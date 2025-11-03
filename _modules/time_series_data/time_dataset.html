@@ -1,0 +1,1117 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>time_series_data.time_dataset &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../_autosummary/hookeai.html">Code</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">time_series_data.time_dataset</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for time_series_data.time_dataset</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Time series data set.</span>
+
+<span class="sd">Classes</span>
+<span class="sd">-------</span>
+<span class="sd">TimeSeriesDatasetInMemory(torch.utils.data.Dataset)</span>
+<span class="sd">    Time series data set (in-memory storage only).</span>
+<span class="sd">TimeSeriesDataset(torch.utils.data.Dataset)</span>
+<span class="sd">    Time series data set.</span>
+
+<span class="sd">Functions</span>
+<span class="sd">---------</span>
+<span class="sd">time_collator</span>
+<span class="sd">    Collate time series batch data.</span>
+<span class="sd">get_time_series_data_loader</span>
+<span class="sd">    Get time series data set data loader.</span>
+<span class="sd">save_dataset</span>
+<span class="sd">    Save PyTorch time series data set to file.</span>
+<span class="sd">load_dataset</span>
+<span class="sd">    Load PyTorch time series data set.</span>
+<span class="sd">change_dataset_features_labels</span>
+<span class="sd">    Change time series data set features labels.</span>
+<span class="sd">add_dataset_feature_init</span>
+<span class="sd">    Add feature initialization to all samples of time series data set.</span>
+<span class="sd">concatenate_dataset_features</span>
+<span class="sd">    Concatenate existing features of time series data set into new feature.</span>
+<span class="sd">sum_dataset_features</span>
+<span class="sd">    Sum existing features of time series data set into new feature.</span>
+<span class="sd">write_time_series_dataset_summary_file</span>
+<span class="sd">    Write summary data file for time series data set generation.</span>
+<span class="sd">split_dataset</span>
+<span class="sd">    Randomly split data set into non-overlapping subsets.</span>
+<span class="sd">get_parent_dataset_indices</span>
+<span class="sd">    Get parent data set indices from subset indices.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#                                                                       Modules</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Standard</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
+<span class="c1"># Third-party</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="c1"># Local</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ioput.iostandard</span><span class="w"> </span><span class="kn">import</span> <span class="n">write_summary_file</span>
+<span class="c1">#</span>
+<span class="c1">#                                                          Authorship &amp; Credits</span>
+<span class="c1"># =============================================================================</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Bernardo Ferreira (bernardo_ferreira@brown.edu)&#39;</span>
+<span class="n">__credits__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Bernardo Ferreira&#39;</span><span class="p">,</span> <span class="p">]</span>
+<span class="n">__status__</span> <span class="o">=</span> <span class="s1">&#39;Stable&#39;</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">time_collator</span><span class="p">(</span><span class="n">batch_data</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Collate time series batch data.</span>
+<span class="sd">    </span>
+<span class="sd">    Ignores all features that are not stored as a torch.Tensor(2d) of shape</span>
+<span class="sd">    (sequence_length, n_features).</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    batch_data : list[dict]</span>
+<span class="sd">        Each batch sample data is stored as a dictionary where each feature</span>
+<span class="sd">        (key, str) data is a torch.Tensor(2d) of shape</span>
+<span class="sd">        (sequence_length, n_features).</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    batch : dict</span>
+<span class="sd">        Collated batch sample data for each feature (key, str), stored as</span>
+<span class="sd">        torch.Tensor(3d) of shape (sequence_length, batch_size, n_features).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Probe features from first batch sample</span>
+    <span class="n">features</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">batch_data</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize collated batch sample data</span>
+    <span class="n">batch</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="c1"># Loop over features</span>
+    <span class="k">for</span> <span class="n">feature</span> <span class="ow">in</span> <span class="n">features</span><span class="p">:</span>
+        <span class="c1"># Probe feature type and shape from first batch sample</span>
+        <span class="n">is_batchable</span> <span class="o">=</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">batch_data</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">feature</span><span class="p">],</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
+                        <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">batch_data</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">feature</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Collate batch sample feature data</span>
+        <span class="k">if</span> <span class="n">is_batchable</span><span class="p">:</span>
+            <span class="n">batch</span><span class="p">[</span><span class="n">feature</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">x</span><span class="p">[</span><span class="n">feature</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">batch_data</span><span class="p">],</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">batch</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="get_time_series_data_loader"><a class="viewcode-back" href="../../_autosummary/hookeai.utilities.fit_data_scalers.get_time_series_data_loader.html#hookeai.material_model_finder.model.material_discovery.get_time_series_data_loader">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">get_time_series_data_loader</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">is_shuffle</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                <span class="o">**</span><span class="n">kwargs</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get time series data set data loader.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dataset : torch.utils.data.Dataset</span>
+<span class="sd">        Time series data set. Each sample is stored as a dictionary where each</span>
+<span class="sd">        feature (key, str) data is a torch.Tensor(2d) of shape</span>
+<span class="sd">        (sequence_length, n_features).</span>
+<span class="sd">    batch_size : int, default=1</span>
+<span class="sd">        Number of samples loaded per batch.</span>
+<span class="sd">    is_shuffle : bool, default=False</span>
+<span class="sd">        Reshuffle data set at every epoch.</span>
+<span class="sd">    **kwargs</span>
+<span class="sd">        Arguments of torch.utils.data.DataLoader.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    data_loader : torch.utils.data.DataLoader</span>
+<span class="sd">        Time series data set data loader.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Time series data set data loader</span>
+    <span class="n">data_loader</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">DataLoader</span><span class="p">(</span><span class="n">dataset</span><span class="o">=</span><span class="n">dataset</span><span class="p">,</span>
+                                              <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>
+                                              <span class="n">shuffle</span><span class="o">=</span><span class="n">is_shuffle</span><span class="p">,</span>
+                                              <span class="n">collate_fn</span><span class="o">=</span><span class="n">time_collator</span><span class="p">,</span>
+                                              <span class="o">**</span><span class="n">kwargs</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">data_loader</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="save_dataset"><a class="viewcode-back" href="../../_autosummary/hookeai.simulators.links.utilities.links_out_to_dataset.save_dataset.html#hookeai.material_model_finder.model.material_discovery.save_dataset">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">save_dataset</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">dataset_basename</span><span class="p">,</span> <span class="n">dataset_directory</span><span class="p">,</span>
+                 <span class="n">is_append_n_sample</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Save PyTorch time series data set to file.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dataset : torch.utils.data.Dataset</span>
+<span class="sd">        Time series data set. Each sample is stored as a dictionary where</span>
+<span class="sd">        each feature (key, str) data is a torch.Tensor(2d) of shape</span>
+<span class="sd">        (sequence_length, n_features).</span>
+<span class="sd">    dataset_basename : str</span>
+<span class="sd">        Data set file basename.</span>
+<span class="sd">    dataset_directory : str</span>
+<span class="sd">        Directory where the times series data set is stored.</span>
+<span class="sd">    is_append_n_sample : bool, default=True</span>
+<span class="sd">        If True, then data set size (number of samples) is appended to</span>
+<span class="sd">        data set filename.</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dataset_file_path : str</span>
+<span class="sd">        PyTorch data set file path.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check data set directory</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">dataset_directory</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The data set directory has not been found:</span><span class="se">\n\n</span><span class="s1">&#39;</span>
+                           <span class="o">+</span> <span class="n">dataset_directory</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set data set file</span>
+    <span class="n">dataset_file</span> <span class="o">=</span> <span class="n">dataset_basename</span>
+    <span class="c1"># Append data set size</span>
+    <span class="k">if</span> <span class="n">is_append_n_sample</span><span class="p">:</span>
+        <span class="n">dataset_file</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;_n</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set data set file path</span>
+    <span class="n">dataset_file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dataset_directory</span><span class="p">,</span>
+                                     <span class="n">dataset_file</span> <span class="o">+</span> <span class="s1">&#39;.pkl&#39;</span><span class="p">)</span>   
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Save data set</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">dataset_file_path</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">dataset_file</span><span class="p">:</span>
+        <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">dataset_file</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">dataset_file_path</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="load_dataset"><a class="viewcode-back" href="../../_autosummary/hookeai.model_architectures.rnn_base_model.optimization.hydra_optimization.load_dataset.html#hookeai.material_model_finder.model.material_discovery.load_dataset">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">load_dataset</span><span class="p">(</span><span class="n">dataset_file_path</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load PyTorch time series data set.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dataset_file_path : str</span>
+<span class="sd">        PyTorch data set file path.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dataset : torch.utils.data.Dataset</span>
+<span class="sd">        PyTorch data set.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check PyTorch data set file</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">dataset_file_path</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;PyTorch data set file has not been found:</span><span class="se">\n\n</span><span class="s1">&#39;</span>
+                           <span class="o">+</span> <span class="n">dataset_file_path</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Load PyTorch data set</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">dataset_file_path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">dataset_file</span><span class="p">:</span>
+        <span class="n">dataset</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">dataset_file</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Check PyTorch data set</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Loaded data set is not a &#39;</span>
+                           <span class="s1">&#39;torch.utils.data.Dataset.&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">dataset</span></div>
+<span class="c1"># =============================================================================</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">change_dataset_features_labels</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">features_label_map</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Change time series data set features labels.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dataset : torch.utils.data.Dataset</span>
+<span class="sd">        Time series data set. Each sample is stored as a dictionary where</span>
+<span class="sd">        each feature (key, str) data is a torch.Tensor(2d) of shape</span>
+<span class="sd">        (sequence_length, n_features).</span>
+<span class="sd">    features_label_map : dict</span>
+<span class="sd">        Features labels mapping. For each original feature label</span>
+<span class="sd">        (key, str), specifies the new label (item, str). Nonexistent</span>
+<span class="sd">        features are silently ignored.</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dataset : torch.utils.data.Dataset</span>
+<span class="sd">        Time series data set. Each sample is stored as a dictionary where</span>
+<span class="sd">        each feature (key, str) data is a torch.Tensor(2d) of shape</span>
+<span class="sd">        (sequence_length, n_features).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Loop over features</span>
+    <span class="k">for</span> <span class="n">old_label</span><span class="p">,</span> <span class="n">new_label</span> <span class="ow">in</span> <span class="n">features_label_map</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>        
+        <span class="c1"># Probe feature existence</span>
+        <span class="k">if</span> <span class="n">old_label</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">dataset</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="k">continue</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Loop over samples</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dataset</span><span class="p">)):</span>
+            <span class="c1"># Get sample</span>
+            <span class="n">sample</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Change feature label</span>
+            <span class="n">sample</span><span class="p">[</span><span class="n">new_label</span><span class="p">]</span> <span class="o">=</span> <span class="n">sample</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">old_label</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Update data set sample</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">TimeSeriesDataset</span><span class="p">):</span>
+                <span class="n">dataset</span><span class="o">.</span><span class="n">update_dataset_sample</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">sample</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">dataset</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">sample</span>      
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">dataset</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="add_dataset_feature_init"><a class="viewcode-back" href="../../_autosummary/hookeai.model_architectures.rnn_base_model.optimization.hydra_optimization.add_dataset_feature_init.html#hookeai.material_model_finder.model.material_discovery.add_dataset_feature_init">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">add_dataset_feature_init</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">feature_label</span><span class="p">,</span> <span class="n">feature_init</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add feature initialization to all samples of time series data set.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dataset : torch.utils.data.Dataset</span>
+<span class="sd">        Time series data set. Each sample is stored as a dictionary where</span>
+<span class="sd">        each feature (key, str) data is a torch.Tensor(2d) of shape</span>
+<span class="sd">        (sequence_length, n_features).</span>
+<span class="sd">    feature_label : str</span>
+<span class="sd">        Feature label.</span>
+<span class="sd">    feature_init : torch.Tensor(2d)</span>
+<span class="sd">        Feature initialization data stored as torch.Tensor(2d) of shape</span>
+<span class="sd">        (n, n_features), where n is a general size.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dataset : torch.utils.data.Dataset</span>
+<span class="sd">        Time series data set. Each sample is stored as a dictionary where</span>
+<span class="sd">        each feature (key, str) data is a torch.Tensor(2d) of shape</span>
+<span class="sd">        (sequence_length, n_features).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check feature initialization</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">feature_init</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Feature initialization was not provided as &#39;</span>
+                           <span class="s1">&#39;torch.Tensor(2d).&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">feature_init</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Feature initialization was not provided as &#39;</span>
+                           <span class="s1">&#39;torch.Tensor(2d).&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Loop over samples</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dataset</span><span class="p">)):</span>
+        <span class="c1"># Get sample</span>
+        <span class="n">sample</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Add new feature</span>
+        <span class="n">sample</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">feature_label</span><span class="p">)]</span> <span class="o">=</span> <span class="n">feature_init</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Update data set sample</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">TimeSeriesDataset</span><span class="p">):</span>
+            <span class="n">dataset</span><span class="o">.</span><span class="n">update_dataset_sample</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">sample</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">dataset</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="concatenate_dataset_features"><a class="viewcode-back" href="../../_autosummary/hookeai.model_architectures.rnn_base_model.optimization.hydra_optimization.concatenate_dataset_features.html#hookeai.material_model_finder.model.material_discovery.concatenate_dataset_features">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">concatenate_dataset_features</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">new_feature_label</span><span class="p">,</span>
+                                 <span class="n">cat_features_labels</span><span class="p">,</span>
+                                 <span class="n">is_remove_features</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Concatenate existing features of time series data set into new feature.</span>
+<span class="sd">    </span>
+<span class="sd">    The new feature is stored as a torch.Tensor(2d) of shape</span>
+<span class="sd">    (sequence_length, n_concat_features) resulting from the concatenation of</span>
+<span class="sd">    the existing features tensors along the second dimension.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dataset : torch.utils.data.Dataset</span>
+<span class="sd">        Time series data set. Each sample is stored as a dictionary where</span>
+<span class="sd">        each feature (key, str) data is a torch.Tensor(2d) of shape</span>
+<span class="sd">        (sequence_length, n_features).</span>
+<span class="sd">    new_feature_label : str</span>
+<span class="sd">        New feature label.</span>
+<span class="sd">    cat_features_labels : tuple[str]</span>
+<span class="sd">        Labels of existing features to be concatenated into new feature.</span>
+<span class="sd">        Concatenation is sorted accordingly.</span>
+<span class="sd">    is_remove_features : bool, default=False</span>
+<span class="sd">        If True, then remove concatenated features from data set after</span>
+<span class="sd">        concatenating the new feature.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dataset : torch.utils.data.Dataset</span>
+<span class="sd">        Time series data set. Each sample is stored as a dictionary where</span>
+<span class="sd">        each feature (key, str) data is a torch.Tensor(2d) of shape</span>
+<span class="sd">        (sequence_length, n_features).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check concatenation features</span>
+    <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">cat_features_labels</span><span class="p">:</span>
+        <span class="c1"># Probe sample existence from first sample</span>
+        <span class="k">if</span> <span class="n">label</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">dataset</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The feature &quot;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s1">&quot; cannot be concatenated &#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;because it does not exist in the data set.&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set data set storage type</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">TimeSeriesDataset</span><span class="p">):</span>
+        <span class="n">is_in_memory_dataset</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">is_in_memory_dataset</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Loop over samples</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dataset</span><span class="p">)):</span>
+        <span class="c1"># Get sample</span>
+        <span class="n">sample</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Concatenate features</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">cat_features_labels</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">sample</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">new_feature_label</span><span class="p">)]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">sample</span><span class="p">[</span><span class="n">label</span><span class="p">]</span> <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">cat_features_labels</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sample</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">new_feature_label</span><span class="p">)]</span> <span class="o">=</span> \
+                <span class="n">sample</span><span class="p">[</span><span class="n">cat_features_labels</span><span class="p">[</span><span class="mi">0</span><span class="p">]]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Remove concatenated features (in-memory data set only)</span>
+        <span class="k">if</span> <span class="n">is_remove_features</span> <span class="ow">and</span> <span class="n">is_in_memory_dataset</span><span class="p">:</span>
+            <span class="c1"># Loop over concatenated features</span>
+            <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">cat_features_labels</span><span class="p">:</span>
+                <span class="n">sample</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">label</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Update data set sample</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">TimeSeriesDataset</span><span class="p">):</span>
+            <span class="n">dataset</span><span class="o">.</span><span class="n">update_dataset_sample</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">sample</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">dataset</span></div>
+<span class="c1"># =============================================================================</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">sum_dataset_features</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">new_feature_label</span><span class="p">,</span> <span class="n">sum_features_labels</span><span class="p">,</span>
+                         <span class="n">features_weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_remove_features</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Sum existing features of time series data set into new feature.</span>
+<span class="sd">    </span>
+<span class="sd">    The new feature is stored as a torch.Tensor(2d) of shape</span>
+<span class="sd">    (sequence_length, n_features) resulting from the sum of the existing</span>
+<span class="sd">    features tensors along the second dimension.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dataset : torch.utils.data.Dataset</span>
+<span class="sd">        Time series data set. Each sample is stored as a dictionary where</span>
+<span class="sd">        each feature (key, str) data is a torch.Tensor(2d) of shape</span>
+<span class="sd">        (sequence_length, n_features).</span>
+<span class="sd">    new_feature_label : str</span>
+<span class="sd">        New feature label.</span>
+<span class="sd">    sum_features_labels : tuple[str]</span>
+<span class="sd">        Labels of existing features to be summed into new feature.</span>
+<span class="sd">    features_weights : dict, default=None</span>
+<span class="sd">        Scalar weights (item, float) multiplied by each existing feature</span>
+<span class="sd">        (key, str) in the summing process. If None, then defaults to 1.0 for</span>
+<span class="sd">        all features.</span>
+<span class="sd">    is_remove_features : bool, default=False</span>
+<span class="sd">        If True, then remove summed features from data set after computing the</span>
+<span class="sd">        new feature.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dataset : torch.utils.data.Dataset</span>
+<span class="sd">        Time series data set. Each sample is stored as a dictionary where</span>
+<span class="sd">        each feature (key, str) data is a torch.Tensor(2d) of shape</span>
+<span class="sd">        (sequence_length, n_features).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check summing features</span>
+    <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">sum_features_labels</span><span class="p">:</span>
+        <span class="c1"># Probe sample existence from first sample</span>
+        <span class="k">if</span> <span class="n">label</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">dataset</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The feature &quot;</span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s1">&quot; cannot be summed &#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;because it does not exist in the data set.&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize sum weights</span>
+    <span class="n">sum_weights</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="c1"># Set sum weights</span>
+    <span class="k">for</span> <span class="n">feature_label</span> <span class="ow">in</span> <span class="n">sum_features_labels</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">feature_label</span> <span class="ow">in</span> <span class="n">features_weights</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="n">sum_weights</span><span class="p">[</span><span class="n">feature_label</span><span class="p">]</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">features_weights</span><span class="p">[</span><span class="n">feature_label</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">sum_weights</span><span class="p">[</span><span class="n">feature_label</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set data set storage type</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">TimeSeriesDataset</span><span class="p">):</span>
+        <span class="n">is_in_memory_dataset</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">is_in_memory_dataset</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Loop over samples</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dataset</span><span class="p">)):</span>
+        <span class="c1"># Get sample</span>
+        <span class="n">sample</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Add features</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">sum_features_labels</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="c1"># Compute new feature</span>
+            <span class="n">sample</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">new_feature_label</span><span class="p">)]</span> <span class="o">=</span> \
+                <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">([</span><span class="n">sum_weights</span><span class="p">[</span><span class="n">label</span><span class="p">]</span><span class="o">*</span><span class="n">sample</span><span class="p">[</span><span class="n">label</span><span class="p">]</span>
+                                       <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">sum_features_labels</span><span class="p">],</span>
+                                      <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Get feature label</span>
+            <span class="n">label</span> <span class="o">=</span> <span class="n">sum_features_labels</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="c1"># Set new feature</span>
+            <span class="n">sample</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">new_feature_label</span><span class="p">)]</span> <span class="o">=</span> <span class="n">sum_weights</span><span class="p">[</span><span class="n">label</span><span class="p">]</span><span class="o">*</span><span class="n">sample</span><span class="p">[</span><span class="n">label</span><span class="p">]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Remove summed features (in-memory data set only)</span>
+        <span class="k">if</span> <span class="n">is_remove_features</span> <span class="ow">and</span> <span class="n">is_in_memory_dataset</span><span class="p">:</span>
+            <span class="c1"># Loop over summed features</span>
+            <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">sum_features_labels</span><span class="p">:</span>
+                <span class="n">sample</span><span class="o">.</span><span class="n">pop</span><span class="p">(</span><span class="n">label</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Update data set sample</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">TimeSeriesDataset</span><span class="p">):</span>
+            <span class="n">dataset</span><span class="o">.</span><span class="n">update_dataset_sample</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">sample</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">dataset</span>
+<span class="c1"># =============================================================================</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">write_time_series_dataset_summary_file</span><span class="p">(</span>
+    <span class="n">dataset_directory</span><span class="p">,</span> <span class="n">n_sample</span><span class="p">,</span> <span class="n">total_time_sec</span><span class="p">,</span> <span class="n">avg_time_sample</span><span class="p">,</span>
+    <span class="n">features</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">targets</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s1">&#39;summary&#39;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Write summary data file for time series data set generation.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dataset_directory : str</span>
+<span class="sd">        Directory where the times series data set is stored.</span>
+<span class="sd">    n_sample : int</span>
+<span class="sd">        Data set size (number of samples).</span>
+<span class="sd">    total_time_sec : int</span>
+<span class="sd">        Total generation time in seconds.</span>
+<span class="sd">    avg_time_sample : float</span>
+<span class="sd">        Average generation time per sample.</span>
+<span class="sd">    features : tuple[str], default=None</span>
+<span class="sd">        Time series data set features.</span>
+<span class="sd">    targets : tuple[str], default=None</span>
+<span class="sd">        Time series data set targets.</span>
+<span class="sd">    filename : str, default=&#39;summary&#39;</span>
+<span class="sd">        Summary file name.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Set summary data</span>
+    <span class="n">summary_data</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;n_sample&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">n_sample</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;features&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">features</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;targets&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">targets</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;Total generation time&#39;</span><span class="p">]</span> <span class="o">=</span> \
+        <span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">total_time_sec</span><span class="p">)))</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;Avg. generation time per path&#39;</span><span class="p">]</span> <span class="o">=</span> \
+        <span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">avg_time_sample</span><span class="p">)))</span>
+    <span class="c1"># Set summary title</span>
+    <span class="n">summary_title</span> <span class="o">=</span> <span class="s1">&#39;Summary: Time series data set generation&#39;</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Write summary file</span>
+    <span class="n">write_summary_file</span><span class="p">(</span>
+        <span class="n">summary_directory</span><span class="o">=</span><span class="n">dataset_directory</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="n">filename</span><span class="p">,</span>
+        <span class="n">summary_title</span><span class="o">=</span><span class="n">summary_title</span><span class="p">,</span> <span class="o">**</span><span class="n">summary_data</span><span class="p">)</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="TimeSeriesDatasetInMemory"><a class="viewcode-back" href="../../_autosummary/hookeai.simulators.links.utilities.links_out_to_dataset.TimeSeriesDatasetInMemory.html#hookeai.material_model_finder.model.material_discovery.TimeSeriesDatasetInMemory">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">TimeSeriesDatasetInMemory</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Time series data set (in-memory storage only).</span>
+<span class="sd">    </span>
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    _dataset_samples : list</span>
+<span class="sd">        Time series data set samples data. Each sample is stored as a</span>
+<span class="sd">        dictionary where each feature (key, str) data is a torch.Tensor(2d) of</span>
+<span class="sd">        shape (sequence_length, n_features).</span>
+<span class="sd">    </span>
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    __len__(self):</span>
+<span class="sd">        Return size of data set (number of samples).</span>
+<span class="sd">    __getitem__(self, index)</span>
+<span class="sd">        Return data set sample from corresponding index.</span>
+<span class="sd">    get_dataset_samples(self)</span>
+<span class="sd">        Get data set samples data.</span>
+<span class="sd">    add_dataset_samples(self, samples)</span>
+<span class="sd">        Add samples to data set.</span>
+<span class="sd">    remove_dataset_samples(self, indices)</span>
+<span class="sd">        Remove samples from data set.</span>
+<span class="sd">    from_dataset(cls, dataset)</span>
+<span class="sd">        Convert data set to TimeSeriesDatasetInMemory data set.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="TimeSeriesDatasetInMemory.__init__"><a class="viewcode-back" href="../../_autosummary/hookeai.simulators.links.utilities.links_out_to_dataset.TimeSeriesDatasetInMemory.html#hookeai.material_model_finder.model.material_discovery.TimeSeriesDatasetInMemory.__init__">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset_samples</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Constructor.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters </span>
+<span class="sd">        ----------</span>
+<span class="sd">        dataset_samples : list[dict]</span>
+<span class="sd">            Time series data set samples data. Each sample is stored as a</span>
+<span class="sd">            dictionary where each feature (key, str) data is a torch.Tensor(2d)</span>
+<span class="sd">            of shape (sequence_length, n_features).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Initialize data set from base class</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">TimeSeriesDatasetInMemory</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set data set samples</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dataset_samples</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">dataset_samples</span><span class="p">)</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return size of data set (number of samples).</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        n_sample : int</span>
+<span class="sd">            Data set size (number of samples).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dataset_samples</span><span class="p">)</span>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="TimeSeriesDatasetInMemory.__getitem__"><a class="viewcode-back" href="../../_autosummary/hookeai.simulators.links.utilities.links_out_to_dataset.TimeSeriesDatasetInMemory.html#hookeai.material_model_finder.model.material_discovery.TimeSeriesDatasetInMemory.__getitem__">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return data set sample from corresponding index.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        index : int</span>
+<span class="sd">            Index of returned data set sample (index must be in [0, n_sample]).</span>
+<span class="sd">            </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        sample_data : dict</span>
+<span class="sd">            Data set sample stored as a dictionary where each feature</span>
+<span class="sd">            (key, str) data is a torch.Tensor(2d) of shape</span>
+<span class="sd">            (sequence_length, n_features).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get data set sample</span>
+        <span class="n">sample_data</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dataset_samples</span><span class="p">[</span><span class="n">index</span><span class="p">]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">sample_data</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="TimeSeriesDatasetInMemory.get_dataset_samples"><a class="viewcode-back" href="../../_autosummary/hookeai.simulators.links.utilities.links_out_to_dataset.TimeSeriesDatasetInMemory.html#hookeai.material_model_finder.model.material_discovery.TimeSeriesDatasetInMemory.get_dataset_samples">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_dataset_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get data set samples data.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dataset_samples : list[dict]</span>
+<span class="sd">            Time series data set samples data. Each sample is stored as a</span>
+<span class="sd">            dictionary where each feature (key, str) data is a torch.Tensor(2d)</span>
+<span class="sd">            of shape (sequence_length, n_features).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dataset_samples</span><span class="p">)</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="TimeSeriesDatasetInMemory.add_dataset_samples"><a class="viewcode-back" href="../../_autosummary/hookeai.simulators.links.utilities.links_out_to_dataset.TimeSeriesDatasetInMemory.html#hookeai.material_model_finder.model.material_discovery.TimeSeriesDatasetInMemory.add_dataset_samples">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">add_dataset_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">samples</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Add samples to data set.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        samples : list[dict]</span>
+<span class="sd">            Time series samples data. Each sample is stored as a dictionary</span>
+<span class="sd">            where each feature (key, str) data is a torch.Tensor(2d) of shape</span>
+<span class="sd">            (sequence_length, n_features).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Append samples data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dataset_samples</span> <span class="o">+=</span> <span class="n">samples</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="TimeSeriesDatasetInMemory.remove_dataset_samples"><a class="viewcode-back" href="../../_autosummary/hookeai.simulators.links.utilities.links_out_to_dataset.TimeSeriesDatasetInMemory.html#hookeai.material_model_finder.model.material_discovery.TimeSeriesDatasetInMemory.remove_dataset_samples">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">remove_dataset_samples</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">indices</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove samples from data set.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        indices : list[int]</span>
+<span class="sd">            Indices of data set samples to be removed (index must be in</span>
+<span class="sd">            [0, n_sample]).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Remove samples data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dataset_samples</span> <span class="o">=</span> \
+            <span class="p">[</span><span class="n">sample</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">sample</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dataset_samples</span><span class="p">)</span>
+             <span class="k">if</span> <span class="n">i</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">set</span><span class="p">(</span><span class="n">indices</span><span class="p">)]</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="TimeSeriesDatasetInMemory.from_dataset"><a class="viewcode-back" href="../../_autosummary/hookeai.simulators.links.utilities.links_out_to_dataset.TimeSeriesDatasetInMemory.html#hookeai.material_model_finder.model.material_discovery.TimeSeriesDatasetInMemory.from_dataset">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">from_dataset</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">dataset</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Convert data set to TimeSeriesDatasetInMemory data set.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dataset : torch.utils.data.Dataset</span>
+<span class="sd">            Time series data set. Each sample is stored as a dictionary where</span>
+<span class="sd">            each feature (key, str) data is a torch.Tensor(2d) of shape</span>
+<span class="sd">            (sequence_length, n_features).</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dataset : TimeSeriesDatasetInMemory</span>
+<span class="sd">            Time series data set. Each sample is stored as a dictionary where</span>
+<span class="sd">            each feature (key, str) data is a torch.Tensor(2d) of shape</span>
+<span class="sd">            (sequence_length, n_features).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Collect data set samples</span>
+        <span class="n">dataset_samples</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">dataset</span><span class="p">]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Create data set</span>
+        <span class="n">dataset</span> <span class="o">=</span> <span class="bp">cls</span><span class="p">(</span><span class="n">dataset_samples</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">dataset</span></div></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="TimeSeriesDataset"><a class="viewcode-back" href="../../_autosummary/hookeai.model_architectures.materials.stress_features.TimeSeriesDataset.html#hookeai.material_model_finder.model.material_discovery.TimeSeriesDataset">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">TimeSeriesDataset</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Dataset</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Time series data set.</span>
+<span class="sd">    </span>
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    _dataset_directory : str</span>
+<span class="sd">        Directory where the time series data set is stored (all data set</span>
+<span class="sd">        samples files).</span>
+<span class="sd">    _dataset_sample_files : list[str]</span>
+<span class="sd">        Time series data set samples files paths. Each sample file contains a</span>
+<span class="sd">        dictionary where each feature (key, str) data is a torch.Tensor(2d) of</span>
+<span class="sd">        shape (sequence_length, n_features).</span>
+<span class="sd">    _dataset_basename : str</span>
+<span class="sd">        Data set file base name.</span>
+<span class="sd">    </span>
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    __len__(self)</span>
+<span class="sd">        Return size of data set (number of samples).</span>
+<span class="sd">    __getitem__(self, index)</span>
+<span class="sd">        Return data set sample from corresponding index.</span>
+<span class="sd">    update_dataset_sample(self, index, time_series)</span>
+<span class="sd">        Update data set sample time series data.</span>
+<span class="sd">    get_dataset_directory(self)</span>
+<span class="sd">        Get directory where time series data set is stored.</span>
+<span class="sd">    get_dataset_sample_files(self)</span>
+<span class="sd">        Get time series data set samples files paths.</span>
+<span class="sd">    set_dataset_basename(self, dataset_basename)</span>
+<span class="sd">        Set data set file base name.</span>
+<span class="sd">    get_dataset_basename(self)</span>
+<span class="sd">        Get data set file base name.</span>
+<span class="sd">    update_dataset_file_internal_directory(dataset_file_path, \</span>
+<span class="sd">                                           new_directory, \</span>
+<span class="sd">                                           is_reload_data=False)</span>
+<span class="sd">        Update internal directory of stored data set in provided file.</span>
+<span class="sd">    _update_dataset_directory(self, dataset_directory, is_reload_data=False)</span>
+<span class="sd">        Update directory where time series data set is stored.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="TimeSeriesDataset.__init__"><a class="viewcode-back" href="../../_autosummary/hookeai.model_architectures.materials.stress_features.TimeSeriesDataset.html#hookeai.material_model_finder.model.material_discovery.TimeSeriesDataset.__init__">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset_directory</span><span class="p">,</span> <span class="n">dataset_sample_files</span><span class="p">,</span>
+                 <span class="n">dataset_basename</span><span class="o">=</span><span class="s1">&#39;time_series_dataset&#39;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Constructor.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dataset_directory : str</span>
+<span class="sd">            Directory where the time series data set is stored (all data set</span>
+<span class="sd">            samples files).</span>
+<span class="sd">        dataset_sample_files : list[str]</span>
+<span class="sd">            Time series data set samples files paths. Each sample file contains</span>
+<span class="sd">            a dictionary where each feature (key, str) data is a</span>
+<span class="sd">            torch.Tensor(2d) of shape (sequence_length, n_features).</span>
+<span class="sd">        dataset_basename : str, default=&#39;time_series_dataset&#39;</span>
+<span class="sd">            Data set file base name.</span>
+<span class="sd">        dataset_samples : list[dict]</span>
+<span class="sd">            Time series data set samples data. Each sample is stored as a</span>
+<span class="sd">            dictionary where each feature (key, str) data is a torch.Tensor(2d)</span>
+<span class="sd">            of shape (sequence_length, n_features).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Initialize data set from base class</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">TimeSeriesDataset</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set data set directory</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">dataset_directory</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The time series data set directory has not &#39;</span>
+                               <span class="s1">&#39;been found:</span><span class="se">\n\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">dataset_directory</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_dataset_directory</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">dataset_directory</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Check data set sample files</span>
+        <span class="k">for</span> <span class="n">file_path</span> <span class="ow">in</span> <span class="n">dataset_sample_files</span><span class="p">:</span>
+            <span class="c1"># Check if sample file exists</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Time series data set sample file has not &#39;</span>
+                                   <span class="s1">&#39;been found:</span><span class="se">\n\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">file_path</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span> \
+                    <span class="o">!=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">dataset_directory</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Time series data set sample file is not &#39;</span>
+                                   <span class="s1">&#39;in dataset directory:</span><span class="se">\n\n</span><span class="s1">&#39;</span>
+                                   <span class="o">+</span> <span class="n">dataset_directory</span><span class="p">)</span>
+        <span class="c1"># Store data set samples file paths</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dataset_sample_files</span> <span class="o">=</span> <span class="n">dataset_sample_files</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set data set file base name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dataset_basename</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">dataset_basename</span><span class="p">)</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="TimeSeriesDataset.__len__"><a class="viewcode-back" href="../../_autosummary/hookeai.model_architectures.materials.stress_features.TimeSeriesDataset.html#hookeai.material_model_finder.model.material_discovery.TimeSeriesDataset.__len__">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="fm">__len__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return size of data set (number of samples).</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        n_sample : int</span>
+<span class="sd">            Data set size (number of samples).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dataset_sample_files</span><span class="p">)</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="TimeSeriesDataset.__getitem__"><a class="viewcode-back" href="../../_autosummary/hookeai.model_architectures.materials.stress_features.TimeSeriesDataset.html#hookeai.material_model_finder.model.material_discovery.TimeSeriesDataset.__getitem__">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="fm">__getitem__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Return data set sample from corresponding index.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        index : int</span>
+<span class="sd">            Index of returned data set sample (index must be in [0, n_sample]).</span>
+<span class="sd">            </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        time_series : dict</span>
+<span class="sd">            Data set sample defined as a dictionary where each feature</span>
+<span class="sd">            (key, str) data is a torch.Tensor(2d) of shape</span>
+<span class="sd">            (sequence_length, n_features).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get data set sample</span>
+        <span class="n">time_series</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dataset_sample_files</span><span class="p">[</span><span class="n">index</span><span class="p">])</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">time_series</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="TimeSeriesDataset.update_dataset_sample"><a class="viewcode-back" href="../../_autosummary/hookeai.model_architectures.materials.stress_features.TimeSeriesDataset.html#hookeai.material_model_finder.model.material_discovery.TimeSeriesDataset.update_dataset_sample">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">update_dataset_sample</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">index</span><span class="p">,</span> <span class="n">time_series</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update data set sample time series data.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        index : int</span>
+<span class="sd">            Index of returned data set sample (index must be in [0, n_sample]).</span>
+<span class="sd">        time_series : dict</span>
+<span class="sd">            Data set sample defined as a dictionary where each feature</span>
+<span class="sd">            (key, str) data is a torch.Tensor(2d) of shape</span>
+<span class="sd">            (sequence_length, n_features).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Update data set sample time series data</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">time_series</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dataset_sample_files</span><span class="p">[</span><span class="n">index</span><span class="p">])</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="TimeSeriesDataset.get_dataset_directory"><a class="viewcode-back" href="../../_autosummary/hookeai.model_architectures.materials.stress_features.TimeSeriesDataset.html#hookeai.material_model_finder.model.material_discovery.TimeSeriesDataset.get_dataset_directory">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_dataset_directory</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get directory where time series data set is stored.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dataset_directory : str</span>
+<span class="sd">            Directory where the time series data set is stored (all data set</span>
+<span class="sd">            samples files).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dataset_directory</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="TimeSeriesDataset.get_dataset_sample_files"><a class="viewcode-back" href="../../_autosummary/hookeai.model_architectures.materials.stress_features.TimeSeriesDataset.html#hookeai.material_model_finder.model.material_discovery.TimeSeriesDataset.get_dataset_sample_files">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_dataset_sample_files</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get time series data set samples files paths.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dataset_sample_files : list[str]</span>
+<span class="sd">            Time series data set samples files paths. Each sample file contains</span>
+<span class="sd">            a dictionary where each feature (key, str) data is a</span>
+<span class="sd">            torch.Tensor(2d) of shape (sequence_length, n_features).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dataset_sample_files</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="TimeSeriesDataset.set_dataset_basename"><a class="viewcode-back" href="../../_autosummary/hookeai.model_architectures.materials.stress_features.TimeSeriesDataset.html#hookeai.material_model_finder.model.material_discovery.TimeSeriesDataset.set_dataset_basename">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">set_dataset_basename</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset_basename</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set data set file base name.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dataset_basename : str</span>
+<span class="sd">            Data set file base name.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dataset_basename</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">dataset_basename</span><span class="p">)</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="TimeSeriesDataset.get_dataset_basename"><a class="viewcode-back" href="../../_autosummary/hookeai.model_architectures.materials.stress_features.TimeSeriesDataset.html#hookeai.material_model_finder.model.material_discovery.TimeSeriesDataset.get_dataset_basename">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_dataset_basename</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get data set file base name.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dataset_basename : str</span>
+<span class="sd">            Data set file base name.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dataset_basename</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="TimeSeriesDataset.update_dataset_file_internal_directory"><a class="viewcode-back" href="../../_autosummary/hookeai.model_architectures.materials.stress_features.TimeSeriesDataset.html#hookeai.material_model_finder.model.material_discovery.TimeSeriesDataset.update_dataset_file_internal_directory">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">update_dataset_file_internal_directory</span><span class="p">(</span>
+        <span class="n">dataset_file_path</span><span class="p">,</span> <span class="n">new_directory</span><span class="p">,</span> <span class="n">is_reload_data</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update internal directory of stored data set in provided file.</span>
+<span class="sd">        </span>
+<span class="sd">        Update is only performed if the new directory does not match the</span>
+<span class="sd">        internal directory of the stored data set.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dataset_file_path : str</span>
+<span class="sd">            Data set file path.</span>
+<span class="sd">        new_directory : str</span>
+<span class="sd">            Data set new directory.</span>
+<span class="sd">        is_reload_data : bool, default=False</span>
+<span class="sd">            Reload and store data set samples in attribute</span>
+<span class="sd">            dataset_samples_data. Only effective if is_store_dataset=True.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check new data set directory</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">new_directory</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The new data set directory has not been &#39;</span>
+                               <span class="s1">&#39;found:</span><span class="se">\n\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">new_directory</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Load PyTorch data set</span>
+        <span class="n">loaded_dataset</span> <span class="o">=</span> <span class="n">load_dataset</span><span class="p">(</span><span class="n">dataset_file_path</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Check data set type</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">loaded_dataset</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Subset</span><span class="p">):</span>
+            <span class="c1"># Get parent data set</span>
+            <span class="n">dataset</span> <span class="o">=</span> <span class="n">loaded_dataset</span><span class="o">.</span><span class="n">dataset</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">loaded_dataset</span><span class="p">,</span> <span class="n">TimeSeriesDataset</span><span class="p">):</span>
+            <span class="c1"># Get data set</span>
+            <span class="n">dataset</span> <span class="o">=</span> <span class="n">loaded_dataset</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The data set must be either &#39;</span>
+                               <span class="s1">&#39;torch.utils.data.Subset (extracted from &#39;</span>
+                               <span class="s1">&#39;TimeSeriesDataset data set) or &#39;</span>
+                               <span class="s1">&#39;TimeSeriesDataset data set.&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get loaded PyTorch data set internal directory</span>
+        <span class="n">stored_directory</span> <span class="o">=</span> <span class="n">dataset</span><span class="o">.</span><span class="n">get_dataset_directory</span><span class="p">()</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Update PyTorch data set file if the new directory does not match the</span>
+        <span class="c1"># internal directory of the loaded data set</span>
+        <span class="k">if</span> <span class="n">stored_directory</span> <span class="o">!=</span> <span class="n">new_directory</span><span class="p">:</span>
+            <span class="c1"># Update directory of PyTorch data set</span>
+            <span class="n">dataset</span><span class="o">.</span><span class="n">_update_dataset_directory</span><span class="p">(</span>
+                <span class="n">new_directory</span><span class="p">,</span> <span class="n">is_reload_data</span><span class="o">=</span><span class="n">is_reload_data</span><span class="p">)</span>
+            <span class="c1"># Save updated PyTorch data set (overwrite existing data set file)</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">dataset_file_path</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">dataset_file</span><span class="p">:</span>
+                <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">loaded_dataset</span><span class="p">,</span> <span class="n">dataset_file</span><span class="p">)</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="TimeSeriesDataset._update_dataset_directory"><a class="viewcode-back" href="../../_autosummary/hookeai.model_architectures.materials.stress_features.TimeSeriesDataset.html#hookeai.material_model_finder.model.material_discovery.TimeSeriesDataset._update_dataset_directory">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">_update_dataset_directory</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">dataset_directory</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update directory where time series data set is stored.</span>
+<span class="sd">        </span>
+<span class="sd">        Stored data set samples files paths directory is updated according</span>
+<span class="sd">        with the new directory.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        dataset_directory : str</span>
+<span class="sd">            Directory where the time series data set is stored (all data set</span>
+<span class="sd">            samples files).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Set new data set directory</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">dataset_directory</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The new time series data set directory has &#39;</span>
+                               <span class="s1">&#39;not been found:</span><span class="se">\n\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">dataset_directory</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_dataset_directory</span> <span class="o">=</span> <span class="n">dataset_directory</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Loop over samples files</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">file_path</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dataset_sample_files</span><span class="p">):</span>
+            <span class="c1"># Set new sample file path (update directory)</span>
+            <span class="n">new_file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">dataset_directory</span><span class="p">),</span>
+                                         <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">file_path</span><span class="p">))</span>
+            <span class="c1"># Update sample file path</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">new_file_path</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Time series data set sample file is not &#39;</span>
+                                   <span class="s1">&#39;in new dataset directory:</span><span class="se">\n\n</span><span class="s1">&#39;</span>
+                                   <span class="o">+</span> <span class="n">dataset_directory</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_dataset_sample_files</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">new_file_path</span></div></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="split_dataset"><a class="viewcode-back" href="../../_autosummary/hookeai.miscellaneous.pruning.pruning_dataset.split_dataset.html#hookeai.material_model_finder.model.material_discovery.split_dataset">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">split_dataset</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">split_sizes</span><span class="p">,</span> <span class="n">is_copy_dataset</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                  <span class="n">is_save_subsets</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">subsets_directory</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                  <span class="n">subsets_basename</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Randomly split data set into non-overlapping subsets.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dataset : torch.utils.data.Dataset</span>
+<span class="sd">        Time series data set. Each sample is stored as a dictionary where</span>
+<span class="sd">        each feature (key, str) data is a torch.Tensor(2d) of shape</span>
+<span class="sd">        (sequence_length, n_features).</span>
+<span class="sd">    split_sizes : dict</span>
+<span class="sd">        Size (item, float) of each data subset name (key, str), where size is a</span>
+<span class="sd">        fraction contained between 0 and 1. The sum of all sizes must equal 1.</span>
+<span class="sd">    is_copy_dataset : bool, default=False</span>
+<span class="sd">        If True, then subsets are disconnected from original parent data set.</span>
+<span class="sd">    is_save_subsets : bool, default=False</span>
+<span class="sd">        If True, then save data subsets to files.</span>
+<span class="sd">    subsets_directory : str, default=None</span>
+<span class="sd">        Directory where the data subsets files are stored.</span>
+<span class="sd">    subset_basename : str, default=None</span>
+<span class="sd">        Subset file base name.</span>
+<span class="sd">    seed : int, default=None</span>
+<span class="sd">        Seed for random data set split generator.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dataset_split : dict</span>
+<span class="sd">        Data subsets (key, str, item, torch.utils.data.Subset).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Initialize data subsets names and sizes</span>
+    <span class="n">subsets_names</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">subsets_sizes</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># Assemble data subsets names and sizes</span>
+    <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">split_sizes</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="c1"># Check if subset size is valid</span>
+        <span class="k">if</span> <span class="n">val</span> <span class="o">&lt;</span> <span class="mf">0.0</span> <span class="ow">or</span> <span class="n">val</span> <span class="o">&gt;</span> <span class="mf">1.0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Subset size must be contained between 0 and &#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;1. Check subset (size): </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s1"> (</span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">)</span>
+        <span class="c1"># Assemble subset name and size</span>
+        <span class="n">subsets_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">key</span><span class="p">))</span>
+        <span class="n">subsets_sizes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Check if split sizes are valid</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">subsets_sizes</span><span class="p">),</span> <span class="mf">1.0</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Sum of subset split sizes must equal 1. &#39;</span>
+                           <span class="sa">f</span><span class="s1">&#39;Current sum: </span><span class="si">{</span><span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">subsets_sizes</span><span class="p">)</span><span class="si">:</span><span class="s1">.2f</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set random split generator</span>
+    <span class="k">if</span> <span class="n">seed</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">generator</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">Generator</span><span class="p">()</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">generator</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Copy original data set</span>
+    <span class="k">if</span> <span class="n">is_copy_dataset</span><span class="p">:</span>
+        <span class="n">dataset</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Randomly split data set into non-overlapping subsets</span>
+    <span class="n">subsets_list</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">random_split</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">subsets_sizes</span><span class="p">,</span>
+                                                 <span class="n">generator</span><span class="o">=</span><span class="n">generator</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Build data subsets</span>
+    <span class="n">dataset_split</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">subset</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">subsets_names</span><span class="p">):</span>
+        <span class="c1"># Check subset</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">subsets_list</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">&lt;</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Subset &quot;</span><span class="si">{</span><span class="n">subset</span><span class="si">}</span><span class="s1">&quot; resulting from data set &#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;split is empty.&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Assemble data subet</span>
+        <span class="n">dataset_split</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">subset</span><span class="p">)]</span> <span class="o">=</span> <span class="n">subsets_list</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Save data subsets files</span>
+    <span class="k">if</span> <span class="n">is_save_subsets</span><span class="p">:</span>
+        <span class="c1"># Check subsets directory</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">subsets_directory</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The data subsets directory has not been &#39;</span>
+                               <span class="s1">&#39;specified or found:</span><span class="se">\n\n</span><span class="s1">&#39;</span>
+                               <span class="o">+</span> <span class="n">subsets_directory</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Loop over data subsets</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">dataset_split</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="c1"># Set data subset file name</span>
+            <span class="n">subset_file</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+            <span class="k">if</span> <span class="n">subsets_basename</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">subset_file</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">subsets_basename</span><span class="si">}</span><span class="s1">_&#39;</span>
+            <span class="n">subset_file</span> <span class="o">+=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">key</span><span class="p">)</span><span class="si">}</span><span class="s1">_n</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">val</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="c1"># Set data subset file path</span>
+            <span class="n">subset_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">subsets_directory</span><span class="p">,</span>
+                                       <span class="n">subset_file</span> <span class="o">+</span> <span class="s1">&#39;.pkl&#39;</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Save data subset</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">subset_path</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">subset_file</span><span class="p">:</span>
+                <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">val</span><span class="p">,</span> <span class="n">subset_file</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    </span>
+    <span class="k">return</span> <span class="n">dataset_split</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="get_parent_dataset_indices"><a class="viewcode-back" href="../../_autosummary/hookeai.miscellaneous.pruning.pruning_dataset.get_parent_dataset_indices.html#hookeai.material_model_finder.model.material_discovery.get_parent_dataset_indices">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">get_parent_dataset_indices</span><span class="p">(</span><span class="n">subset</span><span class="p">,</span> <span class="n">subset_indices</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get parent data set indices from subset indices.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    subset : torch.utils.data.Subset</span>
+<span class="sd">        Time series subset. Each sample is stored as a dictionary where</span>
+<span class="sd">        each feature (key, str) data is a torch.Tensor(2d) of shape</span>
+<span class="sd">        (sequence_length, n_features).</span>
+<span class="sd">    subset_indices : list[int]</span>
+<span class="sd">        Subset samples indices.</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    parent_indices : list[int]</span>
+<span class="sd">        Parent data set samples indices.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check subset</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">subset</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Subset</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Expecting time series subset of class &#39;</span>
+                           <span class="sa">f</span><span class="s1">&#39;torch.utils.data.Subset, but found &#39;</span>
+                           <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">subset</span><span class="p">)</span><span class="o">.</span><span class="vm">__name__</span><span class="si">}</span><span class="s1"> instead.&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get parent data set samples indices</span>
+    <span class="n">parent_indices</span> <span class="o">=</span> <span class="p">[</span><span class="n">subset</span><span class="o">.</span><span class="n">indices</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">subset_indices</span><span class="p">]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">parent_indices</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

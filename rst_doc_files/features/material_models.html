@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Material model architectures &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Local material model updating" href="local_model_updating.html" />
+    <link rel="prev" title="Data generation" href="data_generation.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_generation.html">Data generation</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Material model architectures</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#key-resources">Key resources</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#conventional-material-models">Conventional material models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#neural-network-material-models">Neural network material models</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#hybrid-material-models">Hybrid material models</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../_autosummary/hookeai.html">Code</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Material model architectures</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="material-model-architectures">
+<h1>Material model architectures<a class="headerlink" href="#material-model-architectures" title="Permalink to this heading">¶</a></h1>
+<p>Material models are at the very core of the <a class="reference external" href="https://doi.org/10.1016/j.jmps.2025.106408">Automatically Differentiable Model Updating (ADiMU)</a> framework. Despite handling <strong>any type of parametric material model</strong>, HookeAI includes a variety of <strong>pre-built</strong> <strong>conventional</strong> (physics-based), <strong>neural network</strong> (data-driven), and <strong>hybrid</strong> material models.</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>At the moment, HookeAI <strong>does not</strong> provide a formal interface to implement material model architectures. Nonetheless, all the pre-built models provide clear blueprints to implement and integrate custom architectures.</p>
+</div>
+<hr class="docutils" />
+<section id="key-resources">
+<h2>Key resources<a class="headerlink" href="#key-resources" title="Permalink to this heading">¶</a></h2>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 40%" />
+<col style="width: 60%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p><strong>Source file/directory</strong></p></th>
+<th class="head"><p><strong>Description</strong></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">hookeai/model_architectures</span></code></p></td>
+<td><p>Directory containing the implementation of all <strong>pre-built material model architectures</strong>, as well as the associated <strong>training</strong> and <strong>prediction</strong> procedures.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">hookeai/simulators/fetorch/material</span></code></p></td>
+<td><p>Directory containing the implementation of <strong>conventional material models</strong> from the <strong>FETorch</strong> (PyTorch-based Finite Element Method) library.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="conventional-material-models">
+<h2>Conventional material models<a class="headerlink" href="#conventional-material-models" title="Permalink to this heading">¶</a></h2>
+<p><strong>Conventional</strong> (physics-based, mechanistic or phenomenological) material models are formulated based on rigorous <strong>physics-based theoretical frameworks</strong>, ensuring thermodynamical consistency and fundamental principles like frame invariance and material objectivity. They typically involve a limited number of parameters, often linked to measurable physical quantities, and comprise a <strong>set of well-defined constitutive equations</strong> to describe different types of material behavior (e.g., elasticity, plasticity, viscoelasticity, damage).</p>
+<p>Instead of demanding tailored implementations to fit within the ADiMU framework, HookeAI provides a <strong>single, pre-built model architecture</strong> (<code class="code docutils literal notranslate"><span class="pre">RecurrentConstitutiveModel</span></code>) that wraps the standard implementation of conventional material models. This <strong>wrapper</strong> handles all the required procedures for material model updating, such as parameter normalization/denormalization, enforcement of parameters constraints, and batch processing of features data. Several conventional material models from the <strong>FETorch material library</strong> (<code class="code docutils literal notranslate"><span class="pre">ConstitutiveModel</span></code>) are already integrated within this architecture, including: (i) Linear elasticity (<code class="code docutils literal notranslate"><span class="pre">Elastic</span></code>), (ii) von Mises elastoplasticity with isotropic and kinematic hardening (<code class="code docutils literal notranslate"><span class="pre">VonMises</span></code>, <code class="code docutils literal notranslate"><span class="pre">VonMisesVMAP</span></code>, <code class="code docutils literal notranslate"><span class="pre">VonMisesMixed</span></code>, <code class="code docutils literal notranslate"><span class="pre">VonMisesMixedVMAP</span></code>), (iii) Drucker-Prager elastoplasticity (<code class="code docutils literal notranslate"><span class="pre">DruckerPrager</span></code>, <code class="code docutils literal notranslate"><span class="pre">DruckerPragerVMAP</span></code>), and (iv) Lou-Zhang-Yoon elastoplasticity (<code class="code docutils literal notranslate"><span class="pre">LouZhangYoon</span></code>, <code class="code docutils literal notranslate"><span class="pre">LouZhangYoonVMAP</span></code>).</p>
+<div class="admonition warning">
+<p class="admonition-title">Warning</p>
+<p>In order to enable an efficient updating process, HookeAI’s material model updating leverages <a class="reference external" href="https://docs.pytorch.org/docs/stable/generated/torch.vmap.html">PyTorch’s vectorizing maps</a>. This requires that the conventional material model’s implementation is compatible with <strong>PyTorch vectorization requirements</strong>. Both <strong>standard</strong> and <strong>VMAP-compatible</strong> versions of each conventional material model are provided in the FETorch material library.</p>
+</div>
+<a class="reference internal image-reference" href="../../_images/hookeai_conventional_models.png"><img alt="../../_images/hookeai_conventional_models.png" class="align-center" src="../../_images/hookeai_conventional_models.png" style="width: 100%;" /></a>
+</section>
+<hr class="docutils" />
+<section id="neural-network-material-models">
+<h2>Neural network material models<a class="headerlink" href="#neural-network-material-models" title="Permalink to this heading">¶</a></h2>
+<p><strong>Neural network</strong> (data-driven) material models leverage the powerful function approximation capabilities of <strong>deep neural networks</strong> to learn the material behavior directly from data. Deep learning architectures that integrate appropriate activation functions, inductive biases (e.g., invariances, symmetries) and recurrent structures can effectively capture complex, nonlinear history-dependent material responses without relying on explicit constitutive equations. However, given that these models lack a physics-based foundation and often span tens to billions of non-physically interpretable parameters, they typically <strong>require large amounts of high-quality, representative data</strong> to deliver accurate predictions and generalize well to unseen scenarios.</p>
+<p>HookeAI provides a <strong>pre-built neural network material model</strong> that consists of a multi-layer gated recurrent unit (GRU) architecture (<code class="code docutils literal notranslate"><span class="pre">GRURNNModel</span></code>). The model is particularly well-suited to capture <strong>history-dependent material behavior</strong>, as it can process time series data and effectively learn material behavior temporal dependencies. The model can handle input/output features of arbitrary dimensionality beyond the required strain and stress tensors, such as strain-based (<code class="code docutils literal notranslate"><span class="pre">strain_features.dat</span></code>) and stress-based (e.g., <code class="code docutils literal notranslate"><span class="pre">stress_features.dat</span></code>) additional features (e.g., invariants, volumetric/deviatoric components) as well as other features to capture relevant material behavior dependencies (e.g., temperature, strain rate, composition).</p>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>While the low-level GRU architecture is imported from <a class="reference external" href="https://pytorch.org/docs/stable/generated/torch.nn.GRU.html">PyTorch</a> by default, HookeAI also provides a <strong>fully custom implementation</strong> of the same architecture (<code class="code docutils literal notranslate"><span class="pre">GRU</span></code>). Despite being less computationally efficient, this custom implementation is compatible with PyTorch’s vectorization requirements.</p>
+</div>
+<a class="reference internal image-reference" href="../../_images/hookeai_nn_models.png"><img alt="../../_images/hookeai_nn_models.png" class="align-center" src="../../_images/hookeai_nn_models.png" style="width: 100%;" /></a>
+</section>
+<hr class="docutils" />
+<section id="hybrid-material-models">
+<h2>Hybrid material models<a class="headerlink" href="#hybrid-material-models" title="Permalink to this heading">¶</a></h2>
+<p><strong>Hybrid</strong> material models <strong>integrate physics-based and data-driven components</strong> within a unified framework. Irrespective of the specific architecture, the objective is to combine the advantages of both paradigms: the thermodynamic consistency, robustness, and interpretability of conventional models, together with the flexibility and high expressiveness of neural networks models. Such models may embed neural networks within established constitutive formulations to capture complex behaviors, enforce thermodynamical constraints directly on neural network architectures, and/or integrate multiple models in sequential or parallel configurations. Consequently, hybrid architectures pave the way for a new generation of material models, where physical principles and data-driven representations can be systematically integrated to capture increasingly complex behaviors.</p>
+<p>HookeAI provides a <strong>highly customizable pre-built hybrid material model</strong> (<code class="code docutils literal notranslate"><span class="pre">HybridModel</span></code>) that enables the combination of any conventional and neural network models, each integrated as a hybridized model with a corresponding set of parameters, in a graph-like structure of hybridization channels and layers. The outputs of the different hybridization channels are then collected by a hybridization model (<code class="code docutils literal notranslate"><span class="pre">HybridizationModel</span></code>), itself a general parametric model, that yields the resulting material stress prediction. This flexible architecture allows the implementation of endless hybrid model architectures that can handle input/output features of arbitrary dimensionality and include general non-parametric layers as well.</p>
+<a class="reference internal image-reference" href="../../_images/hookeai_hybrid_model.png"><img alt="../../_images/hookeai_hybrid_model.png" class="align-center" src="../../_images/hookeai_hybrid_model.png" style="width: 70%;" /></a>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="data_generation.html" class="btn btn-neutral float-left" title="Data generation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="local_model_updating.html" class="btn btn-neutral float-right" title="Local material model updating" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

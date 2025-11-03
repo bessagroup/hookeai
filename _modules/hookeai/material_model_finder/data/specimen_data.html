@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>hookeai.material_model_finder.data.specimen_data &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../_autosummary/hookeai.html">Code</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">hookeai.material_model_finder.data.specimen_data</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for hookeai.material_model_finder.data.specimen_data</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Specimen numerical data.</span>
+
+<span class="sd">Classes</span>
+<span class="sd">-------</span>
+<span class="sd">SpecimenNumericalData</span>
+<span class="sd">    Specimen numerical data translated from experimental results.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#                                                                       Modules</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Third-party</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="c1"># Local</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">simulators.fetorch.structure.structure_mesh</span><span class="w"> </span><span class="kn">import</span> <span class="n">StructureMesh</span>
+<span class="c1">#</span>
+<span class="c1">#                                                          Authorship &amp; Credits</span>
+<span class="c1"># =============================================================================</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Bernardo Ferreira (bernardo_ferreira@brown.edu)&#39;</span>
+<span class="n">__credits__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Bernardo Ferreira&#39;</span><span class="p">,</span> <span class="p">]</span>
+<span class="n">__status__</span> <span class="o">=</span> <span class="s1">&#39;Stable&#39;</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="SpecimenNumericalData"><a class="viewcode-back" href="../../../../_autosummary/hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.html#hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">SpecimenNumericalData</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Specimen numerical data translated from experimental results.</span>
+<span class="sd">    </span>
+<span class="sd">    After discretizing the specimen in a suitable finite element mesh, the</span>
+<span class="sd">    experimental results are translated to numerical data, namely the</span>
+<span class="sd">    nodes displacement history and reaction forces history.</span>
+<span class="sd">    </span>
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    specimen_mesh : StructureMesh</span>
+<span class="sd">        Specimen finite element mesh.</span>
+<span class="sd">    nodes_disps_mesh_hist : torch.Tensor(3d)</span>
+<span class="sd">        Displacements history of finite element mesh nodes stored as</span>
+<span class="sd">        torch.Tensor(3d) of shape (n_node_mesh, n_dim, n_time).</span>
+<span class="sd">    reaction_forces_mesh_hist : torch.Tensor(3d)</span>
+<span class="sd">        Reaction forces (Dirichlet boundary conditions) history of finite</span>
+<span class="sd">        element mesh nodes stored as torch.Tensor(3d) of shape</span>
+<span class="sd">        (n_node_mesh, n_dim, n_time).</span>
+<span class="sd">    dirichlet_bc_mesh_hist : torch.Tensor(3d)</span>
+<span class="sd">        Dirichlet boundary constraints history of finite element mesh nodes</span>
+<span class="sd">        stored as torch.Tensor(3d) of shape (n_node_mesh, n_dim, n_time).</span>
+<span class="sd">        Encodes if each degree of freedom is free (assigned 0) or constrained</span>
+<span class="sd">        (greater than 0) under Dirichlet boundary conditions. The encoding</span>
+<span class="sd">        depends on the selected force equilibrium loss type.</span>
+<span class="sd">    time_hist : torch.Tensor(1d)</span>
+<span class="sd">        Discrete time history.</span>
+
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    set_specimen_mesh(self, nodes_coords_mesh_init, elements_type, \</span>
+<span class="sd">                      connectivities)</span>
+<span class="sd">        Set the specimen finite element mesh.</span>
+<span class="sd">    set_specimen_data(self, nodes_disps_mesh_hist, reaction_forces_mesh_hist)</span>
+<span class="sd">        Set specimen numerical data translated from experimental results.</span>
+<span class="sd">    update_specimen_mesh_configuration(self, time_idx, is_update_coords=True)</span>
+<span class="sd">        Update the specimen mesh configuration for given discrete time.</span>
+<span class="sd">    get_batched_mesh_configuration_hist(self, is_update_coords=True)</span>
+<span class="sd">        Get batched finite element mesh configuration history.</span>
+<span class="sd">    get_element_nodes_field_hist(self, element_nodes, nodes_field_mesh_hist)</span>
+<span class="sd">        Get field history of finite element nodes.</span>
+<span class="sd">    get_n_dim(self)</span>
+<span class="sd">        Get number of spatial dimensions.</span>
+<span class="sd">    check_dirichlet_bc_mesh_hist(self, force_equilibrium_loss_type)</span>
+<span class="sd">        Check if Dirichlet boundary constraints history is admissible.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="SpecimenNumericalData.__init__"><a class="viewcode-back" href="../../../../_autosummary/hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.html#hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.__init__">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Constructor.&quot;&quot;&quot;</span>
+        <span class="c1"># Initialize specimen finite element mesh</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">specimen_mesh</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># Initialize specimen data</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nodes_disps_mesh_hist</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reaction_forces_mesh_hist</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dirichlet_bc_mesh_hist</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">time_hist</span> <span class="o">=</span> <span class="kc">None</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="SpecimenNumericalData.set_specimen_mesh"><a class="viewcode-back" href="../../../../_autosummary/hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.html#hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.set_specimen_mesh">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">set_specimen_mesh</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes_coords_mesh_init</span><span class="p">,</span> <span class="n">elements_type</span><span class="p">,</span>
+                          <span class="n">connectivities</span><span class="p">,</span> <span class="n">dirichlet_bool_mesh</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set the specimen finite element mesh.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        nodes_coords_mesh_init : torch.Tensor(2d)</span>
+<span class="sd">            Initial coordinates of finite element mesh nodes stored as</span>
+<span class="sd">            torch.Tensor(2d) of shape (n_node_mesh, n_dim).</span>
+<span class="sd">        elements_type : dict</span>
+<span class="sd">            FETorch element type (item, ElementType) of each finite element</span>
+<span class="sd">            mesh element (str[int]). Elements labels must be within the range</span>
+<span class="sd">            of 1 to n_elem (included).</span>
+<span class="sd">        connectivities : dict</span>
+<span class="sd">            Nodes (item, tuple[int]) of each finite element mesh element</span>
+<span class="sd">            (key, str[int]). Nodes must be within the range of 1 to n_node_mesh</span>
+<span class="sd">            (included). Elements labels must be within the range of 1 to n_elem</span>
+<span class="sd">            (included).</span>
+<span class="sd">        dirichlet_bool_mesh : torch.Tensor(2d)</span>
+<span class="sd">            Degrees of freedom of finite element mesh subject to Dirichlet</span>
+<span class="sd">            boundary conditions. Stored as torch.Tensor(2d) of shape</span>
+<span class="sd">            (n_node_mesh, n_dim) where constrained degrees of freedom are</span>
+<span class="sd">            labeled 1, otherwise 0.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Set specimen finite element mesh</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">specimen_mesh</span> <span class="o">=</span> <span class="n">StructureMesh</span><span class="p">(</span>
+            <span class="n">nodes_coords_mesh_init</span><span class="p">,</span> <span class="n">elements_type</span><span class="p">,</span> <span class="n">connectivities</span><span class="p">,</span>
+            <span class="n">dirichlet_bool_mesh</span><span class="p">)</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="SpecimenNumericalData.set_specimen_data"><a class="viewcode-back" href="../../../../_autosummary/hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.html#hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.set_specimen_data">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">set_specimen_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes_disps_mesh_hist</span><span class="p">,</span>
+                          <span class="n">reaction_forces_mesh_hist</span><span class="p">,</span> <span class="n">dirichlet_bc_mesh_hist</span><span class="p">,</span>
+                          <span class="n">time_hist</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set specimen numerical data translated from experimental results.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        nodes_disps_mesh_hist : torch.Tensor(3d)</span>
+<span class="sd">            Displacements history of finite element mesh nodes stored as</span>
+<span class="sd">            torch.Tensor(3d) of shape (n_node_mesh, n_dim, n_time).</span>
+<span class="sd">        reaction_forces_mesh_hist : torch.Tensor(3d)</span>
+<span class="sd">            Reaction forces (Dirichlet boundary conditions) history of finite</span>
+<span class="sd">            element mesh nodes stored as torch.Tensor(3d) of shape</span>
+<span class="sd">            (n_node_mesh, n_dim, n_time).</span>
+<span class="sd">        dirichlet_bc_mesh_hist : torch.Tensor(3d)</span>
+<span class="sd">            Dirichlet boundary constraints history of finite element mesh nodes</span>
+<span class="sd">            stored as torch.Tensor(3d) of shape (n_node_mesh, n_dim, n_time).</span>
+<span class="sd">            Encodes if each degree of freedom is free (assigned 0) or</span>
+<span class="sd">            constrained (greater than 0) under Dirichlet boundary conditions.</span>
+<span class="sd">            The encoding depends on the selected force equilibrium loss type.</span>
+<span class="sd">        time_hist : torch.Tensor(1d)</span>
+<span class="sd">            Discrete time history.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check specimen finite element mesh</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">specimen_mesh</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The experimental specimen finite element &#39;</span>
+                               <span class="s1">&#39;mesh must be set before setting the &#39;</span>
+                               <span class="s1">&#39;corresponding experimental data.&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Get number of spatial dimensions</span>
+            <span class="n">n_dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">specimen_mesh</span><span class="o">.</span><span class="n">get_n_dim</span><span class="p">()</span>
+            <span class="c1"># Get number of nodes of finite element mesh</span>
+            <span class="n">n_node_mesh</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">specimen_mesh</span><span class="o">.</span><span class="n">get_n_node_mesh</span><span class="p">()</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set data labels</span>
+        <span class="n">data_labels</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;nodes displacement history&#39;</span><span class="p">,</span>
+                       <span class="s1">&#39;nodes reaction forces history&#39;</span><span class="p">,</span>
+                       <span class="s1">&#39;dirichlet boundary constraints history&#39;</span><span class="p">)</span>
+        <span class="c1"># Check specimen data</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">tensor</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">((</span><span class="n">nodes_disps_mesh_hist</span><span class="p">,</span>
+                                    <span class="n">reaction_forces_mesh_hist</span><span class="p">,</span>
+                                    <span class="n">dirichlet_bc_mesh_hist</span><span class="p">)):</span>
+            <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">)</span>
+                <span class="ow">or</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The </span><span class="si">{</span><span class="n">data_labels</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s1"> must be provided as &#39;</span>
+                                   <span class="sa">f</span><span class="s1">&#39; a torch.Tensor(3d) of shape &#39;</span>
+                                   <span class="sa">f</span><span class="s1">&#39;(n_node_mesh, n_dim, n_time).&#39;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">n_node_mesh</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The </span><span class="si">{</span><span class="n">data_labels</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s1"> (</span><span class="si">{</span><span class="n">tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1">) &#39;</span>
+                                   <span class="sa">f</span><span class="s1">&#39;is not consistent with the number of &#39;</span>
+                                   <span class="sa">f</span><span class="s1">&#39;nodes of the specimen mesh &#39;</span>
+                                   <span class="sa">f</span><span class="s1">&#39;(</span><span class="si">{</span><span class="n">n_node_mesh</span><span class="si">}</span><span class="s1">).&#39;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">n_dim</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The </span><span class="si">{</span><span class="n">data_labels</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s1"> (</span><span class="si">{</span><span class="n">tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s1">) &#39;</span>
+                                   <span class="sa">f</span><span class="s1">&#39;is not consistent with the number of &#39;</span>
+                                   <span class="sa">f</span><span class="s1">&#39;spatial dimensions of the specimen mesh &#39;</span>
+                                   <span class="sa">f</span><span class="s1">&#39;(</span><span class="si">{</span><span class="n">n_dim</span><span class="si">}</span><span class="s1">).&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">time_hist</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The discrete time history must be provided &#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;as a torch.Tensor(1d).&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">nodes_disps_mesh_hist</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">!=</span> <span class="n">time_hist</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+              <span class="ow">or</span> <span class="n">reaction_forces_mesh_hist</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">!=</span> <span class="n">time_hist</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+              <span class="ow">or</span> <span class="n">dirichlet_bc_mesh_hist</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span> <span class="o">!=</span> <span class="n">time_hist</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="sa">f</span><span class="s1">&#39;The time history length of the </span><span class="si">{</span><span class="n">data_labels</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1"> &#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;(</span><span class="si">{</span><span class="n">nodes_disps_mesh_hist</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span><span class="si">}</span><span class="s1">) or the </span><span class="si">{</span><span class="n">data_labels</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s1"> &#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;is not consistent the discrete time history &#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;(</span><span class="si">{</span><span class="n">time_hist</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1">).&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Store nodes displacements history</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">nodes_disps_mesh_hist</span> <span class="o">=</span> <span class="n">nodes_disps_mesh_hist</span>
+        <span class="c1"># Store nodes reaction forces history</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">reaction_forces_mesh_hist</span> <span class="o">=</span> <span class="n">reaction_forces_mesh_hist</span>
+        <span class="c1"># Store nodes Dirichlet boundary constraints history</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">dirichlet_bc_mesh_hist</span> <span class="o">=</span> <span class="n">dirichlet_bc_mesh_hist</span>
+        <span class="c1"># Store discrete time history</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">time_hist</span> <span class="o">=</span> <span class="n">time_hist</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="SpecimenNumericalData.update_specimen_mesh_configuration"><a class="viewcode-back" href="../../../../_autosummary/hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.html#hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.update_specimen_mesh_configuration">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">update_specimen_mesh_configuration</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time_idx</span><span class="p">,</span>
+                                           <span class="n">is_update_coords</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update the specimen mesh configuration for given discrete time.</span>
+<span class="sd">        </span>
+<span class="sd">        For a given discrete time, the known nodes displacement history is used</span>
+<span class="sd">        to update the specimen finite element mesh nodes coordinates and</span>
+<span class="sd">        displacements. A similar update is performed for the last converged</span>
+<span class="sd">        mesh configuration.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        time_idx : int</span>
+<span class="sd">            Discrete time index.</span>
+<span class="sd">        is_update_coords : bool, default=True</span>
+<span class="sd">            If False, then only updates the displacements of the finite element</span>
+<span class="sd">            mesh nodes, leaving the nodes coordinates unchanged. If True, then</span>
+<span class="sd">            update both coordinates and displacements of finite element mesh</span>
+<span class="sd">            nodes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check discrete time index</span>
+        <span class="k">if</span> <span class="n">time_idx</span> <span class="o">&lt;</span> <span class="mi">0</span> <span class="ow">or</span> <span class="n">time_idx</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">time_hist</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The discrete time index (</span><span class="si">{</span><span class="n">time_idx</span><span class="si">}</span><span class="s1">) &#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;must be non-negative integer lower than &#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;the discrete time history length &#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;(</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">time_hist</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1">).&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set last converged time index</span>
+        <span class="n">time_idx_old</span> <span class="o">=</span> <span class="nb">max</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="n">time_idx</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="c1"># Update specimen last converged mesh configuration</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">specimen_mesh</span><span class="o">.</span><span class="n">update_mesh_configuration</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">nodes_disps_mesh_hist</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">time_idx_old</span><span class="p">],</span> <span class="n">time</span><span class="o">=</span><span class="s1">&#39;last&#39;</span><span class="p">,</span>
+            <span class="n">is_update_coords</span><span class="o">=</span><span class="n">is_update_coords</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Update specimen mesh current configuration</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">specimen_mesh</span><span class="o">.</span><span class="n">update_mesh_configuration</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">nodes_disps_mesh_hist</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">time_idx</span><span class="p">],</span> <span class="n">time</span><span class="o">=</span><span class="s1">&#39;current&#39;</span><span class="p">,</span>
+            <span class="n">is_update_coords</span><span class="o">=</span><span class="n">is_update_coords</span><span class="p">)</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="SpecimenNumericalData.get_batched_mesh_configuration_hist"><a class="viewcode-back" href="../../../../_autosummary/hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.html#hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.get_batched_mesh_configuration_hist">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_batched_mesh_configuration_hist</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">is_update_coords</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                            <span class="n">device</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get batched finite element mesh configuration history.</span>
+<span class="sd">        </span>
+<span class="sd">        Batching operation over elements requires that all finite element mesh</span>
+<span class="sd">        elements share the same element type (number of nodes).</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        is_update_coords : bool, default=True</span>
+<span class="sd">            If False, then finite element mesh nodes coordinates are kept fixed</span>
+<span class="sd">            throughout history. If True, then finite element mesh nodes</span>
+<span class="sd">            coordinates are computed from nodes displacements history.</span>
+<span class="sd">        device : torch.device, default=None</span>
+<span class="sd">            Device on which torch.Tensor is allocated.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        elements_coords_hist : torch.Tensor(4d)</span>
+<span class="sd">            Coordinates history of finite element mesh elements nodes stored</span>
+<span class="sd">            as torch.Tensor(4d) of shape (n_elem, n_node, n_dim, n_time).</span>
+<span class="sd">        elements_disps_hist : torch.Tensor(4d)</span>
+<span class="sd">            Displacements history of finite element mesh elements nodes stored</span>
+<span class="sd">            as torch.Tensor(4d) of shape (n_elem, n_node, n_dim, n_time).        </span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Build connectivities tensor</span>
+        <span class="n">connectivities_tensor</span> <span class="o">=</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">specimen_mesh</span><span class="o">.</span><span class="n">get_connectivities_tensor</span><span class="p">()</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set vectorized element field history computation (batch along</span>
+        <span class="c1"># element)</span>
+        <span class="n">vmap_get_element_nodes_field_hist</span> <span class="o">=</span> \
+            <span class="n">torch</span><span class="o">.</span><span class="n">vmap</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">get_element_nodes_field_hist</span><span class="p">,</span>
+                       <span class="n">in_dims</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="n">out_dims</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,))</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get batched finite element mesh elements displacement history</span>
+        <span class="n">elements_disps_hist</span> <span class="o">=</span> <span class="n">vmap_get_element_nodes_field_hist</span><span class="p">(</span>
+            <span class="n">connectivities_tensor</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes_disps_mesh_hist</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get finite element mesh nodes initial coordinates</span>
+        <span class="n">nodes_coords_mesh_init</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">specimen_mesh</span><span class="o">.</span><span class="n">get_mesh_configuration</span><span class="p">(</span><span class="n">time</span><span class="o">=</span><span class="s1">&#39;init&#39;</span><span class="p">)</span>
+        <span class="c1"># Build finite element mesh nodes coordinates history</span>
+        <span class="n">nodes_coords_mesh_hist</span> <span class="o">=</span> <span class="n">nodes_coords_mesh_init</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span>
+            <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">time_hist</span><span class="p">))</span>
+        <span class="k">if</span> <span class="n">is_update_coords</span><span class="p">:</span>
+            <span class="n">nodes_coords_mesh_hist</span> <span class="o">=</span> \
+                <span class="n">nodes_coords_mesh_hist</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">nodes_disps_mesh_hist</span>
+        <span class="c1"># Get batched finite element mesh elements coordinates history</span>
+        <span class="n">elements_coords_hist</span> <span class="o">=</span> <span class="n">vmap_get_element_nodes_field_hist</span><span class="p">(</span>
+            <span class="n">connectivities_tensor</span><span class="p">,</span> <span class="n">nodes_coords_mesh_hist</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+            <span class="p">)</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">elements_coords_hist</span><span class="p">,</span> <span class="n">elements_disps_hist</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="SpecimenNumericalData.get_element_nodes_field_hist"><a class="viewcode-back" href="../../../../_autosummary/hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.html#hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.get_element_nodes_field_hist">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_element_nodes_field_hist</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element_nodes</span><span class="p">,</span>
+                                     <span class="n">nodes_field_mesh_hist</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get field history of finite element nodes.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        element_nodes : torch.Tensor(1d)</span>
+<span class="sd">            Finite element mesh element connectitivities stored as</span>
+<span class="sd">            torch.Tensor(1d) of shape (n_node,). Nodes are labeled from</span>
+<span class="sd">            1 to n_node_mesh.</span>
+<span class="sd">        nodes_field_mesh_hist : torch.Tensor(3d)</span>
+<span class="sd">            Field history of finite element mesh nodes stored as</span>
+<span class="sd">            torch.Tensor(3d) of shape (n_node_mesh, n_dim, n_time).</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        element_nodes_hist : torch.Tensor(3d)</span>
+<span class="sd">            Field history of finite element nodes stored as</span>
+<span class="sd">            torch.Tensor(3d) of shape (n_node, n_dim, n_time).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get finite element nodes field history</span>
+        <span class="n">element_nodes_hist</span> <span class="o">=</span> <span class="n">nodes_field_mesh_hist</span><span class="p">[</span><span class="n">element_nodes</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">element_nodes_hist</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="SpecimenNumericalData.get_n_dim"><a class="viewcode-back" href="../../../../_autosummary/hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.html#hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.get_n_dim">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_n_dim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get number of spatial dimensions.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        n_dim : int</span>
+<span class="sd">            Number of spatial dimensions.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get number of spatial dimensions</span>
+        <span class="n">n_dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">specimen_mesh</span><span class="o">.</span><span class="n">get_n_dim</span><span class="p">()</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">n_dim</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="SpecimenNumericalData.check_dirichlet_bc_mesh_hist"><a class="viewcode-back" href="../../../../_autosummary/hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.html#hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.check_dirichlet_bc_mesh_hist">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">check_dirichlet_bc_mesh_hist</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">force_equilibrium_loss_type</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if Dirichlet boundary constraints history is admissible.</span>
+<span class="sd">        </span>
+<span class="sd">        Dirichlet boundary constraints history must be consistent with the</span>
+<span class="sd">        selected force equilibrium loss type in the material model finder.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        force_equilibrium_loss_type : str</span>
+<span class="sd">            Type of force equilibrium loss.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check Dirichlet boundary constraints history</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">dirichlet_bc_mesh_hist</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">return</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Check if Dirichlet boundary constraints are consistent with force</span>
+        <span class="c1"># equilibrium loss type</span>
+        <span class="k">if</span> <span class="n">force_equilibrium_loss_type</span> <span class="o">==</span> <span class="s1">&#39;pointwise&#39;</span><span class="p">:</span>
+            <span class="c1"># Check admissible labels</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">all</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">dirichlet_bc_mesh_hist</span> <span class="o">==</span> <span class="mi">0</span><span class="p">)</span> <span class="o">|</span>
+                             <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dirichlet_bc_mesh_hist</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                    <span class="s1">&#39;All elements of dirichlet_bc_mesh_hist must be 0 &#39;</span>
+                    <span class="s1">&#39;(non-Dirichlet) or 1 (Dirichlet) for </span><span class="se">\&#39;</span><span class="s1">pointwise</span><span class="se">\&#39;</span><span class="s1"> force &#39;</span>
+                    <span class="s1">&#39;equilibrium loss type.&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">force_equilibrium_loss_type</span> <span class="o">==</span> <span class="s1">&#39;dirichlet_sets&#39;</span><span class="p">:</span>
+            <span class="c1"># Check admissible labels</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dirichlet_bc_mesh_hist</span> <span class="o">&gt;=</span> <span class="mi">0</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                    <span class="s1">&#39;All elements of dirichlet_bc_mesh_hist must be greater &#39;</span>
+                    <span class="s1">&#39;than or equal to 0 for </span><span class="se">\&#39;</span><span class="s1">dirichlet_sets</span><span class="se">\&#39;</span><span class="s1"> force &#39;</span>
+                    <span class="s1">&#39;equilibrium loss type.&#39;</span><span class="p">)</span>
+            <span class="c1"># Check that each Dirichlet set label is associated with a single</span>
+            <span class="c1"># dimension over the whole history</span>
+            <span class="n">set_labels</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">unique</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">dirichlet_bc_mesh_hist</span><span class="p">)</span>
+            <span class="n">set_labels</span> <span class="o">=</span> <span class="n">set_labels</span><span class="p">[</span><span class="n">set_labels</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">]</span>
+            <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">set_labels</span><span class="p">:</span>
+                <span class="c1"># Get mask of Dirichlet set label</span>
+                <span class="n">mask</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">dirichlet_bc_mesh_hist</span> <span class="o">==</span> <span class="n">label</span>
+                <span class="c1"># Get dimensions associated with Dirichlet set label</span>
+                <span class="n">dims_with_label</span> <span class="o">=</span> \
+                    <span class="n">mask</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">nonzero</span><span class="p">(</span><span class="n">as_tuple</span><span class="o">=</span><span class="kc">True</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="c1"># Check if Dirichlet set label is associated with a single</span>
+                <span class="c1"># dimension</span>
+                <span class="k">if</span> <span class="n">dims_with_label</span><span class="o">.</span><span class="n">numel</span><span class="p">()</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s1">&#39;Set label </span><span class="si">{</span><span class="n">label</span><span class="o">.</span><span class="n">item</span><span class="p">()</span><span class="si">}</span><span class="s1"> in dirichlet_bc_mesh_hist &#39;</span>
+                        <span class="sa">f</span><span class="s1">&#39;is associated with multiple dimensions: &#39;</span>
+                        <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">dims_with_label</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span><span class="si">}</span><span class="s1">. Each set label (&gt;0) &#39;</span>
+                        <span class="sa">f</span><span class="s1">&#39;must only be associated with a single dimension &#39;</span>
+                        <span class="sa">f</span><span class="s1">&#39;over the whole history.&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Unknown force equilibrium loss type: &#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;</span><span class="se">\&#39;</span><span class="si">{</span><span class="n">force_equilibrium_loss_type</span><span class="si">}</span><span class="se">\&#39;</span><span class="s1">.&#39;</span><span class="p">)</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

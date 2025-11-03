@@ -1,0 +1,1095 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>hookeai.model_architectures.procedures.convergence_plots &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../_autosummary/hookeai.html">Code</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">hookeai.model_architectures.procedures.convergence_plots</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for hookeai.model_architectures.procedures.convergence_plots</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Plots for convergence analysis based on RNN-based models.</span>
+
+<span class="sd">Functions</span>
+<span class="sd">---------</span>
+<span class="sd">plot_prediction_loss_convergence</span>
+<span class="sd">    Plot average prediction loss against training data set size.</span>
+<span class="sd">plot_best_parameters_convergence</span>
+<span class="sd">    Plot best state parameters versus training data set size.</span>
+<span class="sd">plot_time_series_convergence</span>
+<span class="sd">    Plot time series predictions versus ground-truth.</span>
+<span class="sd">plot_prediction_loss_convergence_uq</span>
+<span class="sd">    Plot average prediction loss versus training data set size.</span>
+<span class="sd">plot_best_parameters_convergence_uq</span>
+<span class="sd">    Plot best state parameters versus training data set size.</span>
+<span class="sd">plot_time_series_convergence_uq</span>
+<span class="sd">    Plot time series predictions versus ground-truth.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#                                                                       Modules</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Standard</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
+<span class="c1"># Third-party</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="c1"># Local</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">time_series_data.time_dataset</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_dataset</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">model_architectures.procedures.model_prediction</span><span class="w"> </span><span class="kn">import</span> \
+    <span class="n">plot_time_series_prediction</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">model_architectures.rc_base_model.train.training</span><span class="w"> </span><span class="kn">import</span> \
+    <span class="n">read_best_parameters_from_file</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">model_architectures.materials.process_predictions</span><span class="w"> </span><span class="kn">import</span> \
+    <span class="n">build_prediction_data_arrays</span><span class="p">,</span> <span class="n">build_time_series_predictions_data</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">model_architectures.procedures.model_prediction</span><span class="w"> </span><span class="kn">import</span> \
+    <span class="n">plot_truth_vs_prediction</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ioput.plots</span><span class="w"> </span><span class="kn">import</span> <span class="n">scatter_xy_data</span><span class="p">,</span> <span class="n">plot_boxplots</span><span class="p">,</span> <span class="n">save_figure</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ioput.iostandard</span><span class="w"> </span><span class="kn">import</span> <span class="n">find_unique_file_with_regex</span><span class="p">,</span> <span class="n">make_directory</span>
+<span class="c1">#</span>
+<span class="c1">#                                                          Authorship &amp; Credits</span>
+<span class="c1"># =============================================================================</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Bernardo Ferreira (bernardo_ferreira@brown.edu)&#39;</span>
+<span class="n">__credits__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Bernardo Ferreira&#39;</span><span class="p">,</span> <span class="p">]</span>
+<span class="n">__status__</span> <span class="o">=</span> <span class="s1">&#39;Stable&#39;</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="plot_prediction_loss_convergence"><a class="viewcode-back" href="../../../../_autosummary/hookeai.model_architectures.procedures.convergence_plots.plot_prediction_loss_convergence.html#hookeai.model_architectures.procedures.convergence_plots.plot_prediction_loss_convergence">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">plot_prediction_loss_convergence</span><span class="p">(</span><span class="n">models_base_dirs</span><span class="p">,</span> <span class="n">training_dirs</span><span class="p">,</span>
+                                     <span class="n">predictions_dirs</span><span class="p">,</span>
+                                     <span class="n">filename</span><span class="o">=</span><span class="s1">&#39;testing_loss_convergence&#39;</span><span class="p">,</span>
+                                     <span class="n">save_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_save_fig</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                     <span class="n">is_save_plot_data</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                     <span class="n">is_stdout_display</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_latex</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot average prediction loss versus training data set size.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    models_base_dirs : tuple[str]</span>
+<span class="sd">        Base directory where each model is stored.</span>
+<span class="sd">    training_dirs : tuple[str]</span>
+<span class="sd">        Directory where each model training data set is stored.</span>
+<span class="sd">    predictions_dirs : tuple[str]</span>
+<span class="sd">        Directory where each model samples predictions results files are</span>
+<span class="sd">        stored.</span>
+<span class="sd">    filename : str, default=&#39;testing_loss_convergence&#39;</span>
+<span class="sd">        Figure name.</span>
+<span class="sd">    save_dir : str, default=None</span>
+<span class="sd">        Directory where figure is saved. If None, then figure is saved in</span>
+<span class="sd">        current working directory.</span>
+<span class="sd">    is_save_fig : bool, default=False</span>
+<span class="sd">        Save figure.</span>
+<span class="sd">    is_save_plot_data : bool, default=False</span>
+<span class="sd">        Save plot data. Plot data is stored in a file with a single dictionary</span>
+<span class="sd">        where each item corresponds to a relevant variable used to generate the</span>
+<span class="sd">        plot. If the figure directory is provided, then plot data is saved in</span>
+<span class="sd">        the same directory, otherwise is saved in the current working</span>
+<span class="sd">        directory.</span>
+<span class="sd">    is_stdout_display : bool, default=False</span>
+<span class="sd">        True if displaying figure to standard output device, False otherwise.</span>
+<span class="sd">    is_latex : bool, default=False</span>
+<span class="sd">        If True, then render all strings in LaTeX. If LaTex is not available,</span>
+<span class="sd">        then this option is silently set to False and all input strings are</span>
+<span class="sd">        processed to remove $(...)$ enclosure.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get number of models</span>
+    <span class="n">n_models</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">models_base_dirs</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize training data set sizes</span>
+    <span class="n">training_sizes</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># Loop over training data sets</span>
+    <span class="k">for</span> <span class="n">train_dir</span> <span class="ow">in</span> <span class="n">training_dirs</span><span class="p">:</span>
+        <span class="c1"># Get training data set file path</span>
+        <span class="n">regex</span> <span class="o">=</span> <span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^ss_paths_dataset_n[0-9]+.pkl$&#39;</span><span class="p">,)</span>
+        <span class="n">is_file_found</span><span class="p">,</span> <span class="n">train_dataset_file_path</span> <span class="o">=</span> \
+            <span class="n">find_unique_file_with_regex</span><span class="p">(</span><span class="n">train_dir</span><span class="p">,</span> <span class="n">regex</span><span class="p">)</span>
+        <span class="c1"># Check training data set file</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_file_found</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Training data set file has not been found  &#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;in data set directory:</span><span class="se">\n\n</span><span class="s1">&#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">train_dir</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="c1"># Get training data set size</span>
+        <span class="n">training_sizes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">load_dataset</span><span class="p">(</span><span class="n">train_dataset_file_path</span><span class="p">)))</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize average prediction losses per sample</span>
+    <span class="n">avg_predict_losses</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># Loop over prediction directories</span>
+    <span class="k">for</span> <span class="n">pred_dir</span> <span class="ow">in</span> <span class="n">predictions_dirs</span><span class="p">:</span>
+        <span class="c1"># Get prediction summary file</span>
+        <span class="n">regex</span> <span class="o">=</span> <span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^summary.dat$&#39;</span><span class="p">,)</span>
+        <span class="n">is_file_found</span><span class="p">,</span> <span class="n">summary_file_path</span> <span class="o">=</span> \
+            <span class="n">find_unique_file_with_regex</span><span class="p">(</span><span class="n">pred_dir</span><span class="p">,</span> <span class="n">regex</span><span class="p">)</span> 
+        <span class="c1"># Check prediction summary file</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_file_found</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Prediction summary file has not been found  &#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;in directory:</span><span class="se">\n\n</span><span class="s1">&#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">pred_dir</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="c1"># Open prediction summary file</span>
+        <span class="n">summary_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">summary_file_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
+        <span class="n">summary_file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="c1"># Look for average prediction loss</span>
+        <span class="n">avg_predict_loss</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="n">line_number</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">summary_file</span><span class="p">:</span>
+            <span class="n">line_number</span> <span class="o">=</span> <span class="n">line_number</span> <span class="o">+</span> <span class="mi">1</span>
+            <span class="k">if</span> <span class="s1">&#39;Avg. prediction loss per sample&#39;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                <span class="n">avg_predict_loss</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+                <span class="k">break</span>
+        <span class="c1"># Store average prediction loss</span>
+        <span class="k">if</span> <span class="n">avg_predict_loss</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Average prediction loss has not been found in &#39;</span>
+                               <span class="s1">&#39;prediction summary file:</span><span class="se">\n\n</span><span class="s1">&#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">summary_file_path</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">avg_predict_losses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">avg_predict_loss</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize data array</span>
+    <span class="n">data_xy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">n_models</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">fill_value</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="c1"># Loop over models</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_models</span><span class="p">):</span>
+        <span class="c1"># Assemble model training data set size and average prediction loss</span>
+        <span class="n">data_xy</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">training_sizes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">data_xy</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">avg_predict_losses</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set axes labels</span>
+    <span class="n">x_label</span> <span class="o">=</span> <span class="s1">&#39;Training data set size&#39;</span>
+    <span class="n">y_label</span> <span class="o">=</span> <span class="s1">&#39;Avg. prediction loss&#39;</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Plot data</span>
+    <span class="n">figure</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">scatter_xy_data</span><span class="p">(</span>
+        <span class="n">data_xy</span><span class="p">,</span> <span class="n">x_label</span><span class="o">=</span><span class="n">x_label</span><span class="p">,</span> <span class="n">y_label</span><span class="o">=</span><span class="n">y_label</span><span class="p">,</span> <span class="n">x_scale</span><span class="o">=</span><span class="s1">&#39;log&#39;</span><span class="p">,</span>
+        <span class="n">y_scale</span><span class="o">=</span><span class="s1">&#39;log&#39;</span><span class="p">,</span> <span class="n">is_latex</span><span class="o">=</span><span class="n">is_latex</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Save figure</span>
+    <span class="k">if</span> <span class="n">is_save_fig</span><span class="p">:</span>
+        <span class="n">save_figure</span><span class="p">(</span><span class="n">figure</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span><span class="p">,</span> <span class="n">save_dir</span><span class="o">=</span><span class="n">save_dir</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Save plot data</span>
+    <span class="k">if</span> <span class="n">is_save_plot_data</span><span class="p">:</span>
+        <span class="c1"># Set current working directory to save plot data</span>
+        <span class="k">if</span> <span class="n">save_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">save_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
+        <span class="c1"># Set plot data subdirectory</span>
+        <span class="n">plot_data_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">save_dir</span><span class="p">),</span> <span class="s1">&#39;plot_data&#39;</span><span class="p">)</span>
+        <span class="c1"># Create plot data directory</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">plot_data_dir</span><span class="p">):</span>
+            <span class="n">make_directory</span><span class="p">(</span><span class="n">plot_data_dir</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Build plot data</span>
+        <span class="n">plot_data</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">plot_data</span><span class="p">[</span><span class="s1">&#39;data_xy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data_xy</span>
+        <span class="n">plot_data</span><span class="p">[</span><span class="s1">&#39;x_label&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">x_label</span>
+        <span class="n">plot_data</span><span class="p">[</span><span class="s1">&#39;y_label&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">y_label</span>
+        <span class="n">plot_data</span><span class="p">[</span><span class="s1">&#39;n_models&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">n_models</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set plot data file path</span>
+        <span class="n">plot_data_file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">plot_data_dir</span><span class="p">,</span> <span class="n">filename</span> <span class="o">+</span> <span class="s1">&#39;_data&#39;</span> <span class="o">+</span> <span class="s1">&#39;.pkl&#39;</span><span class="p">)</span>
+        <span class="c1"># Save model samples best parameters data</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">plot_data_file_path</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">data_file</span><span class="p">:</span>
+            <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">plot_data</span><span class="p">,</span> <span class="n">data_file</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Display figure</span>
+    <span class="k">if</span> <span class="n">is_stdout_display</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Close plot</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="s1">&#39;all&#39;</span><span class="p">)</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="plot_best_parameters_convergence"><a class="viewcode-back" href="../../../../_autosummary/hookeai.model_architectures.procedures.convergence_plots.plot_best_parameters_convergence.html#hookeai.model_architectures.procedures.convergence_plots.plot_best_parameters_convergence">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">plot_best_parameters_convergence</span><span class="p">(</span>
+    <span class="n">models_base_dirs</span><span class="p">,</span> <span class="n">training_dirs</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s1">&#39;best_parameters_convergence&#39;</span><span class="p">,</span>
+    <span class="n">save_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_save_fig</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_stdout_display</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_latex</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot best state parameters versus training data set size.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    models_base_dirs : tuple[str]</span>
+<span class="sd">        Base directory where each model is stored.</span>
+<span class="sd">    training_dirs : tuple[str]</span>
+<span class="sd">        Directory where each model training data set is stored.</span>
+<span class="sd">    filename : str, default=&#39;best_parameters_convergence_uq&#39;</span>
+<span class="sd">        Figure name.</span>
+<span class="sd">    save_dir : str, default=None</span>
+<span class="sd">        Directory where figure is saved. If None, then figure is saved in</span>
+<span class="sd">        current working directory.</span>
+<span class="sd">    is_save_fig : bool, default=False</span>
+<span class="sd">        Save figure.</span>
+<span class="sd">    is_stdout_display : bool, default=False</span>
+<span class="sd">        True if displaying figure to standard output device, False otherwise.</span>
+<span class="sd">    is_latex : bool, default=False</span>
+<span class="sd">        If True, then render all strings in LaTeX. If LaTex is not available,</span>
+<span class="sd">        then this option is silently set to False and all input strings are</span>
+<span class="sd">        processed to remove $(...)$ enclosure.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get number of models</span>
+    <span class="n">n_models</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">training_dirs</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize training data set sizes</span>
+    <span class="n">training_sizes</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># Loop over training data sets</span>
+    <span class="k">for</span> <span class="n">train_dir</span> <span class="ow">in</span> <span class="n">training_dirs</span><span class="p">:</span>
+        <span class="c1"># Get training data set file path</span>
+        <span class="n">regex</span> <span class="o">=</span> <span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^ss_paths_dataset_n[0-9]+.pkl$&#39;</span><span class="p">,)</span>
+        <span class="n">is_file_found</span><span class="p">,</span> <span class="n">train_dataset_file_path</span> <span class="o">=</span> \
+            <span class="n">find_unique_file_with_regex</span><span class="p">(</span><span class="n">train_dir</span><span class="p">,</span> <span class="n">regex</span><span class="p">)</span>
+        <span class="c1"># Check training data set file</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_file_found</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Training data set file has not been found  &#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;in data set directory:</span><span class="se">\n\n</span><span class="s1">&#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">train_dir</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="c1"># Get training data set size</span>
+        <span class="n">training_sizes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">load_dataset</span><span class="p">(</span><span class="n">train_dataset_file_path</span><span class="p">)))</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize models parameters data</span>
+    <span class="n">models_parameters_data</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Loop over models directories</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">model_base_dir</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">models_base_dirs</span><span class="p">):</span>
+        <span class="c1"># Set model directory</span>
+        <span class="n">model_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">model_base_dir</span><span class="p">),</span> <span class="s1">&#39;3_model&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get model parameters data file path</span>
+        <span class="n">regex</span> <span class="o">=</span> <span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^parameters_best.pkl$&#39;</span><span class="p">,)</span>
+        <span class="n">is_file_found</span><span class="p">,</span> <span class="n">parameters_file_path</span> <span class="o">=</span> \
+            <span class="n">find_unique_file_with_regex</span><span class="p">(</span><span class="n">model_dir</span><span class="p">,</span> <span class="n">regex</span><span class="p">)</span>
+        <span class="c1"># Check model parameters data file</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_file_found</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Model parameters data file has not &#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;been found in data set directory:</span><span class="se">\n\n</span><span class="s1">&#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">model_dir</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Load model parameters</span>
+        <span class="n">best_model_parameters</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> \
+            <span class="n">read_best_parameters_from_file</span><span class="p">(</span><span class="n">parameters_file_path</span><span class="p">)</span>
+        <span class="c1"># Store model parameters data</span>
+        <span class="n">models_parameters_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">best_model_parameters</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get parameters names (shared between different models)</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># Get model parameters names</span>
+            <span class="n">model_parameters_names</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">best_model_parameters</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Loop over model parameters</span>
+    <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">model_parameters_names</span><span class="p">):</span>
+        <span class="c1"># Initialize data array</span>
+        <span class="n">data_xy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">n_models</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">fill_value</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+        <span class="c1"># Loop over models</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_models</span><span class="p">):</span>
+            <span class="c1"># Assemble model training data set size and parameter</span>
+            <span class="n">data_xy</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">training_sizes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="n">data_xy</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">models_parameters_data</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">param</span><span class="p">]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set axes labels</span>
+        <span class="n">x_label</span> <span class="o">=</span> <span class="s1">&#39;Training data set size&#39;</span>
+        <span class="n">y_label</span> <span class="o">=</span> <span class="n">param</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Plot data</span>
+        <span class="n">figure</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">scatter_xy_data</span><span class="p">(</span>
+            <span class="n">data_xy</span><span class="p">,</span> <span class="n">x_label</span><span class="o">=</span><span class="n">x_label</span><span class="p">,</span> <span class="n">y_label</span><span class="o">=</span><span class="n">y_label</span><span class="p">,</span> <span class="n">x_scale</span><span class="o">=</span><span class="s1">&#39;log&#39;</span><span class="p">,</span>
+            <span class="n">is_latex</span><span class="o">=</span><span class="n">is_latex</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Save figure</span>
+        <span class="k">if</span> <span class="n">is_save_fig</span><span class="p">:</span>
+            <span class="n">save_figure</span><span class="p">(</span><span class="n">figure</span><span class="p">,</span> <span class="n">filename</span> <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;_</span><span class="si">{</span><span class="n">param</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span><span class="p">,</span>
+                        <span class="n">save_dir</span><span class="o">=</span><span class="n">save_dir</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Display figure</span>
+        <span class="k">if</span> <span class="n">is_stdout_display</span><span class="p">:</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Close plot</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="s1">&#39;all&#39;</span><span class="p">)</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="plot_time_series_convergence"><a class="viewcode-back" href="../../../../_autosummary/hookeai.model_architectures.procedures.convergence_plots.plot_time_series_convergence.html#hookeai.model_architectures.procedures.convergence_plots.plot_time_series_convergence">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">plot_time_series_convergence</span><span class="p">(</span><span class="n">models_base_dirs</span><span class="p">,</span> <span class="n">training_dirs</span><span class="p">,</span> <span class="n">testing_dirs</span><span class="p">,</span>
+                                 <span class="n">predictions_dirs</span><span class="p">,</span> <span class="n">prediction_types</span><span class="p">,</span>
+                                 <span class="n">plot_type</span><span class="o">=</span><span class="s1">&#39;time_series_scatter&#39;</span><span class="p">,</span>
+                                 <span class="n">samples_ids</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">,</span>
+                                 <span class="n">filename</span><span class="o">=</span><span class="s1">&#39;time_series_convergence&#39;</span><span class="p">,</span>
+                                 <span class="n">save_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_save_fig</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                 <span class="n">is_stdout_display</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_latex</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot time series predictions versus ground-truth.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    models_base_dirs : tuple[str]</span>
+<span class="sd">        Base directory where each model is stored.</span>
+<span class="sd">    training_dirs : tuple[str]</span>
+<span class="sd">        Directory where each model training data set is stored.</span>
+<span class="sd">    testing_dirs : tuple[str]</span>
+<span class="sd">        Directory where each model testing data set is stored.</span>
+<span class="sd">    predictions_dirs : tuple[str]</span>
+<span class="sd">        Directory where each model samples predictions results files are</span>
+<span class="sd">        stored.</span>
+<span class="sd">    plot_type : {&#39;time_series_scatter&#39;, &#39;time_series_path&#39;}, \</span>
+<span class="sd">                default=&#39;time_series_scatter&#39;</span>
+<span class="sd">        Time series plot type.</span>
+<span class="sd">    samples_ids : {&#39;all&#39;, list[int]}, default=&#39;all&#39;</span>
+<span class="sd">        Samples IDs whose prediction data is plotted.</span>
+<span class="sd">    filename : str, default=&#39;prediction_path_convergence&#39;</span>
+<span class="sd">        Figure name.</span>
+<span class="sd">    save_dir : str, default=None</span>
+<span class="sd">        Directory where figure is saved. If None, then figure is saved in</span>
+<span class="sd">        current working directory.</span>
+<span class="sd">    is_save_fig : bool, default=False</span>
+<span class="sd">        Save figure.</span>
+<span class="sd">    is_stdout_display : bool, default=False</span>
+<span class="sd">        True if displaying figure to standard output device, False otherwise.</span>
+<span class="sd">    is_latex : bool, default=False</span>
+<span class="sd">        If True, then render all strings in LaTeX. If LaTex is not available,</span>
+<span class="sd">        then this option is silently set to False and all input strings are</span>
+<span class="sd">        processed to remove $(...)$ enclosure.</span>
+<span class="sd">    &quot;&quot;&quot;</span>    
+    <span class="c1"># Check time series plot type</span>
+    <span class="k">if</span> <span class="n">plot_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;time_series_scatter&#39;</span><span class="p">,</span> <span class="s1">&#39;time_series_path&#39;</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Unknown time series plot type.&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get number of models</span>
+    <span class="n">n_models</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">models_base_dirs</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize training data set sizes</span>
+    <span class="n">training_sizes</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># Loop over training data sets</span>
+    <span class="k">for</span> <span class="n">train_dir</span> <span class="ow">in</span> <span class="n">training_dirs</span><span class="p">:</span>
+        <span class="c1"># Get training data set file path</span>
+        <span class="n">regex</span> <span class="o">=</span> <span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^ss_paths_dataset_n[0-9]+.pkl$&#39;</span><span class="p">,)</span>
+        <span class="n">is_file_found</span><span class="p">,</span> <span class="n">train_dataset_file_path</span> <span class="o">=</span> \
+            <span class="n">find_unique_file_with_regex</span><span class="p">(</span><span class="n">train_dir</span><span class="p">,</span> <span class="n">regex</span><span class="p">)</span>
+        <span class="c1"># Check training data set file</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_file_found</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Training data set file has not been found  &#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;in data set directory:</span><span class="se">\n\n</span><span class="s1">&#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">train_dir</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="c1"># Get training data set size</span>
+        <span class="n">training_sizes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">load_dataset</span><span class="p">(</span><span class="n">train_dataset_file_path</span><span class="p">)))</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Loop over prediction types</span>
+    <span class="k">for</span> <span class="n">prediction_type</span><span class="p">,</span> <span class="n">prediction_labels</span> <span class="ow">in</span> <span class="n">prediction_types</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="c1"># Initialize models time series predictions data</span>
+        <span class="n">models_prediction_data</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># Initialize testing data set sizes</span>
+        <span class="n">testing_sizes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ </span>
+        <span class="c1"># Loop over testing directories</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">test_dir</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">testing_dirs</span><span class="p">):</span>
+            <span class="c1"># Get testing data set file path</span>
+            <span class="n">regex</span> <span class="o">=</span> <span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^ss_paths_dataset_n[0-9]+.pkl$&#39;</span><span class="p">,)</span>
+            <span class="n">is_file_found</span><span class="p">,</span> <span class="n">test_dataset_file_path</span> <span class="o">=</span> \
+                <span class="n">find_unique_file_with_regex</span><span class="p">(</span><span class="n">test_dir</span><span class="p">,</span> <span class="n">regex</span><span class="p">)</span>
+            <span class="c1"># Check testing data set file</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">is_file_found</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Testing data set file has not been found &#39;</span>
+                                   <span class="sa">f</span><span class="s1">&#39;in data set directory:</span><span class="se">\n\n</span><span class="s1">&#39;</span>
+                                   <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">test_dir</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Get testing data set size</span>
+            <span class="n">testing_sizes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">load_dataset</span><span class="p">(</span><span class="n">test_dataset_file_path</span><span class="p">)))</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Get corresponding prediction directory</span>
+            <span class="n">pred_dir</span> <span class="o">=</span> <span class="n">predictions_dirs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Build times series predictions components data arrays</span>
+            <span class="k">if</span> <span class="n">plot_type</span> <span class="o">==</span> <span class="s1">&#39;time_series_scatter&#39;</span><span class="p">:</span>
+                <span class="c1"># Build prediction components data arrays</span>
+                <span class="n">prediction_data_arrays</span> <span class="o">=</span> <span class="n">build_prediction_data_arrays</span><span class="p">(</span>
+                    <span class="n">pred_dir</span><span class="p">,</span> <span class="n">prediction_type</span><span class="p">,</span> <span class="n">prediction_labels</span><span class="p">,</span>
+                    <span class="n">samples_ids</span><span class="o">=</span><span class="n">samples_ids</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">plot_type</span> <span class="o">==</span> <span class="s1">&#39;time_series_path&#39;</span><span class="p">:</span>
+                <span class="c1"># Build prediction components data arrays for each sample</span>
+                <span class="n">prediction_data_arrays</span> <span class="o">=</span> <span class="n">build_time_series_predictions_data</span><span class="p">(</span>
+                    <span class="n">test_dataset_file_path</span><span class="p">,</span> <span class="n">pred_dir</span><span class="p">,</span>
+                    <span class="n">prediction_type</span><span class="p">,</span> <span class="n">prediction_labels</span><span class="p">,</span>
+                    <span class="n">samples_ids</span><span class="o">=</span><span class="n">samples_ids</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Store model time series prediction components data arrays</span>
+            <span class="n">models_prediction_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">prediction_data_arrays</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Check testing data sets</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">testing_sizes</span><span class="p">))</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Expecting the same testing data set but got &#39;</span>
+                               <span class="s1">&#39;testing data sets with different sizes.&#39;</span><span class="p">)</span>
+        <span class="c1"># Get testing data set size</span>
+        <span class="n">testing_size</span> <span class="o">=</span> <span class="n">testing_sizes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Loop over prediction type components</span>
+        <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">prediction_comp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">prediction_labels</span><span class="p">):</span>
+            <span class="c1"># Plot model times series prediction component</span>
+            <span class="k">if</span> <span class="n">plot_type</span> <span class="o">==</span> <span class="s1">&#39;time_series_scatter&#39;</span><span class="p">:</span>
+                <span class="c1"># Initialize prediction processes</span>
+                <span class="n">prediction_sets</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Loop over models</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_models</span><span class="p">):</span>
+                    <span class="c1"># Get model time series predictions data</span>
+                    <span class="n">model_prediction_data</span> <span class="o">=</span> <span class="n">models_prediction_data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                    <span class="c1"># Set prediction label</span>
+                    <span class="n">label</span> <span class="o">=</span> <span class="s1">&#39;N = &#39;</span> <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">training_sizes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span>
+                    <span class="c1"># Assemble prediction data</span>
+                    <span class="n">prediction_sets</span><span class="p">[</span><span class="n">label</span><span class="p">]</span> <span class="o">=</span> <span class="n">model_prediction_data</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~                 </span>
+                <span class="c1"># Plot model times series predictions</span>
+                <span class="n">plot_truth_vs_prediction</span><span class="p">(</span>
+                    <span class="n">prediction_sets</span><span class="p">,</span>
+                    <span class="n">error_bound</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+                    <span class="n">is_normalize_data</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                    <span class="n">filename</span><span class="o">=</span><span class="p">(</span><span class="n">filename</span> <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;_</span><span class="si">{</span><span class="n">prediction_comp</span><span class="si">}</span><span class="s1">_scatter&#39;</span><span class="p">),</span>
+                    <span class="n">save_dir</span><span class="o">=</span><span class="n">save_dir</span><span class="p">,</span> <span class="n">is_save_fig</span><span class="o">=</span><span class="n">is_save_fig</span><span class="p">,</span>
+                    <span class="n">is_stdout_display</span><span class="o">=</span><span class="n">is_stdout_display</span><span class="p">,</span> <span class="n">is_latex</span><span class="o">=</span><span class="n">is_latex</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="k">elif</span> <span class="n">plot_type</span> <span class="o">==</span> <span class="s1">&#39;time_series_path&#39;</span><span class="p">:</span>
+                <span class="c1"># Set all available samples</span>
+                <span class="k">if</span> <span class="n">samples_ids</span> <span class="o">==</span> <span class="s1">&#39;all&#39;</span><span class="p">:</span>
+                    <span class="n">samples_ids</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">testing_size</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Loop over samples</span>
+                <span class="k">for</span> <span class="n">sample_id</span> <span class="ow">in</span> <span class="n">samples_ids</span><span class="p">:</span>
+                    <span class="c1"># Initialize prediction processes</span>
+                    <span class="n">prediction_sets</span> <span class="o">=</span> <span class="p">{}</span>
+                    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                    <span class="c1"># Assemble discrete time path and ground-truth path by</span>
+                    <span class="c1"># probing the first model data                    </span>
+                    <span class="n">prediction_sets</span><span class="p">[</span><span class="s1">&#39;Ground-Truth&#39;</span><span class="p">]</span> <span class="o">=</span> \
+                        <span class="n">models_prediction_data</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">j</span><span class="p">][</span><span class="nb">str</span><span class="p">(</span><span class="n">sample_id</span><span class="p">)][:,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]]</span>
+                    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                    <span class="c1"># Loop over models</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_models</span><span class="p">):</span>
+                        <span class="c1"># Get model time series predictions data</span>
+                        <span class="n">model_prediction_data</span> <span class="o">=</span> <span class="n">models_prediction_data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                        <span class="c1"># Set prediction label</span>
+                        <span class="n">label</span> <span class="o">=</span> <span class="s1">&#39;N = &#39;</span> <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">training_sizes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span>
+                        <span class="c1"># Assemble sample prediction data</span>
+                        <span class="n">prediction_sets</span><span class="p">[</span><span class="n">label</span><span class="p">]</span> <span class="o">=</span> <span class="n">model_prediction_data</span><span class="p">[</span><span class="n">j</span><span class="p">]</span> \
+                            <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">sample_id</span><span class="p">)][:,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]]</span>
+                    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                    <span class="c1"># Set prediction type label</span>
+                    <span class="k">if</span> <span class="n">prediction_type</span> <span class="o">==</span> <span class="s1">&#39;stress_comps&#39;</span><span class="p">:</span>
+                        <span class="n">y_label</span> <span class="o">=</span> <span class="s1">&#39;Stress (MPa)&#39;</span>
+                    <span class="k">elif</span> <span class="n">prediction_type</span> <span class="o">==</span> <span class="s1">&#39;acc_p_strain&#39;</span><span class="p">:</span>
+                        <span class="n">y_label</span> <span class="o">=</span> <span class="s1">&#39;Accumulated plastic strain&#39;</span>
+                    <span class="k">elif</span> <span class="n">prediction_type</span> <span class="o">==</span> <span class="s1">&#39;p_strain_comps&#39;</span><span class="p">:</span>
+                        <span class="n">y_label</span> <span class="o">=</span> <span class="s1">&#39;Plastic strain&#39;</span>
+                    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                    <span class="c1"># Plot model times series predictions</span>
+                    <span class="n">plot_time_series_prediction</span><span class="p">(</span>
+                        <span class="n">prediction_sets</span><span class="p">,</span> <span class="n">is_reference_data</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                        <span class="n">x_label</span><span class="o">=</span><span class="s1">&#39;Time&#39;</span><span class="p">,</span> <span class="n">y_label</span><span class="o">=</span><span class="n">y_label</span><span class="p">,</span>
+                        <span class="n">is_normalize_data</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                        <span class="n">filename</span><span class="o">=</span><span class="p">(</span><span class="n">filename</span> <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;_</span><span class="si">{</span><span class="n">prediction_comp</span><span class="si">}</span><span class="s1">&#39;</span>
+                                  <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;_path_sample_</span><span class="si">{</span><span class="n">sample_id</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">),</span>
+                        <span class="n">save_dir</span><span class="o">=</span><span class="n">save_dir</span><span class="p">,</span> <span class="n">is_save_fig</span><span class="o">=</span><span class="n">is_save_fig</span><span class="p">,</span>
+                        <span class="n">is_stdout_display</span><span class="o">=</span><span class="n">is_stdout_display</span><span class="p">,</span> <span class="n">is_latex</span><span class="o">=</span><span class="n">is_latex</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Display figure</span>
+    <span class="k">if</span> <span class="n">is_stdout_display</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Close plot</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="s1">&#39;all&#39;</span><span class="p">)</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="plot_prediction_loss_convergence_uq"><a class="viewcode-back" href="../../../../_autosummary/hookeai.model_architectures.procedures.convergence_plots.plot_prediction_loss_convergence_uq.html#hookeai.model_architectures.procedures.convergence_plots.plot_prediction_loss_convergence_uq">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">plot_prediction_loss_convergence_uq</span><span class="p">(</span><span class="n">models_base_dirs</span><span class="p">,</span> <span class="n">training_dirs</span><span class="p">,</span>
+                                        <span class="n">predictions_dirs</span><span class="p">,</span>
+                                        <span class="n">filename</span><span class="o">=</span><span class="s1">&#39;testing_loss_convergence_uq&#39;</span><span class="p">,</span>
+                                        <span class="n">save_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_save_fig</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                        <span class="n">is_save_plot_data</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                        <span class="n">is_stdout_display</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                        <span class="n">is_latex</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot average prediction loss versus training data set size.</span>
+<span class="sd">    </span>
+<span class="sd">    Uncertainty quantification data accounting for different model samples</span>
+<span class="sd">    predictions for each training data set size is required. The corresponding</span>
+<span class="sd">    directory named &#39;uncertainty_quantification&#39; should exist in each model</span>
+<span class="sd">    base directory.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    models_base_dirs : tuple[str]</span>
+<span class="sd">        Base directory where each model is stored.</span>
+<span class="sd">    training_dirs : tuple[str]</span>
+<span class="sd">        Directory where each model training data set is stored.</span>
+<span class="sd">    predictions_dirs : tuple[str]</span>
+<span class="sd">        Directory where each model samples predictions results files are</span>
+<span class="sd">        stored.</span>
+<span class="sd">    filename : str, default=&#39;testing_loss_convergence&#39;</span>
+<span class="sd">        Figure name.</span>
+<span class="sd">    save_dir : str, default=None</span>
+<span class="sd">        Directory where figure is saved. If None, then figure is saved in</span>
+<span class="sd">        current working directory.</span>
+<span class="sd">    is_save_fig : bool, default=False</span>
+<span class="sd">        Save figure.</span>
+<span class="sd">    is_save_plot_data : bool, default=False</span>
+<span class="sd">        Save plot data. Plot data is stored in a file with a single dictionary</span>
+<span class="sd">        where each item corresponds to a relevant variable used to generate the</span>
+<span class="sd">        plot. If the figure directory is provided, then plot data is saved in</span>
+<span class="sd">        the same directory, otherwise is saved in the current working</span>
+<span class="sd">        directory.</span>
+<span class="sd">    is_stdout_display : bool, default=False</span>
+<span class="sd">        True if displaying figure to standard output device, False otherwise.</span>
+<span class="sd">    is_latex : bool, default=False</span>
+<span class="sd">        If True, then render all strings in LaTeX. If LaTex is not available,</span>
+<span class="sd">        then this option is silently set to False and all input strings are</span>
+<span class="sd">        processed to remove $(...)$ enclosure.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get number of models</span>
+    <span class="n">n_models</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">models_base_dirs</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize training data set sizes</span>
+    <span class="n">training_sizes</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># Loop over training data sets</span>
+    <span class="k">for</span> <span class="n">train_dir</span> <span class="ow">in</span> <span class="n">training_dirs</span><span class="p">:</span>
+        <span class="c1"># Get training data set file path</span>
+        <span class="n">regex</span> <span class="o">=</span> <span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^ss_paths_dataset_n[0-9]+.pkl$&#39;</span><span class="p">,)</span>
+        <span class="n">is_file_found</span><span class="p">,</span> <span class="n">train_dataset_file_path</span> <span class="o">=</span> \
+            <span class="n">find_unique_file_with_regex</span><span class="p">(</span><span class="n">train_dir</span><span class="p">,</span> <span class="n">regex</span><span class="p">)</span>
+        <span class="c1"># Check training data set file</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_file_found</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Training data set file has not been found  &#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;in data set directory:</span><span class="se">\n\n</span><span class="s1">&#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">train_dir</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="c1"># Get training data set size</span>
+        <span class="n">training_sizes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">load_dataset</span><span class="p">(</span><span class="n">train_dataset_file_path</span><span class="p">)))</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize average prediction losses per sample</span>
+    <span class="n">avg_predict_losses</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Loop over models directories</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">model_base_dir</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">models_base_dirs</span><span class="p">):</span>
+        <span class="c1"># Extract testing type from prediction subdirectory</span>
+        <span class="n">testing_type</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">predictions_dirs</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set model uncertainty quantification directory</span>
+        <span class="n">uq_directory</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">model_base_dir</span><span class="p">),</span>
+                                    <span class="s1">&#39;uncertainty_quantification&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize model samples directories</span>
+        <span class="n">model_sample_dirs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get files and directories in uncertainty quantification directory</span>
+        <span class="n">directory_list</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">uq_directory</span><span class="p">)</span>
+        <span class="c1"># Loop over files and directories</span>
+        <span class="k">for</span> <span class="n">dirname</span> <span class="ow">in</span> <span class="n">directory_list</span><span class="p">:</span>
+            <span class="c1"># Check if model sample directory</span>
+            <span class="n">is_sample_model</span><span class="o">=</span> \
+                <span class="nb">bool</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^&#39;</span> <span class="o">+</span> <span class="s1">&#39;model&#39;</span> <span class="o">+</span> <span class="sa">r</span><span class="s1">&#39;_[0-9]+&#39;</span><span class="p">,</span> <span class="n">dirname</span><span class="p">))</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Append model sample directory</span>
+            <span class="k">if</span> <span class="n">is_sample_model</span><span class="p">:</span>
+                <span class="n">model_sample_dirs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">uq_directory</span><span class="p">),</span> <span class="n">dirname</span><span class="p">))</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Sort model samples directories</span>
+        <span class="n">model_sample_dirs</span> <span class="o">=</span> \
+            <span class="nb">sorted</span><span class="p">(</span><span class="n">model_sample_dirs</span><span class="p">,</span>
+                   <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;(\d+)\D*$&#39;</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize model samples average prediction loss</span>
+        <span class="n">samples_avg_prediction_loss</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get number of model samples</span>
+        <span class="n">n_model_sample</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">model_sample_dirs</span><span class="p">)</span>
+        <span class="c1"># Loop over model samples</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_model_sample</span><span class="p">):</span>
+            <span class="c1"># Get model sample directory</span>
+            <span class="n">sample_dir</span> <span class="o">=</span> <span class="n">model_sample_dirs</span><span class="p">[</span><span class="n">j</span><span class="p">]</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Set model sample prediction directory</span>
+            <span class="n">sample_pred_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">sample_dir</span><span class="p">),</span>
+                                           <span class="s1">&#39;7_prediction&#39;</span><span class="p">,</span> <span class="n">testing_type</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Get prediction summary file</span>
+            <span class="n">regex</span> <span class="o">=</span> <span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^summary.dat$&#39;</span><span class="p">,)</span>
+            <span class="n">is_file_found</span><span class="p">,</span> <span class="n">summary_file_path</span> <span class="o">=</span> \
+                <span class="n">find_unique_file_with_regex</span><span class="p">(</span><span class="n">sample_pred_dir</span><span class="p">,</span> <span class="n">regex</span><span class="p">)</span> 
+            <span class="c1"># Check prediction summary file</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">is_file_found</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Prediction summary file has not been &#39;</span>
+                                   <span class="sa">f</span><span class="s1">&#39;found in directory:</span><span class="se">\n\n</span><span class="si">{</span><span class="n">sample_pred_dir</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="c1"># Open prediction summary file</span>
+            <span class="n">summary_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">summary_file_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
+            <span class="n">summary_file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="c1"># Look for average prediction loss</span>
+            <span class="n">avg_predict_loss</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="n">line_number</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">summary_file</span><span class="p">:</span>
+                <span class="n">line_number</span> <span class="o">=</span> <span class="n">line_number</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="k">if</span> <span class="s1">&#39;Avg. prediction loss per sample&#39;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                    <span class="n">avg_predict_loss</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+                    <span class="k">break</span>
+            <span class="c1"># Store average prediction loss</span>
+            <span class="k">if</span> <span class="n">avg_predict_loss</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Average prediction loss has not been &#39;</span>
+                                   <span class="s1">&#39;found in prediction summary file:</span><span class="se">\n\n</span><span class="s1">&#39;</span>
+                                   <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">summary_file_path</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">samples_avg_prediction_loss</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">avg_predict_loss</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Store model samples average prediction loss</span>
+        <span class="n">avg_predict_losses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">samples_avg_prediction_loss</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize data array</span>
+    <span class="n">data_xy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">n_models</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">n_model_sample</span><span class="p">),</span> <span class="n">fill_value</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="c1"># Loop over models</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_models</span><span class="p">):</span>
+        <span class="c1"># Assemble model training data set size and average prediction loss</span>
+        <span class="n">data_xy</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">::</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">n_model_sample</span><span class="o">*</span><span class="p">[</span><span class="n">training_sizes</span><span class="p">[</span><span class="n">i</span><span class="p">]]</span>
+        <span class="n">data_xy</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">avg_predict_losses</span><span class="p">[</span><span class="n">i</span><span class="p">][:]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set axes limits and scale</span>
+    <span class="n">x_lims</span> <span class="o">=</span> <span class="p">(</span><span class="mf">8e0</span><span class="p">,</span> <span class="mf">3e3</span><span class="p">)</span>
+    <span class="n">y_lims</span> <span class="o">=</span> <span class="p">(</span><span class="mf">10e2</span><span class="p">,</span> <span class="mf">1e6</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set axes labels</span>
+    <span class="n">x_label</span> <span class="o">=</span> <span class="s1">&#39;Training data set size&#39;</span>
+    <span class="n">y_label</span> <span class="o">=</span> <span class="s1">&#39;Avg. prediction loss (MSE)&#39;</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Plot data</span>
+    <span class="n">figure</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">scatter_xy_data</span><span class="p">(</span>
+        <span class="n">data_xy</span><span class="p">,</span> <span class="n">is_error_bar</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">range_type</span><span class="o">=</span><span class="s1">&#39;min-max&#39;</span><span class="p">,</span> <span class="n">x_lims</span><span class="o">=</span><span class="n">x_lims</span><span class="p">,</span>
+        <span class="n">y_lims</span><span class="o">=</span><span class="n">y_lims</span><span class="p">,</span> <span class="n">x_label</span><span class="o">=</span><span class="n">x_label</span><span class="p">,</span> <span class="n">y_label</span><span class="o">=</span><span class="n">y_label</span><span class="p">,</span> <span class="n">x_scale</span><span class="o">=</span><span class="s1">&#39;log&#39;</span><span class="p">,</span>
+        <span class="n">y_scale</span><span class="o">=</span><span class="s1">&#39;log&#39;</span><span class="p">,</span> <span class="n">is_latex</span><span class="o">=</span><span class="n">is_latex</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Save figure</span>
+    <span class="k">if</span> <span class="n">is_save_fig</span><span class="p">:</span>
+        <span class="n">save_figure</span><span class="p">(</span><span class="n">figure</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span><span class="p">,</span> <span class="n">save_dir</span><span class="o">=</span><span class="n">save_dir</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Save plot data</span>
+    <span class="k">if</span> <span class="n">is_save_plot_data</span><span class="p">:</span>
+        <span class="c1"># Set current working directory to save plot data</span>
+        <span class="k">if</span> <span class="n">save_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">save_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
+        <span class="c1"># Set plot data subdirectory</span>
+        <span class="n">plot_data_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">save_dir</span><span class="p">),</span> <span class="s1">&#39;plot_data&#39;</span><span class="p">)</span>
+        <span class="c1"># Create plot data directory</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">plot_data_dir</span><span class="p">):</span>
+            <span class="n">make_directory</span><span class="p">(</span><span class="n">plot_data_dir</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Build plot data</span>
+        <span class="n">plot_data</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">plot_data</span><span class="p">[</span><span class="s1">&#39;data_xy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data_xy</span>
+        <span class="n">plot_data</span><span class="p">[</span><span class="s1">&#39;x_label&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">x_label</span>
+        <span class="n">plot_data</span><span class="p">[</span><span class="s1">&#39;y_label&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">y_label</span>
+        <span class="n">plot_data</span><span class="p">[</span><span class="s1">&#39;n_models&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">n_models</span>
+        <span class="n">plot_data</span><span class="p">[</span><span class="s1">&#39;n_model_sample&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">n_model_sample</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set plot data file path</span>
+        <span class="n">plot_data_file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">plot_data_dir</span><span class="p">,</span> <span class="n">filename</span> <span class="o">+</span> <span class="s1">&#39;_data&#39;</span> <span class="o">+</span> <span class="s1">&#39;.pkl&#39;</span><span class="p">)</span>
+        <span class="c1"># Save model samples best parameters data</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">plot_data_file_path</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">data_file</span><span class="p">:</span>
+            <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">plot_data</span><span class="p">,</span> <span class="n">data_file</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Display figure</span>
+    <span class="k">if</span> <span class="n">is_stdout_display</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Close plot</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="s1">&#39;all&#39;</span><span class="p">)</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="plot_best_parameters_convergence_uq"><a class="viewcode-back" href="../../../../_autosummary/hookeai.model_architectures.procedures.convergence_plots.plot_best_parameters_convergence_uq.html#hookeai.model_architectures.procedures.convergence_plots.plot_best_parameters_convergence_uq">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">plot_best_parameters_convergence_uq</span><span class="p">(</span>
+    <span class="n">models_base_dirs</span><span class="p">,</span> <span class="n">training_dirs</span><span class="p">,</span> <span class="n">filename</span><span class="o">=</span><span class="s1">&#39;best_parameters_convergence_uq&#39;</span><span class="p">,</span>
+    <span class="n">save_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_save_fig</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_stdout_display</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_latex</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot best state parameters versus training data set size.</span>
+<span class="sd">    </span>
+<span class="sd">    Uncertainty quantification data accounting for different model samples</span>
+<span class="sd">    for each training data set size is required. The corresponding directory</span>
+<span class="sd">    named &#39;uncertainty_quantification&#39; should exist in each model base</span>
+<span class="sd">    directory.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    models_base_dirs : tuple[str]</span>
+<span class="sd">        Base directory where each model is stored.</span>
+<span class="sd">    training_dirs : tuple[str]</span>
+<span class="sd">        Directory where each model training data set is stored.</span>
+<span class="sd">    filename : str, default=&#39;best_parameters_convergence_uq&#39;</span>
+<span class="sd">        Figure name.</span>
+<span class="sd">    save_dir : str, default=None</span>
+<span class="sd">        Directory where figure is saved. If None, then figure is saved in</span>
+<span class="sd">        current working directory.</span>
+<span class="sd">    is_save_fig : bool, default=False</span>
+<span class="sd">        Save figure.</span>
+<span class="sd">    is_stdout_display : bool, default=False</span>
+<span class="sd">        True if displaying figure to standard output device, False otherwise.</span>
+<span class="sd">    is_latex : bool, default=False</span>
+<span class="sd">        If True, then render all strings in LaTeX. If LaTex is not available,</span>
+<span class="sd">        then this option is silently set to False and all input strings are</span>
+<span class="sd">        processed to remove $(...)$ enclosure.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get number of models</span>
+    <span class="n">n_models</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">training_dirs</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize training data set sizes</span>
+    <span class="n">training_sizes</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># Loop over training data sets</span>
+    <span class="k">for</span> <span class="n">train_dir</span> <span class="ow">in</span> <span class="n">training_dirs</span><span class="p">:</span>
+        <span class="c1"># Get training data set file path</span>
+        <span class="n">regex</span> <span class="o">=</span> <span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^ss_paths_dataset_n[0-9]+.pkl$&#39;</span><span class="p">,)</span>
+        <span class="n">is_file_found</span><span class="p">,</span> <span class="n">train_dataset_file_path</span> <span class="o">=</span> \
+            <span class="n">find_unique_file_with_regex</span><span class="p">(</span><span class="n">train_dir</span><span class="p">,</span> <span class="n">regex</span><span class="p">)</span>
+        <span class="c1"># Check training data set file</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_file_found</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Training data set file has not been found  &#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;in data set directory:</span><span class="se">\n\n</span><span class="s1">&#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">train_dir</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="c1"># Get training data set size</span>
+        <span class="n">training_sizes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">load_dataset</span><span class="p">(</span><span class="n">train_dataset_file_path</span><span class="p">)))</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize models parameters data</span>
+    <span class="n">models_parameters_data</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Loop over models directories</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">model_base_dir</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">models_base_dirs</span><span class="p">):</span>
+        <span class="c1"># Set model uncertainty quantification directory</span>
+        <span class="n">uq_directory</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">model_base_dir</span><span class="p">),</span>
+                                    <span class="s1">&#39;uncertainty_quantification&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set model samples parameters data file directory</span>
+        <span class="n">data_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">uq_directory</span><span class="p">,</span> <span class="s1">&#39;plots&#39;</span><span class="p">,</span> <span class="s1">&#39;data&#39;</span><span class="p">)</span>
+        <span class="c1"># Get model samples parameters data file path</span>
+        <span class="n">regex</span> <span class="o">=</span> <span class="p">(</span><span class="sa">r</span><span class="s1">&#39;.*_best_parameters_data.pkl$&#39;</span><span class="p">,)</span>
+        <span class="n">is_file_found</span><span class="p">,</span> <span class="n">parameters_file_path</span> <span class="o">=</span> \
+            <span class="n">find_unique_file_with_regex</span><span class="p">(</span><span class="n">data_dir</span><span class="p">,</span> <span class="n">regex</span><span class="p">)</span>
+        <span class="c1"># Check model samples parameters data file</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_file_found</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Model samples parameters data file has not &#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;been found in data set directory:</span><span class="se">\n\n</span><span class="s1">&#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">data_dir</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Load model samples parameters</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">parameters_file_path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">parameters_file</span><span class="p">:</span>
+            <span class="n">parameters_record</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">parameters_file</span><span class="p">)</span>
+        <span class="c1"># Get model samples parameters data</span>
+        <span class="n">samples_parameters_data</span> <span class="o">=</span> <span class="n">parameters_record</span><span class="p">[</span><span class="s1">&#39;samples_parameters_data&#39;</span><span class="p">]</span>
+        <span class="c1"># Store model samples parameters data</span>
+        <span class="n">models_parameters_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">samples_parameters_data</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get number of model samples and parameters names (shared between</span>
+        <span class="c1"># different models)</span>
+        <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># Get number of model samples</span>
+            <span class="n">n_model_sample</span> <span class="o">=</span> <span class="n">samples_parameters_data</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="c1"># Get model parameters names</span>
+            <span class="n">model_parameters_names</span> <span class="o">=</span> \
+                <span class="n">parameters_record</span><span class="p">[</span><span class="s1">&#39;model_parameters_names&#39;</span><span class="p">]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Loop over model parameters</span>
+    <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">param</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">model_parameters_names</span><span class="p">):</span>
+        <span class="c1"># Initialize data array</span>
+        <span class="n">data_boxplots</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_model_sample</span><span class="p">,</span> <span class="n">n_models</span><span class="p">))</span>
+        <span class="c1"># Loop over models</span>
+        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_models</span><span class="p">):</span>
+            <span class="c1"># Assemble model samples parameter data</span>
+            <span class="n">data_boxplots</span><span class="p">[:,</span> <span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">models_parameters_data</span><span class="p">[</span><span class="n">k</span><span class="p">][:,</span> <span class="n">j</span><span class="p">]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set data labels</span>
+        <span class="n">data_labels</span> <span class="o">=</span> <span class="n">training_sizes</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set axes labels</span>
+        <span class="n">x_label</span> <span class="o">=</span> <span class="s1">&#39;Training data set size&#39;</span>
+        <span class="n">y_label</span> <span class="o">=</span> <span class="n">param</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Plot model parameters box plot</span>
+        <span class="n">figure</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">plot_boxplots</span><span class="p">(</span><span class="n">data_boxplots</span><span class="p">,</span> <span class="n">data_labels</span><span class="p">,</span> <span class="n">x_label</span><span class="o">=</span><span class="n">x_label</span><span class="p">,</span>
+                                  <span class="n">y_label</span><span class="o">=</span><span class="n">y_label</span><span class="p">,</span> <span class="n">is_mean_line</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                  <span class="n">is_latex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Save figure</span>
+        <span class="k">if</span> <span class="n">is_save_fig</span><span class="p">:</span>
+            <span class="n">save_figure</span><span class="p">(</span><span class="n">figure</span><span class="p">,</span> <span class="n">filename</span> <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;_</span><span class="si">{</span><span class="n">param</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span><span class="p">,</span>
+                        <span class="n">save_dir</span><span class="o">=</span><span class="n">save_dir</span><span class="p">,</span> <span class="n">is_tight_layout</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Display figure</span>
+        <span class="k">if</span> <span class="n">is_stdout_display</span><span class="p">:</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Close plot</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="s1">&#39;all&#39;</span><span class="p">)</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="plot_time_series_convergence_uq"><a class="viewcode-back" href="../../../../_autosummary/hookeai.model_architectures.procedures.convergence_plots.plot_time_series_convergence_uq.html#hookeai.model_architectures.procedures.convergence_plots.plot_time_series_convergence_uq">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">plot_time_series_convergence_uq</span><span class="p">(</span><span class="n">models_base_dirs</span><span class="p">,</span> <span class="n">training_dirs</span><span class="p">,</span>
+                                    <span class="n">testing_dirs</span><span class="p">,</span> <span class="n">predictions_dirs</span><span class="p">,</span>
+                                    <span class="n">prediction_types</span><span class="p">,</span>
+                                    <span class="n">plot_type</span><span class="o">=</span><span class="s1">&#39;time_series_scatter&#39;</span><span class="p">,</span>
+                                    <span class="n">samples_ids</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">,</span>
+                                    <span class="n">filename</span><span class="o">=</span><span class="s1">&#39;time_series_convergence&#39;</span><span class="p">,</span>
+                                    <span class="n">save_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_save_fig</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                    <span class="n">is_stdout_display</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_latex</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot time series predictions versus ground-truth.</span>
+
+<span class="sd">    Uncertainty quantification data accounting for different model samples</span>
+<span class="sd">    predictions for each training data set size is required. The corresponding</span>
+<span class="sd">    directory named &#39;uncertainty_quantification&#39; should exist in each model</span>
+<span class="sd">    base directory.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    models_base_dirs : tuple[str]</span>
+<span class="sd">        Base directory where each model is stored.</span>
+<span class="sd">    training_dirs : tuple[str]</span>
+<span class="sd">        Directory where each model training data set is stored.</span>
+<span class="sd">    testing_dirs : tuple[str]</span>
+<span class="sd">        Directory where each model testing data set is stored.</span>
+<span class="sd">    predictions_dirs : tuple[str]</span>
+<span class="sd">        Directory where each model samples predictions results files are</span>
+<span class="sd">        stored.</span>
+<span class="sd">    plot_type : {&#39;time_series_scatter&#39;, &#39;time_series_path&#39;}, \</span>
+<span class="sd">                default=&#39;time_series_scatter&#39;</span>
+<span class="sd">        Time series plot type.</span>
+<span class="sd">    samples_ids : {&#39;all&#39;, list[int]}, default=&#39;all&#39;</span>
+<span class="sd">        Samples IDs whose prediction data is plotted.</span>
+<span class="sd">    filename : str, default=&#39;prediction_path_convergence&#39;</span>
+<span class="sd">        Figure name.</span>
+<span class="sd">    save_dir : str, default=None</span>
+<span class="sd">        Directory where figure is saved. If None, then figure is saved in</span>
+<span class="sd">        current working directory.</span>
+<span class="sd">    is_save_fig : bool, default=False</span>
+<span class="sd">        Save figure.</span>
+<span class="sd">    is_stdout_display : bool, default=False</span>
+<span class="sd">        True if displaying figure to standard output device, False otherwise.</span>
+<span class="sd">    is_latex : bool, default=False</span>
+<span class="sd">        If True, then render all strings in LaTeX. If LaTex is not available,</span>
+<span class="sd">        then this option is silently set to False and all input strings are</span>
+<span class="sd">        processed to remove $(...)$ enclosure.</span>
+<span class="sd">    &quot;&quot;&quot;</span>    
+    <span class="c1"># Check time series plot type</span>
+    <span class="k">if</span> <span class="n">plot_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;time_series_scatter&#39;</span><span class="p">,</span> <span class="s1">&#39;time_series_path&#39;</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Unknown time series plot type.&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get number of models</span>
+    <span class="n">n_models</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">models_base_dirs</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize training data set sizes</span>
+    <span class="n">training_sizes</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># Loop over training data sets</span>
+    <span class="k">for</span> <span class="n">train_dir</span> <span class="ow">in</span> <span class="n">training_dirs</span><span class="p">:</span>
+        <span class="c1"># Get training data set file path</span>
+        <span class="n">regex</span> <span class="o">=</span> <span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^ss_paths_dataset_n[0-9]+.pkl$&#39;</span><span class="p">,)</span>
+        <span class="n">is_file_found</span><span class="p">,</span> <span class="n">train_dataset_file_path</span> <span class="o">=</span> \
+            <span class="n">find_unique_file_with_regex</span><span class="p">(</span><span class="n">train_dir</span><span class="p">,</span> <span class="n">regex</span><span class="p">)</span>
+        <span class="c1"># Check training data set file</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_file_found</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Training data set file has not been found  &#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;in data set directory:</span><span class="se">\n\n</span><span class="s1">&#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">train_dir</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="c1"># Get training data set size</span>
+        <span class="n">training_sizes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">load_dataset</span><span class="p">(</span><span class="n">train_dataset_file_path</span><span class="p">)))</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Loop over prediction types</span>
+    <span class="k">for</span> <span class="n">prediction_type</span><span class="p">,</span> <span class="n">prediction_labels</span> <span class="ow">in</span> <span class="n">prediction_types</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="c1"># Initialize models time series predictions data</span>
+        <span class="n">models_prediction_data</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># Initialize testing data set sizes</span>
+        <span class="n">testing_sizes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ </span>
+        <span class="c1"># Loop over testing directories</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">test_dir</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">testing_dirs</span><span class="p">):</span>
+            <span class="c1"># Get testing data set file path</span>
+            <span class="n">regex</span> <span class="o">=</span> <span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^ss_paths_dataset_n[0-9]+.pkl$&#39;</span><span class="p">,)</span>
+            <span class="n">is_file_found</span><span class="p">,</span> <span class="n">test_dataset_file_path</span> <span class="o">=</span> \
+                <span class="n">find_unique_file_with_regex</span><span class="p">(</span><span class="n">test_dir</span><span class="p">,</span> <span class="n">regex</span><span class="p">)</span>
+            <span class="c1"># Check testing data set file</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">is_file_found</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Testing data set file has not been found &#39;</span>
+                                   <span class="sa">f</span><span class="s1">&#39;in data set directory:</span><span class="se">\n\n</span><span class="s1">&#39;</span>
+                                   <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">test_dir</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Get testing data set size</span>
+            <span class="n">testing_sizes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">load_dataset</span><span class="p">(</span><span class="n">test_dataset_file_path</span><span class="p">)))</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Get corresponding prediction directory</span>
+            <span class="n">pred_dir</span> <span class="o">=</span> <span class="n">predictions_dirs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Build times series predictions components data arrays</span>
+            <span class="k">if</span> <span class="n">plot_type</span> <span class="o">==</span> <span class="s1">&#39;time_series_scatter&#39;</span><span class="p">:</span>
+                <span class="c1"># Build prediction components data arrays</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Not implemented.&#39;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">plot_type</span> <span class="o">==</span> <span class="s1">&#39;time_series_path&#39;</span><span class="p">:</span>
+                <span class="c1"># Build prediction components data arrays for each sample</span>
+                <span class="n">prediction_data_arrays</span> <span class="o">=</span> <span class="n">build_time_series_predictions_data</span><span class="p">(</span>
+                    <span class="n">test_dataset_file_path</span><span class="p">,</span> <span class="n">pred_dir</span><span class="p">,</span>
+                    <span class="n">prediction_type</span><span class="p">,</span> <span class="n">prediction_labels</span><span class="p">,</span>
+                    <span class="n">samples_ids</span><span class="o">=</span><span class="n">samples_ids</span><span class="p">,</span>
+                    <span class="n">is_uncertainty_quantification</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Store model time series prediction components data arrays</span>
+            <span class="n">models_prediction_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">prediction_data_arrays</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Check testing data sets</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">testing_sizes</span><span class="p">))</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Expecting the same testing data set but got &#39;</span>
+                               <span class="s1">&#39;testing data sets with different sizes.&#39;</span><span class="p">)</span>
+        <span class="c1"># Get testing data set size</span>
+        <span class="n">testing_size</span> <span class="o">=</span> <span class="n">testing_sizes</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Loop over prediction type components</span>
+        <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">prediction_comp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">prediction_labels</span><span class="p">):</span>
+            <span class="c1"># Plot model times series prediction component</span>
+            <span class="k">if</span> <span class="n">plot_type</span> <span class="o">==</span> <span class="s1">&#39;time_series_scatter&#39;</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Not implemented.&#39;</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="k">elif</span> <span class="n">plot_type</span> <span class="o">==</span> <span class="s1">&#39;time_series_path&#39;</span><span class="p">:</span>
+                <span class="c1"># Set all available samples</span>
+                <span class="k">if</span> <span class="n">samples_ids</span> <span class="o">==</span> <span class="s1">&#39;all&#39;</span><span class="p">:</span>
+                    <span class="n">samples_ids</span> <span class="o">=</span> <span class="nb">range</span><span class="p">(</span><span class="n">testing_size</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Loop over samples</span>
+                <span class="k">for</span> <span class="n">sample_id</span> <span class="ow">in</span> <span class="n">samples_ids</span><span class="p">:</span>
+                    <span class="c1"># Initialize prediction processes</span>
+                    <span class="n">prediction_sets</span> <span class="o">=</span> <span class="p">{}</span>
+                    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                    <span class="c1"># Assemble discrete time path and ground-truth path by</span>
+                    <span class="c1"># probing the first model data                    </span>
+                    <span class="n">prediction_sets</span><span class="p">[</span><span class="s1">&#39;Ground-Truth&#39;</span><span class="p">]</span> <span class="o">=</span> \
+                        <span class="n">models_prediction_data</span><span class="p">[</span><span class="mi">0</span><span class="p">][</span><span class="n">j</span><span class="p">][</span><span class="nb">str</span><span class="p">(</span><span class="n">sample_id</span><span class="p">)][:,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]]</span>
+                    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                    <span class="c1"># Loop over models</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_models</span><span class="p">):</span>
+                        <span class="c1"># Get model time series predictions data</span>
+                        <span class="n">model_prediction_data</span> <span class="o">=</span> <span class="n">models_prediction_data</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                        <span class="c1"># Set prediction label</span>
+                        <span class="n">label</span> <span class="o">=</span> <span class="s1">&#39;N = &#39;</span> <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">training_sizes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span>
+                        <span class="c1"># Assemble sample prediction data (remove ground-truth)</span>
+                        <span class="n">prediction_sets</span><span class="p">[</span><span class="n">label</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">delete</span><span class="p">(</span>
+                            <span class="n">model_prediction_data</span><span class="p">[</span><span class="n">j</span><span class="p">][</span><span class="nb">str</span><span class="p">(</span><span class="n">sample_id</span><span class="p">)],</span> <span class="mi">1</span><span class="p">,</span>
+                            <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                    <span class="c1"># Set prediction type label</span>
+                    <span class="k">if</span> <span class="n">prediction_type</span> <span class="o">==</span> <span class="s1">&#39;stress_comps&#39;</span><span class="p">:</span>
+                        <span class="n">y_label</span> <span class="o">=</span> <span class="s1">&#39;Stress (MPa)&#39;</span>
+                    <span class="k">elif</span> <span class="n">prediction_type</span> <span class="o">==</span> <span class="s1">&#39;acc_p_strain&#39;</span><span class="p">:</span>
+                        <span class="n">y_label</span> <span class="o">=</span> <span class="s1">&#39;Accumulated plastic strain&#39;</span>
+                    <span class="k">elif</span> <span class="n">prediction_type</span> <span class="o">==</span> <span class="s1">&#39;p_strain_comps&#39;</span><span class="p">:</span>
+                        <span class="n">y_label</span> <span class="o">=</span> <span class="s1">&#39;Plastic strain&#39;</span>
+                    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                    <span class="c1"># Plot model times series predictions</span>
+                    <span class="n">plot_time_series_prediction</span><span class="p">(</span>
+                        <span class="n">prediction_sets</span><span class="p">,</span> <span class="n">is_reference_data</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                        <span class="n">x_label</span><span class="o">=</span><span class="s1">&#39;Time&#39;</span><span class="p">,</span> <span class="n">y_label</span><span class="o">=</span><span class="n">y_label</span><span class="p">,</span>
+                        <span class="n">is_normalize_data</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                        <span class="n">is_uncertainty_quantification</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                        <span class="n">range_type</span><span class="o">=</span><span class="s1">&#39;min-max&#39;</span><span class="p">,</span>
+                        <span class="n">filename</span><span class="o">=</span><span class="p">(</span><span class="n">filename</span> <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;_</span><span class="si">{</span><span class="n">prediction_comp</span><span class="si">}</span><span class="s1">&#39;</span>
+                                  <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;_path_sample_</span><span class="si">{</span><span class="n">sample_id</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">),</span>
+                        <span class="n">save_dir</span><span class="o">=</span><span class="n">save_dir</span><span class="p">,</span> <span class="n">is_save_fig</span><span class="o">=</span><span class="n">is_save_fig</span><span class="p">,</span>
+                        <span class="n">is_stdout_display</span><span class="o">=</span><span class="n">is_stdout_display</span><span class="p">,</span> <span class="n">is_latex</span><span class="o">=</span><span class="n">is_latex</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Display figure</span>
+    <span class="k">if</span> <span class="n">is_stdout_display</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Close plot</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="s1">&#39;all&#39;</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,6 @@
+hookeai.simulators.fetorch.math.matrixops.vget\_state\_2Dmf\_from\_3Dmf
+=======================================================================
+
+.. currentmodule:: hookeai.simulators.fetorch.math.matrixops
+
+.. autofunction:: vget_state_2Dmf_from_3Dmf

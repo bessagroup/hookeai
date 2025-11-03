@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>hookeai.data_generation.spdg.patch_generator.FiniteElementPatch &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator" href="hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator.html" />
+    <link rel="prev" title="hookeai.data_generation.spdg.patch_generator.FiniteElement" href="hookeai.data_generation.spdg.patch_generator.FiniteElement.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="hookeai.html">Code</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="hookeai.data_generation.html">hookeai.data_generation</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="hookeai.data_generation.spdg.html">hookeai.data_generation.spdg</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="hookeai.data_generation.spdg.patch.html">hookeai.data_generation.spdg.patch</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="hookeai.data_generation.spdg.patch_generator.html">hookeai.data_generation.spdg.patch_generator</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="hookeai.data_generation.strain_paths.html">hookeai.data_generation.strain_paths</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.ioput.html">hookeai.ioput</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.material_model_finder.html">hookeai.material_model_finder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.miscellaneous.html">hookeai.miscellaneous</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.model_architectures.html">hookeai.model_architectures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.simulators.html">hookeai.simulators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.time_series_data.html">hookeai.time_series_data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.utilities.html">hookeai.utilities</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="hookeai.html">hookeai</a></li>
+          <li class="breadcrumb-item"><a href="hookeai.data_generation.html">hookeai.data_generation</a></li>
+          <li class="breadcrumb-item"><a href="hookeai.data_generation.spdg.html">hookeai.data_generation.spdg</a></li>
+          <li class="breadcrumb-item"><a href="hookeai.data_generation.spdg.patch_generator.html">hookeai.data_generation.spdg.patch_generator</a></li>
+      <li class="breadcrumb-item active">hookeai.data_generation.spdg.patch_generator.FiniteElementPatch</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="hookeai-data-generation-spdg-patch-generator-finiteelementpatch">
+<h1>hookeai.data_generation.spdg.patch_generator.FiniteElementPatch<a class="headerlink" href="#hookeai-data-generation-spdg-patch-generator-finiteelementpatch" title="Permalink to this heading">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatch">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FiniteElementPatch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">patch_dims</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elem_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_elems_per_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh_nodes_matrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh_nodes_coords_ref</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh_boundary_nodes_disps</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data_generation/spdg/patch.html#FiniteElementPatch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Finite element material patch.</p>
+<p>Material patch is assumed quadrilateral (2d) or parallelepipedic (3D)
+and discretized in a regular finite element mesh of quadrilateral (2d) /
+hexahedral (3d) finite elements.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatch._n_dim">
+<span class="sig-name descname"><span class="pre">_n_dim</span></span><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatch._n_dim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of spatial dimensions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatch._patch_dims">
+<span class="sig-name descname"><span class="pre">_patch_dims</span></span><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatch._patch_dims" title="Permalink to this definition">¶</a></dt>
+<dd><p>Patch size in each dimension.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatch._elem_type">
+<span class="sig-name descname"><span class="pre">_elem_type</span></span><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatch._elem_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finite element type.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatch._n_elems_per_dim">
+<span class="sig-name descname"><span class="pre">_n_elems_per_dim</span></span><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatch._n_elems_per_dim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of finite elements per dimension.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatch._mesh_nodes_matrix">
+<span class="sig-name descname"><span class="pre">_mesh_nodes_matrix</span></span><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatch._mesh_nodes_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Finite element mesh nodes matrix
+(numpy.ndarray[int](n_edge_nodes_per_dim) where each element
+corresponds to a given node position and whose value is set either
+as the global node label or zero (if the node does not exist).
+Nodes are labeled from 1 to n_nodes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)">numpy.ndarray</a>(2d or 3d)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatch._mesh_nodes_coords_ref">
+<span class="sig-name descname"><span class="pre">_mesh_nodes_coords_ref</span></span><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatch._mesh_nodes_coords_ref" title="Permalink to this definition">¶</a></dt>
+<dd><p>Coordinates (item, numpy.ndarray(n_dim)) of each finite element
+mesh node (key, str[int]) in the reference configuration. Nodes are
+labeled from 1 to n_nodes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatch._mesh_boundary_nodes_disps">
+<span class="sig-name descname"><span class="pre">_mesh_boundary_nodes_disps</span></span><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatch._mesh_boundary_nodes_disps" title="Permalink to this definition">¶</a></dt>
+<dd><p>Displacements (item, numpy.ndarray(n_dim)) prescribed on each
+finite element mesh boundary node (key, str[int]). Free degrees of
+freedom must be set as None.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatch._n_edge_nodes_per_dim">
+<span class="sig-name descname"><span class="pre">_n_edge_nodes_per_dim</span></span><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatch._n_edge_nodes_per_dim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of patch edge nodes along each dimension.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_n_dim">
+<span class="sig-name descname"><span class="pre">get_n_dim</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data_generation/spdg/patch.html#FiniteElementPatch.get_n_dim"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_n_dim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get number of spatial dimensions.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_elem_type">
+<span class="sig-name descname"><span class="pre">get_elem_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data_generation/spdg/patch.html#FiniteElementPatch.get_elem_type"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_elem_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get finite element type.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_n_elems_per_dim">
+<span class="sig-name descname"><span class="pre">get_n_elems_per_dim</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data_generation/spdg/patch.html#FiniteElementPatch.get_n_elems_per_dim"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_n_elems_per_dim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get number of finite elements per dimension.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_n_edge_nodes_per_dim">
+<span class="sig-name descname"><span class="pre">get_n_edge_nodes_per_dim</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data_generation/spdg/patch.html#FiniteElementPatch.get_n_edge_nodes_per_dim"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_n_edge_nodes_per_dim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get number of patch edge nodes along each dimension.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_mesh_nodes_matrix">
+<span class="sig-name descname"><span class="pre">get_mesh_nodes_matrix</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data_generation/spdg/patch.html#FiniteElementPatch.get_mesh_nodes_matrix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_mesh_nodes_matrix" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get finite element mesh nodes matrix.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_mesh_nodes_coords_ref">
+<span class="sig-name descname"><span class="pre">get_mesh_nodes_coords_ref</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data_generation/spdg/patch.html#FiniteElementPatch.get_mesh_nodes_coords_ref"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_mesh_nodes_coords_ref" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get reference coordinates of each finite element mesh node.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_mesh_boundary_nodes_disps">
+<span class="sig-name descname"><span class="pre">get_mesh_boundary_nodes_disps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data_generation/spdg/patch.html#FiniteElementPatch.get_mesh_boundary_nodes_disps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_mesh_boundary_nodes_disps" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get displacements prescribed on finite element mesh boundary nodes.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_elem_size_dims">
+<span class="sig-name descname"><span class="pre">get_elem_size_dims</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data_generation/spdg/patch.html#FiniteElementPatch.get_elem_size_dims"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_elem_size_dims" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get finite element size along each dimension.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_mesh_connected_nodes">
+<span class="sig-name descname"><span class="pre">get_mesh_connected_nodes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data_generation/spdg/patch.html#FiniteElementPatch.get_mesh_connected_nodes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_mesh_connected_nodes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get finite element mesh connected nodes pairs.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatch._set_n_edge_nodes_per_dim">
+<span class="sig-name descname"><span class="pre">_set_n_edge_nodes_per_dim</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data_generation/spdg/patch.html#FiniteElementPatch._set_n_edge_nodes_per_dim"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatch._set_n_edge_nodes_per_dim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set number of patch edge nodes per dimension.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_boundary_nodes_labels">
+<span class="sig-name descname"><span class="pre">get_boundary_nodes_labels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data_generation/spdg/patch.html#FiniteElementPatch.get_boundary_nodes_labels"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_boundary_nodes_labels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get finite element mesh boundary nodes labels.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_boundary_edges_nodes_labels">
+<span class="sig-name descname"><span class="pre">get_boundary_edges_nodes_labels</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data_generation/spdg/patch.html#FiniteElementPatch.get_boundary_edges_nodes_labels"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_boundary_edges_nodes_labels" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get finite element mesh boundary edges nodes labels.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_patch_attributes">
+<span class="sig-name descname"><span class="pre">get_patch_attributes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data_generation/spdg/patch.html#FiniteElementPatch.get_patch_attributes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_patch_attributes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get finite element material patch attributes.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">plot_deformed_patch(self,</span> <span class="pre">is_hide_axes=False,</span> <span class="pre">is_show_fixed_dof=False,</span></span></dt>
+<dd><blockquote>
+<div><p>is_hide_deformed_faces=True, is_show_plot=False,
+is_save_plot=False, save_directory=None,
+plot_name=None, is_overwrite_file=False)</p>
+</div></blockquote>
+<p>Generate plot of material patch.</p>
+</dd></dl>
+
+<p>Constructor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_dim</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of spatial dimensions.</p></li>
+<li><p><strong>patch_dims</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>]</em>) – Patch size in each dimension.</p></li>
+<li><p><strong>elem_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Finite element type.</p></li>
+<li><p><strong>n_elems_per_dim</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>]</em>) – Number of finite elements per dimension.</p></li>
+<li><p><strong>mesh_nodes_matrix</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>numpy.ndarray</em></a><em>(</em><em>2d</em><em> or </em><em>3d</em><em>)</em>) – Finite element mesh nodes matrix
+(numpy.ndarray[int](n_edge_nodes_per_dim) where each element
+corresponds to a given node position and whose value is set either
+as the global node label or zero (if the node does not exist).
+Nodes are labeled from 1 to n_nodes.</p></li>
+<li><p><strong>mesh_nodes_coords_ref</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Coordinates (item, numpy.ndarray(n_dim)) of each finite element
+mesh node (key, str[int]) in the reference configuration. Nodes are
+labeled from 1 to n_nodes.</p></li>
+<li><p><strong>mesh_boundary_nodes_disps</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Displacements (item, numpy.ndarray(n_dim)) prescribed on each
+finite element mesh boundary node (key, str[int]). Free degrees of
+freedom must be set as None.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">List of Public Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id1" title="hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_boundary_edges_nodes_labels"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_boundary_edges_nodes_labels</span></code></a></p></td>
+<td><p>Get finite element mesh boundary edges nodes labels.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#id2" title="hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_boundary_nodes_labels"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_boundary_nodes_labels</span></code></a></p></td>
+<td><p>Get finite element mesh boundary nodes labels.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id3" title="hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_elem_size_dims"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_elem_size_dims</span></code></a></p></td>
+<td><p>Get finite element size along each dimension.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#id4" title="hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_elem_type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_elem_type</span></code></a></p></td>
+<td><p>Get finite element type.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id5" title="hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_mesh_boundary_nodes_disps"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_mesh_boundary_nodes_disps</span></code></a></p></td>
+<td><p>Get displacements prescribed on finite element mesh boundary nodes.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#id6" title="hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_mesh_connected_nodes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_mesh_connected_nodes</span></code></a></p></td>
+<td><p>Get finite element mesh connected nodes pairs.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id7" title="hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_mesh_nodes_coords_ref"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_mesh_nodes_coords_ref</span></code></a></p></td>
+<td><p>Get reference coordinates of each finite element mesh node.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#id8" title="hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_mesh_nodes_matrix"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_mesh_nodes_matrix</span></code></a></p></td>
+<td><p>Get finite element mesh nodes matrix.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id9" title="hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_n_dim"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_n_dim</span></code></a></p></td>
+<td><p>Get number of spatial dimensions.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#id10" title="hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_n_edge_nodes_per_dim"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_n_edge_nodes_per_dim</span></code></a></p></td>
+<td><p>Get number of patch edge nodes along each dimension.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id11" title="hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_n_elems_per_dim"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_n_elems_per_dim</span></code></a></p></td>
+<td><p>Get number of finite elements per dimension.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#id12" title="hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_patch_attributes"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_patch_attributes</span></code></a></p></td>
+<td><p>Get finite element material patch attributes.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.plot_deformed_patch" title="hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.plot_deformed_patch"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_deformed_patch</span></code></a></p></td>
+<td><p>Generate plot of finite element material patch.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">patch_dims</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elem_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_elems_per_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh_nodes_matrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh_nodes_coords_ref</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh_boundary_nodes_disps</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data_generation/spdg/patch.html#FiniteElementPatch.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_dim</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of spatial dimensions.</p></li>
+<li><p><strong>patch_dims</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>]</em>) – Patch size in each dimension.</p></li>
+<li><p><strong>elem_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Finite element type.</p></li>
+<li><p><strong>n_elems_per_dim</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>]</em>) – Number of finite elements per dimension.</p></li>
+<li><p><strong>mesh_nodes_matrix</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>numpy.ndarray</em></a><em>(</em><em>2d</em><em> or </em><em>3d</em><em>)</em>) – Finite element mesh nodes matrix
+(numpy.ndarray[int](n_edge_nodes_per_dim) where each element
+corresponds to a given node position and whose value is set either
+as the global node label or zero (if the node does not exist).
+Nodes are labeled from 1 to n_nodes.</p></li>
+<li><p><strong>mesh_nodes_coords_ref</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Coordinates (item, numpy.ndarray(n_dim)) of each finite element
+mesh node (key, str[int]) in the reference configuration. Nodes are
+labeled from 1 to n_nodes.</p></li>
+<li><p><strong>mesh_boundary_nodes_disps</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Displacements (item, numpy.ndarray(n_dim)) prescribed on each
+finite element mesh boundary node (key, str[int]). Free degrees of
+freedom must be set as None.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">_set_n_edge_nodes_per_dim</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data_generation/spdg/patch.html#FiniteElementPatch._set_n_edge_nodes_per_dim"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id0" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set number of patch edge nodes per dimension.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id1">
+<span class="sig-name descname"><span class="pre">get_boundary_edges_nodes_labels</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data_generation/spdg/patch.html#FiniteElementPatch.get_boundary_edges_nodes_labels"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id1" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get finite element mesh boundary edges nodes labels.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>boundary_edges_nodes_labels</strong> – Finite element mesh boundary edges nodes labels.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id2">
+<span class="sig-name descname"><span class="pre">get_boundary_nodes_labels</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data_generation/spdg/patch.html#FiniteElementPatch.get_boundary_nodes_labels"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get finite element mesh boundary nodes labels.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>boundary_nodes_labels</strong> – Finite element mesh boundary nodes labels.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id3">
+<span class="sig-name descname"><span class="pre">get_elem_size_dims</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data_generation/spdg/patch.html#FiniteElementPatch.get_elem_size_dims"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id3" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get finite element size along each dimension.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>elem_size_dims</strong> – Finite element size along each dimension.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id4">
+<span class="sig-name descname"><span class="pre">get_elem_type</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data_generation/spdg/patch.html#FiniteElementPatch.get_elem_type"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id4" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get finite element type.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>elem_type</strong> – Finite element type.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id5">
+<span class="sig-name descname"><span class="pre">get_mesh_boundary_nodes_disps</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data_generation/spdg/patch.html#FiniteElementPatch.get_mesh_boundary_nodes_disps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id5" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get displacements prescribed on finite element mesh boundary nodes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>mesh_boundary_nodes_disps</strong> – Displacements (item, numpy.ndarray(n_dim)) prescribed on each
+finite element mesh boundary node (key, str[int]). Free degrees of
+freedom must be set as None.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id6">
+<span class="sig-name descname"><span class="pre">get_mesh_connected_nodes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data_generation/spdg/patch.html#FiniteElementPatch.get_mesh_connected_nodes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id6" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get finite element mesh connected nodes pairs.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>connected_nodes</strong> – A set containing all pairs of nodes that are connected by a finite
+element edge. Each connection is stored a single time as a
+tuple(node[int], node[int]) and is independent of the corresponding
+nodes storage order.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>(2)]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id7">
+<span class="sig-name descname"><span class="pre">get_mesh_nodes_coords_ref</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data_generation/spdg/patch.html#FiniteElementPatch.get_mesh_nodes_coords_ref"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id7" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get reference coordinates of each finite element mesh node.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>mesh_nodes_coords_ref</strong> – Coordinates (item, numpy.ndarray(n_dim)) of each finite element
+mesh node (key, str[int]) in the reference configuration. Nodes are
+labeled from 1 to n_nodes.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id8">
+<span class="sig-name descname"><span class="pre">get_mesh_nodes_matrix</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data_generation/spdg/patch.html#FiniteElementPatch.get_mesh_nodes_matrix"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id8" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get finite element mesh nodes matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>mesh_nodes_matrix</strong> – Finite element mesh nodes matrix
+(numpy.ndarray[int](n_edge_nodes_per_dim)) where each element
+corresponds to a given node position and whose value is set either
+as the global node label or zero (if the node does not exist).
+Nodes are labeled from 1 to n_nodes.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)">numpy.ndarray</a>(2d or 3d)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id9">
+<span class="sig-name descname"><span class="pre">get_n_dim</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data_generation/spdg/patch.html#FiniteElementPatch.get_n_dim"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id9" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get number of spatial dimensions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>n_dim</strong> – Number of spatial dimensions.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id10">
+<span class="sig-name descname"><span class="pre">get_n_edge_nodes_per_dim</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data_generation/spdg/patch.html#FiniteElementPatch.get_n_edge_nodes_per_dim"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id10" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get number of patch edge nodes along each dimension.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>n_edge_nodes_per_dim</strong> – Number of patch edge nodes along each dimension.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id11">
+<span class="sig-name descname"><span class="pre">get_n_elems_per_dim</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data_generation/spdg/patch.html#FiniteElementPatch.get_n_elems_per_dim"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id11" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get number of finite elements per dimension.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>n_elems_per_dim</strong> – Number of finite elements per dimension.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id12">
+<span class="sig-name descname"><span class="pre">get_patch_attributes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data_generation/spdg/patch.html#FiniteElementPatch.get_patch_attributes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id12" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get finite element material patch attributes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>patch_attributes</strong> – Material patch attributes.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.plot_deformed_patch">
+<span class="sig-name descname"><span class="pre">plot_deformed_patch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">is_hide_axes</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_show_fixed_dof</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_hide_deformed_faces</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_show_plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_save_plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_directory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">plot_name</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_overwrite_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data_generation/spdg/patch.html#FiniteElementPatch.plot_deformed_patch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.plot_deformed_patch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate plot of finite element material patch.</p>
+<p>Deformed configuration is only plotted if all boundary degrees of
+freedom displacements are prescribed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>is_hide_axes</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – If True, then hide all visual components of axes.</p></li>
+<li><p><strong>is_show_fixed_dof</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – If True, then signal fixed boundary degrees of freedom.</p></li>
+<li><p><strong>is_hide_deformed_faces</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=True</em>) – If True, then hide boundary faces nodes deformed configuration
+when available. Only effective for three-dimensional patch.</p></li>
+<li><p><strong>is_show_plot</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – Display plot of finite element material patch if True.</p></li>
+<li><p><strong>is_save_plot</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – Save plot of finite element material patch. Plot is only saved if
+<cite>save_directory</cite> is provided and exists.</p></li>
+<li><p><strong>save_directory</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>default=None</em>) – Directory where plot of finite element material patch is stored.</p></li>
+<li><p><strong>plot_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>default=None</em>) – Filename of finite element material patch plot.</p></li>
+<li><p><strong>is_overwrite_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – Overwrite plot of finite element material patch if True, otherwise
+generate non-existent file path by extending the original file path
+with an integer.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="hookeai.data_generation.spdg.patch_generator.FiniteElement.html" class="btn btn-neutral float-left" title="hookeai.data_generation.spdg.patch_generator.FiniteElement" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator.html" class="btn btn-neutral float-right" title="hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

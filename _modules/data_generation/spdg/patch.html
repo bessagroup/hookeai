@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>data_generation.spdg.patch &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../_autosummary/hookeai.html">Code</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">data_generation.spdg.patch</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for data_generation.spdg.patch</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Finite element material patch.</span>
+
+<span class="sd">Classes</span>
+<span class="sd">-------</span>
+<span class="sd">FiniteElementPatch</span>
+<span class="sd">    Finite element material patch.</span>
+
+<span class="sd">Functions</span>
+<span class="sd">---------</span>
+<span class="sd">rotation_angle_2d</span>
+<span class="sd">    Compute the rotation angle between two vectors in 2D.</span>
+<span class="sd">mean_rotation_angle_2d</span>
+<span class="sd">    Compute mean rotation angle between pairs of vectors in 2D.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#                                                                       Modules</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Standard</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="c1"># Third-party</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="c1"># Local</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">simulators.links.discretization.finite_element</span><span class="w"> </span><span class="kn">import</span> <span class="n">FiniteElement</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ioput.iostandard</span><span class="w"> </span><span class="kn">import</span> <span class="n">new_file_path_with_int</span>
+<span class="c1">#</span>
+<span class="c1">#                                                          Authorship &amp; Credits</span>
+<span class="c1"># =============================================================================</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Bernardo Ferreira (bernardo_ferreira@brown.edu)&#39;</span>
+<span class="n">__credits__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Bernardo Ferreira&#39;</span><span class="p">,</span> <span class="p">]</span>
+<span class="n">__status__</span> <span class="o">=</span> <span class="s1">&#39;Stable&#39;</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="FiniteElementPatch"><a class="viewcode-back" href="../../../_autosummary/hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.html#hookeai.data_generation.spdg.patch_generator.FiniteElementPatch">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">FiniteElementPatch</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Finite element material patch.</span>
+<span class="sd">    </span>
+<span class="sd">    Material patch is assumed quadrilateral (2d) or parallelepipedic (3D)</span>
+<span class="sd">    and discretized in a regular finite element mesh of quadrilateral (2d) /</span>
+<span class="sd">    hexahedral (3d) finite elements.</span>
+<span class="sd">    </span>
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    _n_dim : int</span>
+<span class="sd">        Number of spatial dimensions.</span>
+<span class="sd">    _patch_dims : tuple[float]</span>
+<span class="sd">        Patch size in each dimension.</span>
+<span class="sd">    _elem_type : str</span>
+<span class="sd">        Finite element type.</span>
+<span class="sd">    _n_elems_per_dim : tuple[int]</span>
+<span class="sd">        Number of finite elements per dimension.</span>
+<span class="sd">    _mesh_nodes_matrix : numpy.ndarray(2d or 3d)</span>
+<span class="sd">        Finite element mesh nodes matrix</span>
+<span class="sd">        (numpy.ndarray[int](n_edge_nodes_per_dim) where each element</span>
+<span class="sd">        corresponds to a given node position and whose value is set either</span>
+<span class="sd">        as the global node label or zero (if the node does not exist).</span>
+<span class="sd">        Nodes are labeled from 1 to n_nodes.</span>
+<span class="sd">    _mesh_nodes_coords_ref : dict</span>
+<span class="sd">        Coordinates (item, numpy.ndarray(n_dim)) of each finite element</span>
+<span class="sd">        mesh node (key, str[int]) in the reference configuration. Nodes are</span>
+<span class="sd">        labeled from 1 to n_nodes.</span>
+<span class="sd">    _mesh_boundary_nodes_disps : dict</span>
+<span class="sd">        Displacements (item, numpy.ndarray(n_dim)) prescribed on each</span>
+<span class="sd">        finite element mesh boundary node (key, str[int]). Free degrees of</span>
+<span class="sd">        freedom must be set as None.</span>
+<span class="sd">    _n_edge_nodes_per_dim : tuple[int]</span>
+<span class="sd">        Number of patch edge nodes along each dimension.</span>
+<span class="sd">    </span>
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    get_n_dim(self)</span>
+<span class="sd">        Get number of spatial dimensions.</span>
+<span class="sd">    get_elem_type(self)</span>
+<span class="sd">        Get finite element type.</span>
+<span class="sd">    get_n_elems_per_dim(self)</span>
+<span class="sd">        Get number of finite elements per dimension.</span>
+<span class="sd">    get_n_edge_nodes_per_dim(self)</span>
+<span class="sd">        Get number of patch edge nodes along each dimension.</span>
+<span class="sd">    get_mesh_nodes_matrix(self)</span>
+<span class="sd">        Get finite element mesh nodes matrix.</span>
+<span class="sd">    get_mesh_nodes_coords_ref(self)</span>
+<span class="sd">        Get reference coordinates of each finite element mesh node.</span>
+<span class="sd">    get_mesh_boundary_nodes_disps(self)</span>
+<span class="sd">        Get displacements prescribed on finite element mesh boundary nodes.</span>
+<span class="sd">    get_elem_size_dims(self)</span>
+<span class="sd">        Get finite element size along each dimension.</span>
+<span class="sd">    get_mesh_connected_nodes(self)</span>
+<span class="sd">        Get finite element mesh connected nodes pairs.</span>
+<span class="sd">    _set_n_edge_nodes_per_dim(self)</span>
+<span class="sd">        Set number of patch edge nodes per dimension.</span>
+<span class="sd">    get_boundary_nodes_labels(self)</span>
+<span class="sd">        Get finite element mesh boundary nodes labels.</span>
+<span class="sd">    get_boundary_edges_nodes_labels(self)</span>
+<span class="sd">        Get finite element mesh boundary edges nodes labels.</span>
+<span class="sd">    get_patch_attributes(self)</span>
+<span class="sd">        Get finite element material patch attributes.</span>
+<span class="sd">    plot_deformed_patch(self, is_hide_axes=False, is_show_fixed_dof=False,</span>
+<span class="sd">                        is_hide_deformed_faces=True, is_show_plot=False,</span>
+<span class="sd">                        is_save_plot=False, save_directory=None,</span>
+<span class="sd">                        plot_name=None, is_overwrite_file=False)</span>
+<span class="sd">        Generate plot of material patch.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="FiniteElementPatch.__init__"><a class="viewcode-back" href="../../../_autosummary/hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.html#hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.__init__">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_dim</span><span class="p">,</span> <span class="n">patch_dims</span><span class="p">,</span> <span class="n">elem_type</span><span class="p">,</span> <span class="n">n_elems_per_dim</span><span class="p">,</span>
+                 <span class="n">mesh_nodes_matrix</span><span class="p">,</span> <span class="n">mesh_nodes_coords_ref</span><span class="p">,</span>
+                 <span class="n">mesh_boundary_nodes_disps</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Constructor.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        n_dim : int</span>
+<span class="sd">            Number of spatial dimensions.</span>
+<span class="sd">        patch_dims : tuple[float]</span>
+<span class="sd">            Patch size in each dimension.</span>
+<span class="sd">        elem_type : str</span>
+<span class="sd">            Finite element type.</span>
+<span class="sd">        n_elems_per_dim : tuple[int]</span>
+<span class="sd">            Number of finite elements per dimension.</span>
+<span class="sd">        mesh_nodes_matrix : numpy.ndarray(2d or 3d)</span>
+<span class="sd">            Finite element mesh nodes matrix</span>
+<span class="sd">            (numpy.ndarray[int](n_edge_nodes_per_dim) where each element</span>
+<span class="sd">            corresponds to a given node position and whose value is set either</span>
+<span class="sd">            as the global node label or zero (if the node does not exist).</span>
+<span class="sd">            Nodes are labeled from 1 to n_nodes.</span>
+<span class="sd">        mesh_nodes_coords_ref : dict</span>
+<span class="sd">            Coordinates (item, numpy.ndarray(n_dim)) of each finite element</span>
+<span class="sd">            mesh node (key, str[int]) in the reference configuration. Nodes are</span>
+<span class="sd">            labeled from 1 to n_nodes.</span>
+<span class="sd">        mesh_boundary_nodes_disps : dict</span>
+<span class="sd">            Displacements (item, numpy.ndarray(n_dim)) prescribed on each</span>
+<span class="sd">            finite element mesh boundary node (key, str[int]). Free degrees of</span>
+<span class="sd">            freedom must be set as None.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_n_dim</span> <span class="o">=</span> <span class="n">n_dim</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_patch_dims</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">patch_dims</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_elem_type</span> <span class="o">=</span> <span class="n">elem_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_n_elems_per_dim</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">n_elems_per_dim</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mesh_nodes_matrix</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">mesh_nodes_matrix</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mesh_nodes_coords_ref</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">mesh_nodes_coords_ref</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mesh_boundary_nodes_disps</span> <span class="o">=</span> \
+            <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">mesh_boundary_nodes_disps</span><span class="p">)</span>
+        <span class="c1"># Check if only boundary nodes have prescribed displacements</span>
+        <span class="n">boundary_nodes_labels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_boundary_nodes_labels</span><span class="p">()</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">([</span><span class="nb">int</span><span class="p">(</span><span class="n">label</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">boundary_nodes_labels</span>
+                   <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mesh_boundary_nodes_disps</span><span class="o">.</span><span class="n">keys</span><span class="p">()]):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Displacements can only be prescribed on &#39;</span>
+                               <span class="s1">&#39;finite element mesh boundary nodes.&#39;</span><span class="p">)</span>
+        <span class="c1"># Set number of patch edge nodes per dimension.</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_n_edge_nodes_per_dim</span><span class="p">()</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="FiniteElementPatch.get_n_dim"><a class="viewcode-back" href="../../../_autosummary/hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.html#hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_n_dim">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_n_dim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get number of spatial dimensions.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        n_dim : int</span>
+<span class="sd">            Number of spatial dimensions.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_dim</span><span class="p">)</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="FiniteElementPatch.get_elem_type"><a class="viewcode-back" href="../../../_autosummary/hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.html#hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_elem_type">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_elem_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get finite element type.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        elem_type : str</span>
+<span class="sd">            Finite element type.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_elem_type</span><span class="p">)</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="FiniteElementPatch.get_n_elems_per_dim"><a class="viewcode-back" href="../../../_autosummary/hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.html#hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_n_elems_per_dim">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_n_elems_per_dim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get number of finite elements per dimension.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        n_elems_per_dim : tuple[int]</span>
+<span class="sd">            Number of finite elements per dimension.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_elems_per_dim</span><span class="p">)</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="FiniteElementPatch.get_n_edge_nodes_per_dim"><a class="viewcode-back" href="../../../_autosummary/hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.html#hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_n_edge_nodes_per_dim">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_n_edge_nodes_per_dim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get number of patch edge nodes along each dimension.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        n_edge_nodes_per_dim : tuple[int]</span>
+<span class="sd">            Number of patch edge nodes along each dimension.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_edge_nodes_per_dim</span><span class="p">)</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="FiniteElementPatch.get_mesh_nodes_matrix"><a class="viewcode-back" href="../../../_autosummary/hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.html#hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_mesh_nodes_matrix">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_mesh_nodes_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get finite element mesh nodes matrix.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        mesh_nodes_matrix : numpy.ndarray(2d or 3d)</span>
+<span class="sd">           Finite element mesh nodes matrix</span>
+<span class="sd">           (numpy.ndarray[int](n_edge_nodes_per_dim)) where each element</span>
+<span class="sd">           corresponds to a given node position and whose value is set either</span>
+<span class="sd">           as the global node label or zero (if the node does not exist).</span>
+<span class="sd">           Nodes are labeled from 1 to n_nodes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mesh_nodes_matrix</span><span class="p">)</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="FiniteElementPatch.get_mesh_nodes_coords_ref"><a class="viewcode-back" href="../../../_autosummary/hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.html#hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_mesh_nodes_coords_ref">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_mesh_nodes_coords_ref</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get reference coordinates of each finite element mesh node.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        mesh_nodes_coords_ref : dict</span>
+<span class="sd">            Coordinates (item, numpy.ndarray(n_dim)) of each finite element</span>
+<span class="sd">            mesh node (key, str[int]) in the reference configuration. Nodes are</span>
+<span class="sd">            labeled from 1 to n_nodes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mesh_nodes_coords_ref</span><span class="p">)</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="FiniteElementPatch.get_mesh_boundary_nodes_disps"><a class="viewcode-back" href="../../../_autosummary/hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.html#hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_mesh_boundary_nodes_disps">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_mesh_boundary_nodes_disps</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get displacements prescribed on finite element mesh boundary nodes.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        mesh_boundary_nodes_disps : dict</span>
+<span class="sd">            Displacements (item, numpy.ndarray(n_dim)) prescribed on each</span>
+<span class="sd">            finite element mesh boundary node (key, str[int]). Free degrees of</span>
+<span class="sd">            freedom must be set as None.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mesh_boundary_nodes_disps</span><span class="p">)</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="FiniteElementPatch.get_elem_size_dims"><a class="viewcode-back" href="../../../_autosummary/hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.html#hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_elem_size_dims">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_elem_size_dims</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get finite element size along each dimension.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        elem_size_dims : tuple</span>
+<span class="sd">            Finite element size along each dimension.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">_patch_dims</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_elems_per_dim</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                      <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_dim</span><span class="p">)])</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="FiniteElementPatch.get_mesh_connected_nodes"><a class="viewcode-back" href="../../../_autosummary/hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.html#hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_mesh_connected_nodes">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_mesh_connected_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get finite element mesh connected nodes pairs.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        connected_nodes : tuple[tuple(2)]</span>
+<span class="sd">            A set containing all pairs of nodes that are connected by a finite</span>
+<span class="sd">            element edge. Each connection is stored a single time as a</span>
+<span class="sd">            tuple(node[int], node[int]) and is independent of the corresponding</span>
+<span class="sd">            nodes storage order.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Initialize node connectivities</span>
+        <span class="n">connected_nodes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Find node connectivities</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_dim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="c1"># Get connectivities along first spatial dimension</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mesh_nodes_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mesh_nodes_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                    <span class="n">node_1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mesh_nodes_matrix</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
+                    <span class="n">node_2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mesh_nodes_matrix</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">node_1</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">node_2</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">connected_nodes</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">node_1</span><span class="p">,</span> <span class="n">node_2</span><span class="p">))</span>
+            <span class="c1"># Get connectivities along second spatial dimension</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mesh_nodes_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mesh_nodes_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                    <span class="n">node_1</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mesh_nodes_matrix</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
+                    <span class="n">node_2</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mesh_nodes_matrix</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+                    <span class="k">if</span> <span class="n">node_1</span> <span class="o">!=</span> <span class="mi">0</span> <span class="ow">and</span> <span class="n">node_2</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="n">connected_nodes</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">node_1</span><span class="p">,</span> <span class="n">node_2</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Missing 3D implementation.&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">connected_nodes</span><span class="p">)</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="FiniteElementPatch._set_n_edge_nodes_per_dim"><a class="viewcode-back" href="../../../_autosummary/hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.html#hookeai.data_generation.spdg.patch_generator.FiniteElementPatch._set_n_edge_nodes_per_dim">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">_set_n_edge_nodes_per_dim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set number of patch edge nodes per dimension.&quot;&quot;&quot;</span>
+        <span class="c1"># Get finite element</span>
+        <span class="n">elem</span> <span class="o">=</span> <span class="n">FiniteElement</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_elem_type</span><span class="p">)</span>
+        <span class="c1"># Get number of edge nodes per finite element</span>
+        <span class="n">n_edge_nodes_elem</span> <span class="o">=</span> <span class="n">elem</span><span class="o">.</span><span class="n">get_n_edge_nodes</span><span class="p">()</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Compute number of patch edge nodes along each dimension</span>
+        <span class="n">n_edge_nodes_per_dim</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># Loop over each dimension</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_dim</span><span class="p">):</span>
+            <span class="c1"># Compute number of edge nodes</span>
+            <span class="n">n_edge_nodes_per_dim</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_n_elems_per_dim</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">*</span><span class="n">n_edge_nodes_elem</span>
+                <span class="o">-</span> <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_elems_per_dim</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">))</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_n_edge_nodes_per_dim</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">n_edge_nodes_per_dim</span><span class="p">)</span></div>
+    <span class="c1"># -------------------------------------------------------------------------  </span>
+<div class="viewcode-block" id="FiniteElementPatch.get_boundary_nodes_labels"><a class="viewcode-back" href="../../../_autosummary/hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.html#hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_boundary_nodes_labels">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_boundary_nodes_labels</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get finite element mesh boundary nodes labels.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        boundary_nodes_labels : tuple[int]</span>
+<span class="sd">            Finite element mesh boundary nodes labels.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get finite element mesh boundary nodes labels </span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_dim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">boundary_nodes_labels</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">set</span><span class="p">([</span>
+                <span class="n">label</span> <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mesh_nodes_matrix</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span> \
+                <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mesh_nodes_matrix</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">])</span> \
+                <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mesh_nodes_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:])</span> \
+                <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mesh_nodes_matrix</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:])]))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">boundary_nodes_labels</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">set</span><span class="p">([</span>
+                <span class="n">label</span> <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span>
+                <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mesh_nodes_matrix</span><span class="p">[:,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span> \
+                <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mesh_nodes_matrix</span><span class="p">[:,</span> <span class="p">:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span> \
+                <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mesh_nodes_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span> \
+                <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mesh_nodes_matrix</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:,</span> <span class="p">:]</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span> \
+                <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mesh_nodes_matrix</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span> \
+                <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mesh_nodes_matrix</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span>
+                <span class="k">if</span> <span class="n">label</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">]))</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">boundary_nodes_labels</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="FiniteElementPatch.get_boundary_edges_nodes_labels"><a class="viewcode-back" href="../../../_autosummary/hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.html#hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_boundary_edges_nodes_labels">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_boundary_edges_nodes_labels</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get finite element mesh boundary edges nodes labels.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        boundary_edges_nodes_labels : tuple[int]</span>
+<span class="sd">            Finite element mesh boundary edges nodes labels.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get finite element mesh boundary edges nodes labels </span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_dim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">boundary_edges_nodes_labels</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">set</span><span class="p">([</span>
+                <span class="n">label</span> <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mesh_nodes_matrix</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">])</span> \
+                <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mesh_nodes_matrix</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">])</span> \
+                <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mesh_nodes_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:])</span> \
+                <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mesh_nodes_matrix</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:])]))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">boundary_edges_nodes_labels</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">set</span><span class="p">([</span>
+                <span class="n">label</span> <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span>
+                <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mesh_nodes_matrix</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span> \
+                <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mesh_nodes_matrix</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span> \
+                <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mesh_nodes_matrix</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span> \
+                <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mesh_nodes_matrix</span><span class="p">[:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span> \
+                <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mesh_nodes_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span> \
+                <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mesh_nodes_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span> \
+                <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mesh_nodes_matrix</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span> \
+                <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mesh_nodes_matrix</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:,</span> <span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span> \
+                <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mesh_nodes_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span> \
+                <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mesh_nodes_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span> \
+                <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mesh_nodes_matrix</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span> \
+                <span class="o">+</span> <span class="nb">list</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mesh_nodes_matrix</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">flatten</span><span class="p">())]))</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">boundary_edges_nodes_labels</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="FiniteElementPatch.get_patch_attributes"><a class="viewcode-back" href="../../../_autosummary/hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.html#hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.get_patch_attributes">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_patch_attributes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get finite element material patch attributes.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        patch_attributes : dict</span>
+<span class="sd">            Material patch attributes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Initialize material patch attributes</span>
+        <span class="n">patch_attributes</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Assemble material patch attributes</span>
+        <span class="n">patch_attributes</span><span class="p">[</span><span class="s1">&#39;n_dim&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_dim</span>
+        <span class="n">patch_attributes</span><span class="p">[</span><span class="s1">&#39;patch_dims&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_patch_dims</span>
+        <span class="n">patch_attributes</span><span class="p">[</span><span class="s1">&#39;elem_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_elem_type</span>
+        <span class="n">patch_attributes</span><span class="p">[</span><span class="s1">&#39;n_elems_per_dim&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_elems_per_dim</span>
+        <span class="n">patch_attributes</span><span class="p">[</span><span class="s1">&#39;mesh_nodes_matrix&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mesh_nodes_matrix</span>
+        <span class="n">patch_attributes</span><span class="p">[</span><span class="s1">&#39;mesh_nodes_coords_ref&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mesh_nodes_coords_ref</span>
+        <span class="n">patch_attributes</span><span class="p">[</span><span class="s1">&#39;mesh_boundary_nodes_disps&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">_mesh_boundary_nodes_disps</span>
+        <span class="n">patch_attributes</span><span class="p">[</span><span class="s1">&#39;n_edge_nodes_per_dim&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_edge_nodes_per_dim</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">patch_attributes</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="FiniteElementPatch.plot_deformed_patch"><a class="viewcode-back" href="../../../_autosummary/hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.html#hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.plot_deformed_patch">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">plot_deformed_patch</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">is_hide_axes</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_show_fixed_dof</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                            <span class="n">is_hide_deformed_faces</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_show_plot</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                            <span class="n">is_save_plot</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">save_directory</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                            <span class="n">plot_name</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_overwrite_file</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate plot of finite element material patch.</span>
+<span class="sd">        </span>
+<span class="sd">        Deformed configuration is only plotted if all boundary degrees of</span>
+<span class="sd">        freedom displacements are prescribed.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        is_hide_axes : bool, default=False</span>
+<span class="sd">            If True, then hide all visual components of axes.</span>
+<span class="sd">        is_show_fixed_dof : bool, default=False</span>
+<span class="sd">            If True, then signal fixed boundary degrees of freedom.</span>
+<span class="sd">        is_hide_deformed_faces : bool, default=True</span>
+<span class="sd">            If True, then hide boundary faces nodes deformed configuration</span>
+<span class="sd">            when available. Only effective for three-dimensional patch.</span>
+<span class="sd">        is_show_plot : bool, default=False</span>
+<span class="sd">            Display plot of finite element material patch if True.</span>
+<span class="sd">        is_save_plot : bool, default=False</span>
+<span class="sd">            Save plot of finite element material patch. Plot is only saved if</span>
+<span class="sd">            `save_directory` is provided and exists.</span>
+<span class="sd">        save_directory : str, default=None</span>
+<span class="sd">            Directory where plot of finite element material patch is stored.</span>
+<span class="sd">        plot_name : str, default=None</span>
+<span class="sd">            Filename of finite element material patch plot.</span>
+<span class="sd">        is_overwrite_file : bool, default=False</span>
+<span class="sd">            Overwrite plot of finite element material patch if True, otherwise</span>
+<span class="sd">            generate non-existent file path by extending the original file path</span>
+<span class="sd">            with an integer.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get finite element mesh nodes reference coordinates</span>
+        <span class="n">mesh_nodes_coords_ref</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mesh_nodes_coords_ref</span>
+        <span class="c1"># Get finite element mesh nodes labels</span>
+        <span class="n">mesh_bnd_nodes_labels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_boundary_nodes_labels</span><span class="p">()</span>
+        <span class="n">mesh_bnd_edges_nodes_labels</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_boundary_edges_nodes_labels</span><span class="p">()</span>
+        <span class="n">mesh_bnd_faces_nodes_labels</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+            <span class="nb">set</span><span class="p">(</span><span class="n">mesh_bnd_nodes_labels</span><span class="p">)</span> <span class="o">-</span> <span class="nb">set</span><span class="p">(</span><span class="n">mesh_bnd_edges_nodes_labels</span><span class="p">))</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get finite element mesh boundary nodes labels with prescribed</span>
+        <span class="c1"># displacements</span>
+        <span class="n">presc_bnd_nodes_labels</span> <span class="o">=</span> \
+            <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">label</span><span class="p">)</span> <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mesh_boundary_nodes_disps</span><span class="o">.</span><span class="n">keys</span><span class="p">()]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize multi-directional connectivities node labels</span>
+        <span class="n">limit_nodes_labels</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># Loop over dimensions</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_dim</span><span class="p">):</span>
+            <span class="c1"># Initialize slicer</span>
+            <span class="n">slicer</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_dim</span><span class="o">*</span><span class="p">[</span><span class="nb">slice</span><span class="p">(</span><span class="kc">None</span><span class="p">)]</span>
+            <span class="c1"># Loop over nodes</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mesh_nodes_matrix</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="c1"># Set slices along dimension</span>
+                <span class="n">slicer_1</span> <span class="o">=</span> <span class="n">slicer</span><span class="p">[:]</span>
+                <span class="n">slicer_1</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">j</span>
+                <span class="n">slicer_2</span> <span class="o">=</span> <span class="n">slicer</span><span class="p">[:]</span>
+                <span class="n">slicer_2</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">j</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="c1"># Get connectivities node labels</span>
+                <span class="n">limit_nodes_labels</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="nb">zip</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_mesh_nodes_matrix</span><span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">slicer_1</span><span class="p">)]</span><span class="o">.</span><span class="n">flatten</span><span class="p">(),</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_mesh_nodes_matrix</span><span class="p">[</span><span class="nb">tuple</span><span class="p">(</span><span class="n">slicer_2</span><span class="p">)]</span><span class="o">.</span><span class="n">flatten</span><span class="p">()))</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Remove connectivities involving unexistent nodes</span>
+        <span class="n">limit_nodes_labels</span> <span class="o">=</span> <span class="p">[</span><span class="n">pair_label</span> <span class="k">for</span> <span class="n">pair_label</span> <span class="ow">in</span> <span class="n">limit_nodes_labels</span>
+                              <span class="k">if</span> <span class="mi">0</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">pair_label</span><span class="p">]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set nodes marker size</span>
+        <span class="n">nodes_ms</span> <span class="o">=</span> <span class="mi">4</span>
+        <span class="c1"># Set reference and deformed configuration colors</span>
+        <span class="n">ref_color</span> <span class="o">=</span> <span class="s1">&#39;#a9a9a9&#39;</span>
+        <span class="n">def_color</span> <span class="o">=</span> <span class="s1">&#39;#d62728&#39;</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Default LaTeX Computer Modern Roman</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">rc</span><span class="p">(</span><span class="s1">&#39;text&#39;</span><span class="p">,</span> <span class="n">usetex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">rc</span><span class="p">(</span><span class="s1">&#39;font&#39;</span><span class="p">,</span> <span class="o">**</span><span class="p">{</span><span class="s1">&#39;family&#39;</span><span class="p">:</span> <span class="s1">&#39;serif&#39;</span><span class="p">,</span>
+                          <span class="s1">&#39;serif&#39;</span><span class="p">:</span> <span class="p">[</span><span class="s1">&#39;Computer Modern Roman&#39;</span><span class="p">]})</span> 
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_dim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="c1"># Generate plot</span>
+            <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">()</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Remove non-boundary connectivities nodes labels</span>
+            <span class="n">masked_limit_nodes_labels</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">pair_labels</span> <span class="ow">in</span> <span class="n">limit_nodes_labels</span><span class="p">:</span>
+                <span class="c1"># Store boundary connectivity nodes labels</span>
+                <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">pair_labels</span><span class="p">)</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="n">mesh_bnd_nodes_labels</span><span class="p">):</span>
+                    <span class="n">masked_limit_nodes_labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pair_labels</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Plot finite element mesh (reference configuration)</span>
+            <span class="k">for</span> <span class="n">pair_labels</span> <span class="ow">in</span> <span class="n">masked_limit_nodes_labels</span><span class="p">:</span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="n">mesh_nodes_coords_ref</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">label</span><span class="p">)][</span><span class="mi">0</span><span class="p">]</span>
+                         <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">pair_labels</span><span class="p">],</span>
+                        <span class="p">[</span><span class="n">mesh_nodes_coords_ref</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">label</span><span class="p">)][</span><span class="mi">1</span><span class="p">]</span>
+                         <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">pair_labels</span><span class="p">],</span>
+                        <span class="s1">&#39;o-&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">ref_color</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="n">nodes_ms</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([],</span> <span class="p">[],</span> <span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">ref_color</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Reference&#39;</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Set deformed boundary configuration plot flag</span>
+            <span class="n">is_plot_deformed_boundary</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">presc_bnd_nodes_labels</span><span class="p">)</span> <span class="o">==</span> <span class="nb">set</span><span class="p">(</span><span class="n">mesh_bnd_nodes_labels</span><span class="p">):</span>
+                <span class="c1"># Plot deformed boundary configuration only if all boundary</span>
+                <span class="c1"># degrees of freedom displacements are known                </span>
+                <span class="n">is_plot_deformed_boundary</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">([</span>
+                    <span class="kc">None</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mesh_boundary_nodes_disps</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">label</span><span class="p">)]</span>
+                    <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">mesh_bnd_nodes_labels</span><span class="p">])</span>                
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Plot finite element mesh boundary deformed configuration</span>
+            <span class="k">if</span> <span class="n">is_plot_deformed_boundary</span><span class="p">:</span>
+                <span class="c1"># Loop over finite element mesh boundary nodes</span>
+                <span class="n">mesh_bnd_nodes_coords_def</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">mesh_bnd_nodes_labels</span><span class="p">:</span>
+                    <span class="c1"># Compute finite element mesh boundary nodes coordinates</span>
+                    <span class="c1"># (deformed configuration)</span>
+                    <span class="n">mesh_bnd_nodes_coords_def</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">label</span><span class="p">)]</span> <span class="o">=</span> \
+                        <span class="n">mesh_nodes_coords_ref</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">label</span><span class="p">)]</span> \
+                        <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mesh_boundary_nodes_disps</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">label</span><span class="p">)]</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Remove non-edge connectivities nodes labels</span>
+                <span class="n">masked_limit_nodes_labels</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">pair_labels</span> <span class="ow">in</span> <span class="n">limit_nodes_labels</span><span class="p">:</span>
+                    <span class="c1"># Store edge-to-edge connectivity nodes labels</span>
+                    <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">pair_labels</span><span class="p">)</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="n">mesh_bnd_edges_nodes_labels</span><span class="p">):</span>
+                        <span class="n">masked_limit_nodes_labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pair_labels</span><span class="p">)</span>    
+                <span class="c1"># Plot finite element mesh (deformed configuration)</span>
+                <span class="k">for</span> <span class="n">pair_labels</span> <span class="ow">in</span> <span class="n">masked_limit_nodes_labels</span><span class="p">:</span>
+                    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="n">mesh_bnd_nodes_coords_def</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">label</span><span class="p">)][</span><span class="mi">0</span><span class="p">]</span>
+                            <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">pair_labels</span><span class="p">],</span>
+                            <span class="p">[</span><span class="n">mesh_bnd_nodes_coords_def</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">label</span><span class="p">)][</span><span class="mi">1</span><span class="p">]</span>
+                            <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">pair_labels</span><span class="p">],</span>
+                            <span class="s1">&#39;o-&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">def_color</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="n">nodes_ms</span><span class="p">)</span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([],</span> <span class="p">[],</span> <span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">def_color</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Deformed&#39;</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Set axes labels  </span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Dim 1&#39;</span><span class="p">)</span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Dim 2&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Generate plot</span>
+            <span class="n">fig</span><span class="p">,</span> <span class="n">ax</span> <span class="o">=</span> <span class="n">plt</span><span class="o">.</span><span class="n">subplots</span><span class="p">(</span><span class="n">subplot_kw</span><span class="o">=</span><span class="nb">dict</span><span class="p">(</span><span class="n">projection</span><span class="o">=</span><span class="s1">&#39;3d&#39;</span><span class="p">))</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Remove non-boundary connectivities nodes labels</span>
+            <span class="n">masked_limit_nodes_labels</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="k">for</span> <span class="n">pair_labels</span> <span class="ow">in</span> <span class="n">limit_nodes_labels</span><span class="p">:</span>
+                <span class="c1"># Store boundary connectivity nodes labels</span>
+                <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">pair_labels</span><span class="p">)</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="n">mesh_bnd_nodes_labels</span><span class="p">):</span>
+                    <span class="n">masked_limit_nodes_labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pair_labels</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Plot finite element mesh (reference configuration)</span>
+            <span class="k">for</span> <span class="n">pair_labels</span> <span class="ow">in</span> <span class="n">masked_limit_nodes_labels</span><span class="p">:</span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="n">mesh_nodes_coords_ref</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">label</span><span class="p">)][</span><span class="mi">0</span><span class="p">]</span>
+                         <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">pair_labels</span><span class="p">],</span>
+                        <span class="p">[</span><span class="n">mesh_nodes_coords_ref</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">label</span><span class="p">)][</span><span class="mi">1</span><span class="p">]</span>
+                         <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">pair_labels</span><span class="p">],</span>
+                        <span class="p">[</span><span class="n">mesh_nodes_coords_ref</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">label</span><span class="p">)][</span><span class="mi">2</span><span class="p">]</span>
+                         <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">pair_labels</span><span class="p">],</span>
+                        <span class="s1">&#39;o-&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">ref_color</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="n">nodes_ms</span><span class="p">)</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([],</span> <span class="p">[],</span> <span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">ref_color</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Reference&#39;</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Set boundary deformed configuration plot flags</span>
+            <span class="n">is_plot_deformed_boundary_edges</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="n">is_plot_deformed_boundary_faces</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">mesh_bnd_edges_nodes_labels</span><span class="p">)</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span>
+                    <span class="n">presc_bnd_nodes_labels</span><span class="p">):</span>
+                <span class="c1"># Plot boundary edges deformed configuration only if all</span>
+                <span class="c1"># degrees of freedom displacements are known                </span>
+                <span class="n">is_plot_deformed_boundary_edges</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">([</span>
+                    <span class="kc">None</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mesh_boundary_nodes_disps</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">label</span><span class="p">)]</span>
+                    <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">mesh_bnd_edges_nodes_labels</span><span class="p">])</span>
+            <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">mesh_bnd_faces_nodes_labels</span><span class="p">)</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span>
+                    <span class="n">presc_bnd_nodes_labels</span><span class="p">):</span>
+                <span class="c1"># Plot boundary faces deformed configuration only if all</span>
+                <span class="c1"># degrees of freedom displacements are known                </span>
+                <span class="n">is_plot_deformed_boundary_faces</span> <span class="o">=</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">([</span>
+                    <span class="kc">None</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mesh_boundary_nodes_disps</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">label</span><span class="p">)]</span>
+                    <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">mesh_bnd_faces_nodes_labels</span><span class="p">])</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Plot finite element mesh boundary deformed configuration</span>
+            <span class="k">if</span> <span class="n">is_plot_deformed_boundary_edges</span><span class="p">:</span>
+                <span class="c1"># Loop over finite element mesh boundary nodes</span>
+                <span class="n">mesh_bnd_nodes_coords_def</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">presc_bnd_nodes_labels</span><span class="p">:</span>
+                    <span class="c1"># Compute finite element mesh boundary nodes coordinates</span>
+                    <span class="c1"># (deformed configuration)</span>
+                    <span class="n">mesh_bnd_nodes_coords_def</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">label</span><span class="p">)]</span> <span class="o">=</span> \
+                        <span class="n">mesh_nodes_coords_ref</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">label</span><span class="p">)]</span> \
+                        <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mesh_boundary_nodes_disps</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">label</span><span class="p">)]</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Remove non-boundary connectivities nodes labels</span>
+                <span class="n">masked_limit_nodes_labels</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="k">for</span> <span class="n">pair_labels</span> <span class="ow">in</span> <span class="n">limit_nodes_labels</span><span class="p">:</span>
+                    <span class="c1"># Store edge-to-edge connectivity nodes labels</span>
+                    <span class="k">if</span> <span class="n">is_plot_deformed_boundary_edges</span><span class="p">:</span>
+                        <span class="c1"># Store edge connectivity nodes labels</span>
+                        <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">pair_labels</span><span class="p">)</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span>
+                                <span class="n">mesh_bnd_edges_nodes_labels</span><span class="p">):</span>
+                            <span class="n">masked_limit_nodes_labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pair_labels</span><span class="p">)</span>
+                    <span class="c1"># Store face-to-face and face-to-edge connectivity nodes</span>
+                    <span class="c1"># labels</span>
+                    <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">is_hide_deformed_faces</span>
+                            <span class="ow">and</span> <span class="n">is_plot_deformed_boundary_faces</span><span class="p">):</span>
+                        <span class="c1"># Store edge connectivity nodes labels</span>
+                        <span class="k">if</span> <span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">pair_labels</span><span class="p">)</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span><span class="n">mesh_bnd_nodes_labels</span><span class="p">)</span>
+                                <span class="ow">and</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="n">pair_labels</span><span class="p">)</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span>
+                                <span class="n">mesh_bnd_edges_nodes_labels</span><span class="p">)):</span>
+                            <span class="n">masked_limit_nodes_labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">pair_labels</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Plot finite element mesh (deformed configuration)</span>
+                <span class="k">for</span> <span class="n">pair_labels</span> <span class="ow">in</span> <span class="n">masked_limit_nodes_labels</span><span class="p">:</span>
+                    <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([</span><span class="n">mesh_bnd_nodes_coords_def</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">label</span><span class="p">)][</span><span class="mi">0</span><span class="p">]</span>
+                            <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">pair_labels</span><span class="p">],</span>
+                            <span class="p">[</span><span class="n">mesh_bnd_nodes_coords_def</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">label</span><span class="p">)][</span><span class="mi">1</span><span class="p">]</span>
+                            <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">pair_labels</span><span class="p">],</span>
+                            <span class="p">[</span><span class="n">mesh_bnd_nodes_coords_def</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">label</span><span class="p">)][</span><span class="mi">2</span><span class="p">]</span>
+                            <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">pair_labels</span><span class="p">],</span>
+                            <span class="s1">&#39;o-&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">def_color</span><span class="p">,</span> <span class="n">ms</span><span class="o">=</span><span class="n">nodes_ms</span><span class="p">)</span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">([],</span> <span class="p">[],</span> <span class="s1">&#39;-&#39;</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">def_color</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Deformed&#39;</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Set axes labels  </span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">set_xlabel</span><span class="p">(</span><span class="s1">&#39;Dim 1&#39;</span><span class="p">)</span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">set_ylabel</span><span class="p">(</span><span class="s1">&#39;Dim 2&#39;</span><span class="p">)</span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">set_zlabel</span><span class="p">(</span><span class="s1">&#39;Dim 3&#39;</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Set grid off</span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">grid</span><span class="p">(</span><span class="kc">False</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Adjust view angle</span>
+                <span class="n">ax</span><span class="o">.</span><span class="n">view_init</span><span class="p">(</span><span class="n">elev</span><span class="o">=</span><span class="mi">33</span><span class="p">,</span> <span class="n">azim</span><span class="o">=</span><span class="mi">36</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set fixed degrees of freedom markers</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_dim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">markers_dim</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;&gt;&#39;</span><span class="p">,</span> <span class="s1">&#39;^&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">markers_dim</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;&gt;&#39;</span><span class="p">,</span> <span class="s1">&#39;&lt;&#39;</span><span class="p">,</span> <span class="s1">&#39;^&#39;</span><span class="p">)</span>
+        <span class="c1"># Plot fixed boundary degrees of freedom</span>
+        <span class="k">if</span> <span class="n">is_show_fixed_dof</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">label</span> <span class="ow">in</span> <span class="n">presc_bnd_nodes_labels</span><span class="p">:</span>
+                <span class="c1"># Get boundary node coordinates (reference configuration)</span>
+                <span class="n">coord</span> <span class="o">=</span> <span class="n">mesh_nodes_coords_ref</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">label</span><span class="p">)]</span>
+                <span class="c1"># Get displacement</span>
+                <span class="n">disp</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mesh_boundary_nodes_disps</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">label</span><span class="p">)]</span>
+                <span class="c1"># Loop over dimensions</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_dim</span><span class="p">):</span>
+                    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">disp</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="nb">float</span><span class="p">)</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">disp</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="mf">0.0</span><span class="p">):</span>
+                        <span class="n">ax</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="o">*</span><span class="nb">list</span><span class="p">(</span><span class="n">coord</span><span class="p">),</span>
+                                <span class="n">marker</span><span class="o">=</span><span class="n">markers_dim</span><span class="p">[</span><span class="n">i</span><span class="p">],</span>
+                                <span class="n">markersize</span><span class="o">=</span><span class="n">nodes_ms</span> <span class="o">+</span> <span class="mi">4</span><span class="p">,</span>
+                                <span class="n">markerfacecolor</span><span class="o">=</span><span class="s1">&#39;None&#39;</span><span class="p">,</span>
+                                <span class="n">markeredgecolor</span><span class="o">=</span><span class="s1">&#39;#1f77b4&#39;</span><span class="p">,</span>
+                                <span class="n">markeredgewidth</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                                <span class="n">zorder</span><span class="o">=</span><span class="mi">15</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Hide axes components</span>
+        <span class="k">if</span> <span class="n">is_hide_axes</span><span class="p">:</span>
+            <span class="n">ax</span><span class="o">.</span><span class="n">set_axis_off</span><span class="p">()</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set plot legend</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s1">&#39;center&#39;</span><span class="p">,</span> <span class="n">ncol</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">numpoints</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">frameon</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="n">fancybox</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">facecolor</span><span class="o">=</span><span class="s1">&#39;inherit&#39;</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;inherit&#39;</span><span class="p">,</span>
+                    <span class="n">fontsize</span><span class="o">=</span><span class="mi">10</span><span class="p">,</span> <span class="n">framealpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+                    <span class="n">bbox_to_anchor</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">1.03</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span>
+                    <span class="n">borderaxespad</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">markerscale</span><span class="o">=</span><span class="mf">0.0</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set axes properties</span>
+        <span class="n">ax</span><span class="o">.</span><span class="n">set_aspect</span><span class="p">(</span><span class="s1">&#39;equal&#39;</span><span class="p">,</span> <span class="n">adjustable</span><span class="o">=</span><span class="s1">&#39;box&#39;</span><span class="p">)</span> 
+        <span class="c1"># Set plot properties</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">set_figheight</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="n">forward</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="n">fig</span><span class="o">.</span><span class="n">set_figwidth</span><span class="p">(</span><span class="mi">8</span><span class="p">,</span> <span class="n">forward</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Display figure</span>
+        <span class="k">if</span> <span class="n">is_show_plot</span><span class="p">:</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Save figure (pdf format)</span>
+        <span class="k">if</span> <span class="n">is_save_plot</span> <span class="ow">and</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">save_directory</span><span class="p">)):</span>
+            <span class="c1"># Set figure path</span>
+            <span class="k">if</span> <span class="n">plot_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">plot_name</span> <span class="o">=</span> <span class="s1">&#39;finite_element_material_patch&#39;</span>
+            <span class="n">fig_path</span> <span class="o">=</span> \
+                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">save_directory</span><span class="p">),</span> <span class="n">plot_name</span><span class="p">)</span> \
+                    <span class="o">+</span> <span class="s1">&#39;.pdf&#39;</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">fig_path</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_overwrite_file</span><span class="p">:</span>
+                <span class="n">fig_path</span> <span class="o">=</span> <span class="n">new_file_path_with_int</span><span class="p">(</span><span class="n">fig_path</span><span class="p">)</span>
+            <span class="c1"># Set figure size (inches)</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">set_figheight</span><span class="p">(</span><span class="mf">3.6</span><span class="p">,</span> <span class="n">forward</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">set_figwidth</span><span class="p">(</span><span class="mf">3.6</span><span class="p">,</span> <span class="n">forward</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="c1"># Set padding</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_dim</span> <span class="o">==</span> <span class="mi">3</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_hide_axes</span><span class="p">:</span>
+                <span class="n">pad_inches</span> <span class="o">=</span> <span class="mf">0.25</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">pad_inches</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="c1"># Save figure file</span>
+            <span class="n">fig</span><span class="o">.</span><span class="n">savefig</span><span class="p">(</span><span class="n">fig_path</span><span class="p">,</span> <span class="n">transparent</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">dpi</span><span class="o">=</span><span class="mi">300</span><span class="p">,</span>
+                        <span class="n">bbox_inches</span><span class="o">=</span><span class="s1">&#39;tight&#39;</span><span class="p">,</span> <span class="n">pad_inches</span><span class="o">=</span><span class="n">pad_inches</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Close plot</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="s1">&#39;all&#39;</span><span class="p">)</span></div></div>
+<span class="c1"># =============================================================================</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">rotation_angle_2d</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute the rotation angle between two vectors in 2D.</span>
+<span class="sd">    </span>
+<span class="sd">    The rotation angle is computed from x1 to x2 array.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x1 : np.ndarray(1d)</span>
+<span class="sd">        1D array.</span>
+<span class="sd">    x2 : np.ndarray(1d)</span>
+<span class="sd">        1D array.</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    angle_deg : float</span>
+<span class="sd">        Angle (degrees) from x1 to x2, contained between -180 and +180 degrees.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check 1D arrays</span>
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">):</span>
+        <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">))</span> <span class="ow">or</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Input arrays must be 1D numpy.ndarray.&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Compute angle (radians)</span>
+    <span class="n">angle</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">([</span><span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">]),</span><span class="n">np</span><span class="o">.</span><span class="n">dot</span><span class="p">(</span><span class="n">x1</span><span class="p">,</span> <span class="n">x2</span><span class="p">))</span>
+    <span class="c1"># Compute angle (degrees)</span>
+    <span class="n">angle_deg</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">degrees</span><span class="p">(</span><span class="n">angle</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">angle_deg</span>
+<span class="c1"># =============================================================================</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">mean_rotation_angle_2d</span><span class="p">(</span><span class="n">x1_arrays</span><span class="p">,</span> <span class="n">x2_arrays</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute mean rotation angle between pairs of vectors in 2D.</span>
+<span class="sd">    </span>
+<span class="sd">    The i-th rotation angle is computed from x1 to x2 arrays, stored in</span>
+<span class="sd">    x1_arrays[i, :] and x2_arrays[i, :], respectively.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x1_arrays : numpy.ndarray(2d)</span>
+<span class="sd">        1D arrays stored as numpy.ndarray(n_arrays, 2).</span>
+<span class="sd">    x2_arrays : numpy.ndarray(2d)</span>
+<span class="sd">        1D arrays stored as numpy.ndarray(n_arrays, 2).</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    mean_angle_deg : float</span>
+<span class="sd">        Mean rotation angle (degrees) from x1 to x2, contained between -180 and</span>
+<span class="sd">        +180 degrees.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check 2D arrays</span>
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">(</span><span class="n">x1_arrays</span><span class="p">,</span> <span class="n">x2_arrays</span><span class="p">):</span>
+        <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">))</span> <span class="ow">or</span> <span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Input arrays must be 2D numpy.ndarray.&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">x1_arrays</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">x2_arrays</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The number of arrays in x1_arrays &#39;</span>
+                           <span class="sa">f</span><span class="s1">&#39;(</span><span class="si">{</span><span class="n">x1_arrays</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1">) does not match the &#39;</span>
+                           <span class="sa">f</span><span class="s1">&#39;number of arrays in x2_arrays &#39;</span>
+                           <span class="sa">f</span><span class="s1">&#39;(</span><span class="si">{</span><span class="n">x2_arrays</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1">).&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">n_arrays</span> <span class="o">=</span> <span class="n">x1_arrays</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Compute mean rotation angle (degrees)</span>
+    <span class="n">mean_angle_deg</span> <span class="o">=</span> \
+        <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">([</span><span class="n">rotation_angle_2d</span><span class="p">(</span><span class="n">x1_arrays</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:],</span> <span class="n">x2_arrays</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:])</span>
+                 <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_arrays</span><span class="p">)])</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">mean_angle_deg</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

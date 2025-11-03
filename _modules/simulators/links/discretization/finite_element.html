@@ -1,0 +1,444 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>simulators.links.discretization.finite_element &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../_autosummary/hookeai.html">Code</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">simulators.links.discretization.finite_element</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for simulators.links.discretization.finite_element</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Finite element.</span>
+
+<span class="sd">Classes</span>
+<span class="sd">-------</span>
+<span class="sd">class FiniteElement</span>
+<span class="sd">    Quadrilateral/Hexahedral finite element.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#                                                                       Modules</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Standard</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="c1"># Third-party</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="c1">#</span>
+<span class="c1">#                                                          Authorship &amp; Credits</span>
+<span class="c1"># =============================================================================</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Bernardo Ferreira (bernardo_ferreira@brown.edu)&#39;</span>
+<span class="n">__credits__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Bernardo Ferreira&#39;</span><span class="p">,</span> <span class="p">]</span>
+<span class="n">__status__</span> <span class="o">=</span> <span class="s1">&#39;Stable&#39;</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="FiniteElement"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.links.links.FiniteElement.html#hookeai.data_generation.spdg.patch.FiniteElement">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">FiniteElement</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Quadrilateral/Hexahedral finite element.</span>
+<span class="sd">    </span>
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    _elem_type : str</span>
+<span class="sd">        Finite element type.</span>
+<span class="sd">    _n_dim : int</span>
+<span class="sd">        Number of spatial dimensions.</span>
+<span class="sd">    _n_nodes : int</span>
+<span class="sd">        Number of nodes.</span>
+<span class="sd">    _n_edges : int</span>
+<span class="sd">        Number of edges.</span>
+<span class="sd">    _n_edge_nodes : int</span>
+<span class="sd">        Number of nodes per edge.</span>
+<span class="sd">    _nodes_matrix : numpy.ndarray(2d or 3d)</span>
+<span class="sd">        Element nodes matrix (numpy.ndarray[int](n_dim*(n_edge_nodes,))) where</span>
+<span class="sd">        each element corresponds to a given node position and whose value is</span>
+<span class="sd">        set either as the node label (according to adopted numbering</span>
+<span class="sd">        convention) or zero (if the node does not exist). Nodes are labeled</span>
+<span class="sd">        from 1 to n_nodes.</span>
+
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    _available_elem_type()</span>
+<span class="sd">        Get available finite element types.</span>
+<span class="sd">    _is_available_elem_type(elem_type)</span>
+<span class="sd">        Check if finite element type is available.</span>
+<span class="sd">    _set_elem_type_attributes(self)</span>
+<span class="sd">        Set finite element type attributes.</span>
+<span class="sd">    get_n_dim(self)</span>
+<span class="sd">        Get number of spatial dimensions.   </span>
+<span class="sd">    get_n_edge_nodes(self)</span>
+<span class="sd">        Get number of nodes per edge.</span>
+<span class="sd">    get_nodes_matrix(self)</span>
+<span class="sd">        Get element nodes matrix.  </span>
+<span class="sd">    get_node_label_index(self, label)</span>
+<span class="sd">        Get node label index on element nodal matrix.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="FiniteElement.__init__"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.links.links.FiniteElement.html#hookeai.data_generation.spdg.patch.FiniteElement.__init__">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">elem_type</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Constructor.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        elem_type : str</span>
+<span class="sd">            Finite element type.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Set finite element type</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_available_elem_type</span><span class="p">(</span><span class="n">elem_type</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Finite element type (</span><span class="si">{</span><span class="n">elem_type</span><span class="si">}</span><span class="s1">) is not &#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;available.&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_elem_type</span> <span class="o">=</span> <span class="n">elem_type</span>
+        <span class="c1"># Set finite element type attributes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_set_elem_type_attributes</span><span class="p">()</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="FiniteElement._available_elem_type"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.links.links.FiniteElement.html#hookeai.data_generation.spdg.patch.FiniteElement._available_elem_type">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_available_elem_type</span><span class="p">():</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get available finite element types.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        available : tuple[str]</span>
+<span class="sd">            Available finite element types.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Set available finite element types</span>
+        <span class="n">available</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;SQUAD4&#39;</span><span class="p">,</span> <span class="s1">&#39;SQUAD8&#39;</span><span class="p">,</span> <span class="s1">&#39;SQUAD12&#39;</span><span class="p">,</span> <span class="s1">&#39;LQUAD4&#39;</span><span class="p">,</span> <span class="s1">&#39;LQUAD9&#39;</span><span class="p">,</span>
+                     <span class="s1">&#39;LQUAD16&#39;</span><span class="p">,</span> <span class="s1">&#39;SHEXA8&#39;</span><span class="p">,</span> <span class="s1">&#39;SHEXA20&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">available</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="FiniteElement._is_available_elem_type"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.links.links.FiniteElement.html#hookeai.data_generation.spdg.patch.FiniteElement._is_available_elem_type">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_is_available_elem_type</span><span class="p">(</span><span class="n">elem_type</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if finite element type is available.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        elem_type : str</span>
+<span class="sd">            Finite element type.</span>
+<span class="sd">            </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        is_available : bool</span>
+<span class="sd">            True if the element type is available, False otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check if finite element type is available</span>
+        <span class="n">is_available</span> <span class="o">=</span> <span class="n">elem_type</span> <span class="ow">in</span> <span class="n">FiniteElement</span><span class="o">.</span><span class="n">_available_elem_type</span><span class="p">()</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">is_available</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="FiniteElement._set_elem_type_attributes"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.links.links.FiniteElement.html#hookeai.data_generation.spdg.patch.FiniteElement._set_elem_type_attributes">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">_set_elem_type_attributes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set finite element type attributes.&quot;&quot;&quot;</span>
+        <span class="c1"># Set finite element type attributes for each element type</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_elem_type</span> <span class="o">==</span> <span class="s1">&#39;SQUAD4&#39;</span><span class="p">:</span>
+            <span class="n">n_dim</span> <span class="o">=</span> <span class="mi">2</span>
+            <span class="n">n_nodes</span> <span class="o">=</span> <span class="mi">4</span>
+            <span class="n">n_edges</span> <span class="o">=</span> <span class="mi">4</span>
+            <span class="n">n_edge_nodes</span> <span class="o">=</span> <span class="mi">2</span>
+            <span class="n">nodes_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_dim</span><span class="o">*</span><span class="p">(</span><span class="n">n_edge_nodes</span><span class="p">,),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">3</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">4</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_elem_type</span> <span class="o">==</span> <span class="s1">&#39;SQUAD8&#39;</span><span class="p">:</span>
+            <span class="n">n_dim</span> <span class="o">=</span> <span class="mi">2</span>
+            <span class="n">n_nodes</span> <span class="o">=</span> <span class="mi">8</span>
+            <span class="n">n_edges</span> <span class="o">=</span> <span class="mi">4</span>
+            <span class="n">n_edge_nodes</span> <span class="o">=</span> <span class="mi">3</span>
+            <span class="n">nodes_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_dim</span><span class="o">*</span><span class="p">(</span><span class="n">n_edge_nodes</span><span class="p">,),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">3</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">4</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">5</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">6</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">7</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">8</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_elem_type</span> <span class="o">==</span> <span class="s1">&#39;SQUAD12&#39;</span><span class="p">:</span>
+            <span class="n">n_dim</span> <span class="o">=</span> <span class="mi">2</span>
+            <span class="n">n_nodes</span> <span class="o">=</span> <span class="mi">12</span>
+            <span class="n">n_edges</span> <span class="o">=</span> <span class="mi">4</span>
+            <span class="n">n_edge_nodes</span> <span class="o">=</span> <span class="mi">4</span>
+            <span class="n">nodes_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_dim</span><span class="o">*</span><span class="p">(</span><span class="n">n_edge_nodes</span><span class="p">,),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">3</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">4</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">5</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">6</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="mi">7</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="mi">8</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="mi">9</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="mi">10</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">11</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">12</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_elem_type</span> <span class="o">==</span> <span class="s1">&#39;LQUAD4&#39;</span><span class="p">:</span>
+            <span class="n">n_dim</span> <span class="o">=</span> <span class="mi">2</span>
+            <span class="n">n_nodes</span> <span class="o">=</span> <span class="mi">4</span>
+            <span class="n">n_edges</span> <span class="o">=</span> <span class="mi">4</span>
+            <span class="n">n_edge_nodes</span> <span class="o">=</span> <span class="mi">2</span>
+            <span class="n">nodes_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_dim</span><span class="o">*</span><span class="p">(</span><span class="n">n_edge_nodes</span><span class="p">,),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">3</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">4</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_elem_type</span> <span class="o">==</span> <span class="s1">&#39;LQUAD9&#39;</span><span class="p">:</span>
+            <span class="n">n_dim</span> <span class="o">=</span> <span class="mi">2</span>
+            <span class="n">n_nodes</span> <span class="o">=</span> <span class="mi">9</span>
+            <span class="n">n_edges</span> <span class="o">=</span> <span class="mi">4</span>
+            <span class="n">n_edge_nodes</span> <span class="o">=</span> <span class="mi">3</span>
+            <span class="n">nodes_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_dim</span><span class="o">*</span><span class="p">(</span><span class="n">n_edge_nodes</span><span class="p">,),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">3</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">4</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">5</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">6</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">7</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">8</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">9</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_elem_type</span> <span class="o">==</span> <span class="s1">&#39;LQUAD16&#39;</span><span class="p">:</span>
+            <span class="n">n_dim</span> <span class="o">=</span> <span class="mi">2</span>
+            <span class="n">n_nodes</span> <span class="o">=</span> <span class="mi">16</span>
+            <span class="n">n_edges</span> <span class="o">=</span> <span class="mi">4</span>
+            <span class="n">n_edge_nodes</span> <span class="o">=</span> <span class="mi">4</span>
+            <span class="n">nodes_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_dim</span><span class="o">*</span><span class="p">(</span><span class="n">n_edge_nodes</span><span class="p">,),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">3</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">4</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">5</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">6</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">7</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">8</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">9</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">10</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">11</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">12</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="mi">13</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="mi">14</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="mi">15</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">3</span><span class="p">,</span> <span class="mi">3</span><span class="p">]</span> <span class="o">=</span> <span class="mi">16</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_elem_type</span> <span class="o">==</span> <span class="s1">&#39;SHEXA8&#39;</span><span class="p">:</span>
+            <span class="n">n_dim</span> <span class="o">=</span> <span class="mi">3</span>
+            <span class="n">n_nodes</span> <span class="o">=</span> <span class="mi">8</span>
+            <span class="n">n_edges</span> <span class="o">=</span> <span class="mi">12</span>
+            <span class="n">n_edge_nodes</span> <span class="o">=</span> <span class="mi">2</span>
+            <span class="n">nodes_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_dim</span><span class="o">*</span><span class="p">(</span><span class="n">n_edge_nodes</span><span class="p">,),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">3</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">4</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">5</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">6</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">7</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">8</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_elem_type</span> <span class="o">==</span> <span class="s1">&#39;SHEXA20&#39;</span><span class="p">:</span>
+            <span class="n">n_dim</span> <span class="o">=</span> <span class="mi">3</span>
+            <span class="n">n_nodes</span> <span class="o">=</span> <span class="mi">20</span>
+            <span class="n">n_edges</span> <span class="o">=</span> <span class="mi">12</span>
+            <span class="n">n_edge_nodes</span> <span class="o">=</span> <span class="mi">3</span>
+            <span class="n">nodes_matrix</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">n_dim</span><span class="o">*</span><span class="p">(</span><span class="n">n_edge_nodes</span><span class="p">,),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">)</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">2</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">3</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">4</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">5</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">6</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">7</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">8</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">9</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">10</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">11</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mi">12</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">13</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">14</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">15</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="mi">16</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">17</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">2</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">18</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">19</span>
+            <span class="n">nodes_matrix</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="mi">20</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Unknown finite element type.&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set finite element type attributes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_n_dim</span> <span class="o">=</span> <span class="n">n_dim</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_n_nodes</span> <span class="o">=</span> <span class="n">n_nodes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_n_edges</span> <span class="o">=</span> <span class="n">n_edges</span> 
+        <span class="bp">self</span><span class="o">.</span><span class="n">_n_edge_nodes</span> <span class="o">=</span> <span class="n">n_edge_nodes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nodes_matrix</span> <span class="o">=</span> <span class="n">nodes_matrix</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="FiniteElement.get_n_dim"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.links.links.FiniteElement.html#hookeai.data_generation.spdg.patch.FiniteElement.get_n_dim">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_n_dim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get number of spatial dimensions.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        n_dim : int</span>
+<span class="sd">            Number of spatial dimensions.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_dim</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="FiniteElement.get_n_nodes"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.links.links.FiniteElement.html#hookeai.data_generation.spdg.patch.FiniteElement.get_n_nodes">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_n_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get number of nodes.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        n_nodes : int</span>
+<span class="sd">            Number of nodes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_nodes</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="FiniteElement.get_n_edge_nodes"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.links.links.FiniteElement.html#hookeai.data_generation.spdg.patch.FiniteElement.get_n_edge_nodes">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_n_edge_nodes</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get number of nodes per edge.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        n_edge_nodes : int</span>
+<span class="sd">            Number of nodes per edge.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_edge_nodes</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="FiniteElement.get_nodes_matrix"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.links.links.FiniteElement.html#hookeai.data_generation.spdg.patch.FiniteElement.get_nodes_matrix">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_nodes_matrix</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get element nodes matrix.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        nodes_matrix : numpy.ndarray(2d or 3d)</span>
+<span class="sd">            Element nodes matrix (numpy.ndarray[int](n_dim*(n_edge_nodes,)))</span>
+<span class="sd">            where each element corresponds to a given node position and whose</span>
+<span class="sd">            value is set either as the node label (according to adopted</span>
+<span class="sd">            numbering convention) or zero (if the node does not exist). Nodes</span>
+<span class="sd">            are labeled from 1 to n_nodes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nodes_matrix</span><span class="p">)</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="FiniteElement.get_node_label_index"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.links.links.FiniteElement.html#hookeai.data_generation.spdg.patch.FiniteElement.get_node_label_index">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_node_label_index</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">label</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get node label index on element nodal matrix.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        label : int</span>
+<span class="sd">            Node label.</span>
+<span class="sd">            </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        index : tuple[int]</span>
+<span class="sd">            Index of node label on element nodal matrix.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Search for node label</span>
+        <span class="n">index_arrays</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nodes_matrix</span><span class="o">==</span><span class="n">label</span><span class="p">)</span>
+        <span class="c1"># Check if node label was found</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">index_arrays</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">!=</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_dim</span><span class="p">)]):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Node label not found.&#39;</span><span class="p">)</span>
+        <span class="c1"># Get nodel label index</span>
+        <span class="n">index</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span><span class="nb">int</span><span class="p">(</span><span class="n">index_arrays</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_dim</span><span class="p">)])</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">index</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,1339 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>hookeai.simulators.links.links &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../_autosummary/hookeai.html">Code</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">hookeai.simulators.links.links</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for hookeai.simulators.links.links</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Finite element method simulator: Links.</span>
+
+<span class="sd">Links (Large Strain Implicit Nonlinear Analysis of Solids Linking Scales) is</span>
+<span class="sd">a finite element code developed by the CM2S research group at the Faculty of</span>
+<span class="sd">Engineering, University of Porto.</span>
+
+<span class="sd">Classes</span>
+<span class="sd">-------</span>
+<span class="sd">LinksSimulator</span>
+<span class="sd">    Finite element method simulator: Links.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#                                                                       Modules</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Standard</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">subprocess</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">itertools</span>
+<span class="c1"># Third-party</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="c1"># Local</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ioput.iostandard</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_directory</span><span class="p">,</span> <span class="n">new_file_path_with_int</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ioput.plots</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_xy_data</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">simulators.links.discretization.finite_element</span><span class="w"> </span><span class="kn">import</span> <span class="n">FiniteElement</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">simulators.links.models.links_elastic</span><span class="w"> </span><span class="kn">import</span> <span class="n">LinksElastic</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">simulators.links.models.links_von_mises</span><span class="w"> </span><span class="kn">import</span> <span class="n">LinksVonMises</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">simulators.links.models.links_drucker_prager</span><span class="w"> </span><span class="kn">import</span> <span class="n">LinksDruckerPrager</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">simulators.links.models.links_lou</span><span class="w"> </span><span class="kn">import</span> <span class="n">LinksLou</span>
+<span class="c1">#</span>
+<span class="c1">#                                                          Authorship &amp; Credits</span>
+<span class="c1"># =============================================================================</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Bernardo Ferreira (bernardo_ferreira@brown.edu)&#39;</span>
+<span class="n">__credits__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Bernardo Ferreira&#39;</span><span class="p">,</span> <span class="p">]</span>
+<span class="n">__status__</span> <span class="o">=</span> <span class="s1">&#39;Alpha&#39;</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="LinksSimulator"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.links.links.LinksSimulator.html#hookeai.simulators.links.links.LinksSimulator">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">LinksSimulator</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Finite element method simulator: Links.</span>
+<span class="sd">    </span>
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    _links_bin_path : str</span>
+<span class="sd">        Links binary absolute path.</span>
+<span class="sd">    _strain_formulation: {&#39;infinitesimal&#39;, &#39;finite&#39;}</span>
+<span class="sd">        Links strain formulation.</span>
+<span class="sd">    _analysis_type : {&#39;plane_stress&#39;, &#39;plane_strain&#39;, &#39;axisymmetric&#39;, \</span>
+<span class="sd">                        &#39;tridimensional&#39;}</span>
+<span class="sd">        Links analysis type.</span>
+<span class="sd">            </span>
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    _get_n_dim(self)</span>
+<span class="sd">        Get number of spatial dimensions from analysis type.</span>
+<span class="sd">    generate_input_data_file(self, filename, directory, patch, \</span>
+<span class="sd">                             patch_material_data, links_input_params=None)</span>
+<span class="sd">        Generate Links input data file.</span>
+<span class="sd">    run_links_simulation(self, links_file_path)</span>
+<span class="sd">        Run Links simulation.</span>
+<span class="sd">    read_links_simulation_results(self, links_output_directory, \</span>
+<span class="sd">                                  results_keywords)</span>
+<span class="sd">        Read Links simulation results.</span>
+<span class="sd">    _write_links_input_data_file(self, links_file_path, input_params, \</span>
+<span class="sd">                                 node_coords, elements, elements_mat_phase, \</span>
+<span class="sd">                                 element_type, n_gauss_points, \</span>
+<span class="sd">                                 mesh_elem_material, mat_phases_descriptors, \</span>
+<span class="sd">                                 node_displacements)</span>
+<span class="sd">        Write Links input data file.</span>
+<span class="sd">    _get_links_default_input_params(self)</span>
+<span class="sd">        Get Links default input data file parameters.</span>
+<span class="sd">    _get_links_mesh_data(self, patch, mesh_elem_material)</span>
+<span class="sd">        Get Links finite element mesh data.</span>
+<span class="sd">    _get_links_elem_type_data(self, patch)</span>
+<span class="sd">        Get Links finite element type data.</span>
+<span class="sd">    _get_links_loading_incrementation(self)</span>
+<span class="sd">        Get Links loading incrementation.</span>
+<span class="sd">    remove_mesh_elements(cls, remove_elements_labels, node_coords, elements, \</span>
+<span class="sd">                         elements_mat_phase, node_disps=None, \</span>
+<span class="sd">                         boundary_nodes_labels=None)</span>
+<span class="sd">        Remove elements from finite element mesh.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="LinksSimulator.__init__"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.links.links.LinksSimulator.html#hookeai.simulators.links.links.LinksSimulator.__init__">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">links_bin_path</span><span class="p">,</span> <span class="n">strain_formulation</span><span class="p">,</span> <span class="n">analysis_type</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Constructor.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        links_bin_path : str</span>
+<span class="sd">            Links binary absolute path.</span>
+<span class="sd">        strain_formulation: {&#39;infinitesimal&#39;, &#39;finite&#39;}</span>
+<span class="sd">            Links strain formulation.</span>
+<span class="sd">        analysis_type : {&#39;plane_stress&#39;, &#39;plane_strain&#39;, &#39;axisymmetric&#39;, \</span>
+<span class="sd">                         &#39;tridimensional&#39;}</span>
+<span class="sd">            Links analysis type.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_links_bin_path</span> <span class="o">=</span> <span class="n">links_bin_path</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_strain_formulation</span> <span class="o">=</span> <span class="n">strain_formulation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_analysis_type</span> <span class="o">=</span> <span class="n">analysis_type</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="LinksSimulator._get_n_dim"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.links.links.LinksSimulator.html#hookeai.simulators.links.links.LinksSimulator._get_n_dim">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">_get_n_dim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get number of spatial dimensions from analysis type.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        n_dim : int</span>
+<span class="sd">            Number of spatial dimensions.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_analysis_type</span> <span class="o">==</span> <span class="s1">&#39;tridimensional&#39;</span><span class="p">:</span>
+            <span class="n">n_dim</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">n_dim</span> <span class="o">=</span> <span class="mi">2</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">n_dim</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="LinksSimulator.generate_input_data_file"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.links.links.LinksSimulator.html#hookeai.simulators.links.links.LinksSimulator.generate_input_data_file">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">generate_input_data_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="n">directory</span><span class="p">,</span> <span class="n">patch</span><span class="p">,</span>
+                                 <span class="n">patch_material_data</span><span class="p">,</span>
+                                 <span class="n">remove_elements_labels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                 <span class="n">links_input_params</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                 <span class="n">is_overwrite_file</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> 
+                                 <span class="n">is_save_increm_file</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                 <span class="n">is_verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate Links input data file.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        filename : str</span>
+<span class="sd">            Links input data file name.</span>
+<span class="sd">        directory : str</span>
+<span class="sd">            Directory where Links input data file is stored.</span>
+<span class="sd">        patch : FiniteElementPatch</span>
+<span class="sd">            Finite element patch. If `is_admissible` is False, then returns</span>
+<span class="sd">            None.</span>
+<span class="sd">        patch_material_data : dict</span>
+<span class="sd">            Finite element patch material data. Expecting</span>
+<span class="sd">            &#39;mesh_elem_material&#39;: numpy.ndarray [int](n_elems_per_dim) (finite</span>
+<span class="sd">            element mesh elements material matrix where each element</span>
+<span class="sd">            corresponds to a given finite element position and whose value is</span>
+<span class="sd">            the corresponding material phase (int)) and</span>
+<span class="sd">            &#39;mat_phases_descriptors&#39;: dict (constitutive model descriptors</span>
+<span class="sd">            (item, dict) for each material phase (key, str[int])).</span>
+<span class="sd">        remove_elements_labels : tuple[int], default=None</span>
+<span class="sd">            Finite elements to be removed from finite element mesh.</span>
+<span class="sd">        links_input_params : dict, default=None</span>
+<span class="sd">            Links input data file parameters. If None, default parameters are</span>
+<span class="sd">            set.</span>
+<span class="sd">        is_overwrite_file : bool, default=False</span>
+<span class="sd">            Overwrite existing Links input data file if True, otherwise</span>
+<span class="sd">            generate non-existent file path by extending the original file path</span>
+<span class="sd">            with an integer.</span>
+<span class="sd">        is_save_increm_file : bool, default=False</span>
+<span class="sd">            If True, then save data file with Links input data file loading</span>
+<span class="sd">            incrementation data.</span>
+<span class="sd">        is_verbose : bool, default=False</span>
+<span class="sd">            If True, enable verbose output.</span>
+<span class="sd">            </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        links_file_path : str</span>
+<span class="sd">            Links input data file path.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Generating Links simulation input data file&#39;</span>
+                  <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">-------------------------------------------&#39;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&gt; Setting input data file path...&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Create directory if it does not exist</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">directory</span><span class="p">):</span>
+            <span class="n">make_directory</span><span class="p">(</span><span class="n">directory</span><span class="p">)</span>
+        <span class="c1"># Set Links input data file path</span>
+        <span class="n">links_file_path</span> <span class="o">=</span> \
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">directory</span><span class="p">),</span> <span class="n">filename</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;.dat&#39;</span>
+        <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">links_file_path</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_overwrite_file</span><span class="p">:</span>
+            <span class="n">links_file_path</span> <span class="o">=</span> <span class="n">new_file_path_with_int</span><span class="p">(</span><span class="n">links_file_path</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&gt; Setting Links input data file parameters...&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get Links default input data file parameters</span>
+        <span class="n">input_params</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_links_default_input_params</span><span class="p">()</span>
+        <span class="c1"># Set Links input data file parameters</span>
+        <span class="k">if</span> <span class="n">links_input_params</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">links_input_params</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">param</span> <span class="ow">in</span> <span class="n">input_params</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                    <span class="n">input_params</span><span class="p">[</span><span class="n">param</span><span class="p">]</span> <span class="o">=</span> <span class="n">links_input_params</span><span class="p">[</span><span class="n">param</span><span class="p">]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&gt; Generating finite element mesh data...&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get Links finite element mesh elements material matrix</span>
+        <span class="n">mesh_elem_material</span> <span class="o">=</span> <span class="n">patch_material_data</span><span class="p">[</span><span class="s1">&#39;mesh_elem_material&#39;</span><span class="p">]</span>        
+        <span class="c1"># Get Links finite element mesh data</span>
+        <span class="n">node_coords</span><span class="p">,</span> <span class="n">elements</span><span class="p">,</span> <span class="n">elements_mat_phase</span> <span class="o">=</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">_get_links_mesh_data</span><span class="p">(</span><span class="n">patch</span><span class="p">,</span> <span class="n">mesh_elem_material</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&gt; Getting prescribed node displacements...&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get Links prescribed node displacements</span>
+        <span class="n">node_displacements</span> <span class="o">=</span> <span class="n">patch</span><span class="o">.</span><span class="n">get_mesh_boundary_nodes_disps</span><span class="p">()</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Remove elements from Links finite elements mesh</span>
+        <span class="k">if</span> <span class="n">remove_elements_labels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Get mesh boundary nodes labels</span>
+            <span class="n">boundary_nodes_labels</span> <span class="o">=</span> <span class="n">patch</span><span class="o">.</span><span class="n">get_boundary_nodes_labels</span><span class="p">()</span>
+            <span class="c1"># Remove elements from Links finite elements mesh</span>
+            <span class="n">node_coords</span><span class="p">,</span> <span class="n">elements</span><span class="p">,</span> <span class="n">elements_mat_phase</span><span class="p">,</span> <span class="n">node_displacements</span> <span class="o">=</span> \
+                <span class="bp">self</span><span class="o">.</span><span class="n">remove_mesh_elements</span><span class="p">(</span>
+                    <span class="n">remove_elements_labels</span><span class="p">,</span> <span class="n">node_coords</span><span class="p">,</span> <span class="n">elements</span><span class="p">,</span>
+                    <span class="n">elements_mat_phase</span><span class="p">,</span> <span class="n">node_disps</span><span class="o">=</span><span class="n">node_displacements</span><span class="p">,</span>
+                    <span class="n">boundary_nodes_labels</span><span class="o">=</span><span class="n">boundary_nodes_labels</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get Links finite element type</span>
+        <span class="n">element_type</span><span class="p">,</span> <span class="n">n_gauss_points</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_links_elem_type_data</span><span class="p">(</span><span class="n">patch</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get Links material phases descriptors</span>
+        <span class="n">mat_phases_descriptors</span> <span class="o">=</span> <span class="n">patch_material_data</span><span class="p">[</span><span class="s1">&#39;mat_phases_descriptors&#39;</span><span class="p">]</span>
+        <span class="c1"># Check if descriptors were provided for all material phases</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">set</span><span class="p">(</span><span class="n">mesh_elem_material</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span><span class="o">.</span><span class="n">issubset</span><span class="p">(</span>
+                <span class="nb">set</span><span class="p">([</span><span class="nb">int</span><span class="p">(</span><span class="nb">id</span><span class="p">)</span> <span class="k">for</span> <span class="nb">id</span> <span class="ow">in</span> <span class="n">mat_phases_descriptors</span><span class="o">.</span><span class="n">keys</span><span class="p">()])):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Material descriptors were not provided &#39;</span>
+                               <span class="s1">&#39;for all material phases in the material &#39;</span>
+                               <span class="s1">&#39;patch.&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&gt; Writing Links simulation input data file...&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Write Links input data file</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_write_links_input_data_file</span><span class="p">(</span>
+            <span class="n">links_file_path</span><span class="p">,</span> <span class="n">input_params</span><span class="p">,</span> <span class="n">node_coords</span><span class="p">,</span> <span class="n">elements</span><span class="p">,</span>
+            <span class="n">elements_mat_phase</span><span class="p">,</span> <span class="n">element_type</span><span class="p">,</span> <span class="n">n_gauss_points</span><span class="p">,</span>
+            <span class="n">mesh_elem_material</span><span class="p">,</span> <span class="n">mat_phases_descriptors</span><span class="p">,</span> <span class="n">node_displacements</span><span class="p">,</span>
+            <span class="n">is_save_increm_file</span><span class="o">=</span><span class="n">is_save_increm_file</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&gt; File: &#39;</span> <span class="o">+</span> <span class="n">links_file_path</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">links_file_path</span></div>
+    <span class="c1"># -------------------------------------------------------------------------  </span>
+<div class="viewcode-block" id="LinksSimulator.run_links_simulation"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.links.links.LinksSimulator.html#hookeai.simulators.links.links.LinksSimulator.run_links_simulation">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">run_links_simulation</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">links_file_path</span><span class="p">,</span> <span class="n">is_verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Run Links simulation.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        links_file_path : str</span>
+<span class="sd">            Links input data file path.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        is_success : bool</span>
+<span class="sd">            True if Links simulation is successfully solved.</span>
+<span class="sd">        links_output_directory : str</span>
+<span class="sd">            Links simulation output directory.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Running Links simulation&#39;</span>
+                  <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">------------------------&#39;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&gt; File: &#39;</span> <span class="o">+</span> <span class="n">links_file_path</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Run Links simulation</span>
+        <span class="n">subprocess</span><span class="o">.</span><span class="n">run</span><span class="p">([</span><span class="bp">self</span><span class="o">.</span><span class="n">_links_bin_path</span><span class="p">,</span> <span class="n">links_file_path</span><span class="p">],</span>
+                       <span class="n">stdout</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">,</span> <span class="n">stderr</span><span class="o">=</span><span class="n">subprocess</span><span class="o">.</span><span class="n">PIPE</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&gt; Searching for simulation output directory...&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get simulation output directory</span>
+        <span class="n">links_output_directory</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">links_file_path</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="c1"># Check if simulation output directory exists</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">links_output_directory</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Links simulation output directory has not &#39;</span>
+                               <span class="s1">&#39;been found.&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get input data file name</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">links_file_path</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># Get &#39;.screen&#39; file path</span>
+        <span class="n">screen_file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">links_output_directory</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span> \
+            <span class="o">+</span> <span class="s1">&#39;.screen&#39;</span>
+        <span class="c1"># Check if simulation was successfully solved</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">screen_file_path</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Links simulation </span><span class="se">\&#39;</span><span class="s1">.screen</span><span class="se">\&#39;</span><span class="s1"> file has not &#39;</span>
+                               <span class="s1">&#39;been found.&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">is_success</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="c1"># Open &#39;.screen&#39; file</span>
+            <span class="n">screen_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">screen_file_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
+            <span class="n">screen_file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+            <span class="c1"># Look for succesful completion message</span>
+            <span class="n">line_number</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">screen_file</span><span class="p">:</span>
+                <span class="n">line_number</span> <span class="o">=</span> <span class="n">line_number</span> <span class="o">+</span> <span class="mi">1</span>
+                <span class="k">if</span> <span class="s1">&#39;Program L I N K S successfully completed.&#39;</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                    <span class="n">is_success</span> <span class="o">=</span> <span class="kc">True</span>
+                    <span class="k">break</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">is_success</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&gt; Simulation status: Success&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&gt; Simulation status: Failure&#39;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&gt; Output directory: &#39;</span> <span class="o">+</span> <span class="n">links_output_directory</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">is_success</span><span class="p">,</span> <span class="n">links_output_directory</span></div>
+    <span class="c1"># -------------------------------------------------------------------------  </span>
+<div class="viewcode-block" id="LinksSimulator.read_links_simulation_results"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.links.links.LinksSimulator.html#hookeai.simulators.links.links.LinksSimulator.read_links_simulation_results">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">read_links_simulation_results</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">links_output_directory</span><span class="p">,</span>
+                                      <span class="n">results_keywords</span><span class="p">,</span> <span class="n">is_verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Read Links simulation results.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        links_output_directory : str</span>
+<span class="sd">            Links simulation output directory.</span>
+<span class="sd">        results_keywords : tuple[str]</span>
+<span class="sd">            A list of results to be output among:</span>
+<span class="sd">            </span>
+<span class="sd">            &#39;node_data&#39; : numpy.ndarray(3d) of shape \</span>
+<span class="sd">                        (n_nodes, n_data_dim, n_time_steps), where the i-th \</span>
+<span class="sd">                        node output data at the k-th time step is stored in \</span>
+<span class="sd">                        indexes [i, :, k].</span>
+<span class="sd">            </span>
+<span class="sd">            &#39;global_data&#39; : numpy.ndarray(3d) of shape \</span>
+<span class="sd">                            (1, n_data_dim, n_time_steps) where the global \</span>
+<span class="sd">                            output data at the k-th time step is stored in \</span>
+<span class="sd">                            [0, :, k].</span>
+<span class="sd">        is_verbose : bool, default=False</span>
+<span class="sd">            If True, enable verbose output.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        results : dict</span>
+<span class="sd">            Links simulation results for each requested results keyword</span>
+<span class="sd">            (key, str).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Read Links simulation results&#39;</span>
+                  <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">-----------------------------&#39;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&gt; Output directory: &#39;</span> <span class="o">+</span> <span class="n">links_output_directory</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Check if simulation output directory exists</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">links_output_directory</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Links simulation output directory has not &#39;</span>
+                               <span class="s1">&#39;been found.&#39;</span><span class="p">)</span>
+        <span class="c1"># Get simulation name</span>
+        <span class="n">simulation_name</span> <span class="o">=</span> \
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">links_output_directory</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize simulation results</span>
+        <span class="n">results</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get nodes features data</span>
+        <span class="k">if</span> <span class="s1">&#39;node_data&#39;</span> <span class="ow">in</span> <span class="n">results_keywords</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&gt; Reading nodes features data...&#39;</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Initialize node data</span>
+            <span class="n">node_data</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Get node data output directory</span>
+            <span class="n">directory</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">links_output_directory</span><span class="p">,</span> <span class="s1">&#39;NODE_DATA&#39;</span><span class="p">)</span>
+            <span class="c1"># Get files in node data output directory</span>
+            <span class="n">directory_list</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">directory</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Initialize node data files</span>
+            <span class="n">node_data_files</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">node_data_files_time_steps</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="c1"># Loop over files</span>
+            <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">directory_list</span><span class="p">:</span>
+                <span class="c1"># Check if is node data file</span>
+                <span class="n">is_node_data_file</span> <span class="o">=</span> \
+                    <span class="nb">bool</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^&#39;</span> <span class="o">+</span> <span class="n">simulation_name</span> <span class="o">+</span> <span class="sa">r</span><span class="s1">&#39;(.*)&#39;</span>
+                                   <span class="o">+</span> <span class="sa">r</span><span class="s1">&#39;\.nodedata$&#39;</span><span class="p">,</span> <span class="n">filename</span><span class="p">))</span>
+                <span class="k">if</span> <span class="n">is_node_data_file</span><span class="p">:</span>
+                    <span class="c1"># Get node data file time step</span>
+                    <span class="n">time_step</span> <span class="o">=</span> \
+                        <span class="nb">int</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">filename</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+                    <span class="c1"># Store node data file and corresponding time step</span>
+                    <span class="n">node_data_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+                    <span class="n">node_data_files_time_steps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">time_step</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Sort node data files by time step</span>
+            <span class="n">order</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">node_data_files_time_steps</span><span class="p">)</span>
+            <span class="n">node_data_files</span><span class="p">[:]</span> <span class="o">=</span> <span class="p">[</span><span class="n">node_data_files</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">order</span><span class="p">]</span>
+            <span class="n">node_data_files_time_steps</span><span class="p">[:]</span> <span class="o">=</span> <span class="p">[</span><span class="n">node_data_files_time_steps</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                                             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">order</span><span class="p">]</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Get number of time steps</span>
+            <span class="n">n_time_steps</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">node_data_files_time_steps</span><span class="p">)</span>
+            <span class="c1"># Loop over node data files</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">file</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">node_data_files</span><span class="p">):</span>
+                <span class="c1"># Get node data file path</span>
+                <span class="n">file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="n">file</span><span class="p">)</span>
+                <span class="c1"># Get nodes features data</span>
+                <span class="n">data_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">genfromtxt</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Initialize node features data</span>
+                <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="c1"># Get number of nodes and features</span>
+                    <span class="n">n_nodes</span> <span class="o">=</span> <span class="n">data_array</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                    <span class="n">n_features</span> <span class="o">=</span> <span class="n">data_array</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                    <span class="c1"># Initialize node features data</span>
+                    <span class="n">node_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_nodes</span><span class="p">,</span> <span class="n">n_features</span><span class="p">,</span> <span class="n">n_time_steps</span><span class="p">))</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Assemble node features data</span>
+                <span class="n">node_data</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">data_array</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ </span>
+            <span class="c1"># Store node features data</span>
+            <span class="n">results</span><span class="p">[</span><span class="s1">&#39;node_data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">node_data</span>   
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">if</span> <span class="s1">&#39;global_data&#39;</span> <span class="ow">in</span> <span class="n">results_keywords</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&gt; Reading global features data...&#39;</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Initialize global data</span>
+            <span class="n">global_data</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Get global data output directory</span>
+            <span class="n">directory</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">links_output_directory</span><span class="p">,</span> <span class="s1">&#39;GLOBAL_DATA&#39;</span><span class="p">)</span>
+            <span class="c1"># Get files in global data output directory</span>
+            <span class="n">directory_list</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">directory</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Initialize global data files</span>
+            <span class="n">global_data_files</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="n">global_data_files_time_steps</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="c1"># Loop over files</span>
+            <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">directory_list</span><span class="p">:</span>
+                <span class="c1"># Check if is global data file</span>
+                <span class="n">is_global_data_file</span> <span class="o">=</span> \
+                    <span class="nb">bool</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^&#39;</span> <span class="o">+</span> <span class="n">simulation_name</span> <span class="o">+</span> <span class="sa">r</span><span class="s1">&#39;(.*)&#39;</span>
+                                   <span class="o">+</span> <span class="sa">r</span><span class="s1">&#39;\.globaldata$&#39;</span><span class="p">,</span> <span class="n">filename</span><span class="p">))</span>
+                <span class="k">if</span> <span class="n">is_global_data_file</span><span class="p">:</span>
+                    <span class="c1"># Get global data file time step</span>
+                    <span class="n">time_step</span> <span class="o">=</span> \
+                        <span class="nb">int</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">filename</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+                    <span class="c1"># Store global data file and corresponding time step</span>
+                    <span class="n">global_data_files</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">filename</span><span class="p">)</span>
+                    <span class="n">global_data_files_time_steps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">time_step</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Sort global data files by time step</span>
+            <span class="n">order</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">global_data_files_time_steps</span><span class="p">)</span>
+            <span class="n">global_data_files</span><span class="p">[:]</span> <span class="o">=</span> <span class="p">[</span><span class="n">global_data_files</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">order</span><span class="p">]</span>
+            <span class="n">global_data_files_time_steps</span><span class="p">[:]</span> <span class="o">=</span> <span class="p">[</span><span class="n">global_data_files_time_steps</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                                             <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">order</span><span class="p">]</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Get number of time steps</span>
+            <span class="n">n_time_steps</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">global_data_files_time_steps</span><span class="p">)</span>
+            <span class="c1"># Loop over global data files</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">file</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">global_data_files</span><span class="p">):</span>
+                <span class="c1"># Get global data file path</span>
+                <span class="n">file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">directory</span><span class="p">,</span> <span class="n">file</span><span class="p">)</span>
+                <span class="c1"># Get nodes features data</span>
+                <span class="n">data_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">atleast_1d</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">genfromtxt</span><span class="p">(</span><span class="n">file_path</span><span class="p">))</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Initialize global features data</span>
+                <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="c1"># Get number of features</span>
+                    <span class="n">n_features</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data_array</span><span class="p">)</span>
+                    <span class="c1"># Initialize global features data</span>
+                    <span class="n">global_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_features</span><span class="p">,</span> <span class="n">n_time_steps</span><span class="p">))</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Assemble global features data</span>
+                <span class="n">global_data</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">data_array</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ </span>
+            <span class="c1"># Store global features data</span>
+            <span class="n">results</span><span class="p">[</span><span class="s1">&#39;global_data&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">global_data</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">results</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="LinksSimulator._write_links_input_data_file"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.links.links.LinksSimulator.html#hookeai.simulators.links.links.LinksSimulator._write_links_input_data_file">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">_write_links_input_data_file</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">links_file_path</span><span class="p">,</span> <span class="n">input_params</span><span class="p">,</span>
+                                     <span class="n">node_coords</span><span class="p">,</span> <span class="n">elements</span><span class="p">,</span>
+                                     <span class="n">elements_mat_phase</span><span class="p">,</span> <span class="n">element_type</span><span class="p">,</span>
+                                     <span class="n">n_gauss_points</span><span class="p">,</span> <span class="n">mesh_elem_material</span><span class="p">,</span>
+                                     <span class="n">mat_phases_descriptors</span><span class="p">,</span>
+                                     <span class="n">node_displacements</span><span class="p">,</span>
+                                     <span class="n">is_save_increm_file</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Write Links input data file.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        links_file_path : str</span>
+<span class="sd">            Links input data file path.</span>
+<span class="sd">        input_params : dict</span>
+<span class="sd">            Links input data file parameters.</span>
+<span class="sd">        node_coords : dict</span>
+<span class="sd">            Coordinates (item, numpy.ndarray(n_dim)) of each finite element</span>
+<span class="sd">            mesh node (key, str[int]).</span>
+<span class="sd">        elements : dict</span>
+<span class="sd">            Nodes (item, tuple[int]) of each finite element (key, str[int]).</span>
+<span class="sd">        elements_mat_phase : dict</span>
+<span class="sd">            Material phase (item, int) of each finite element (key, str).</span>
+<span class="sd">        element_type : str</span>
+<span class="sd">            Finite element type.</span>
+<span class="sd">        n_gauss_points : int</span>
+<span class="sd">            Number of Gauss integration points per element.</span>
+<span class="sd">        mesh_elem_material : numpy.ndarray(2d or 3d)</span>
+<span class="sd">            Finite element mesh elements material matrix</span>
+<span class="sd">            (numpy.ndarray[int](n_elems_per_dim) where each element</span>
+<span class="sd">            corresponds to a given finite element position and whose value is</span>
+<span class="sd">            the corresponding material phase (int).</span>
+<span class="sd">        mat_phases_descriptors : dict </span>
+<span class="sd">            Constitutive model descriptors (item, dict) for each material phase</span>
+<span class="sd">            (key, str[int])).</span>
+<span class="sd">        node_displacements : dict</span>
+<span class="sd">            Displacements (item, numpy.ndarray(n_dim)) prescribed on each</span>
+<span class="sd">            finite element mesh node (key, str[int]). Free degrees of</span>
+<span class="sd">            freedom must be set as None.</span>
+<span class="sd">        is_save_increm_file : bool, default=False</span>
+<span class="sd">            If True, then save data file with Links input data file loading</span>
+<span class="sd">            incrementation data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Open Links input data file</span>
+        <span class="n">links_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">links_file_path</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Short name for input parameters</span>
+        <span class="n">ip</span> <span class="o">=</span> <span class="n">input_params</span>
+        <span class="c1"># Get number of spatial dimensions</span>
+        <span class="n">n_dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_n_dim</span><span class="p">()</span>
+        <span class="c1"># Get material phases</span>
+        <span class="n">mat_phases</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">mesh_elem_material</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span>
+        <span class="c1"># Get number of material phases</span>
+        <span class="n">n_mat_phases</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">mat_phases</span><span class="p">)</span>
+        <span class="c1"># Get number of nodes</span>
+        <span class="n">n_nodes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">node_coords</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="c1"># Get number of elements</span>
+        <span class="n">n_elements</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">elements</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="c1"># Get number of nodes with prescribed displacements</span>
+        <span class="n">n_nodes_disps</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">node_displacements</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize input file data</span>
+        <span class="n">write_lines</span> <span class="o">=</span> \
+            <span class="p">[</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">TITLE &#39;</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">ip</span><span class="p">[</span><span class="s1">&#39;title&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">]</span> \
+            <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">ANALYSIS_TYPE &#39;</span> <span class="o">+</span> <span class="n">ip</span><span class="p">[</span><span class="s1">&#39;analysis_type&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">]</span> \
+            <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">LARGE_STRAIN_FORMULATION &#39;</span> <span class="o">+</span> <span class="n">ip</span><span class="p">[</span><span class="s1">&#39;large_strain_formulation&#39;</span><span class="p">]</span> \
+               <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">]</span> \
+            <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">SOLUTION_ALGORITHM &#39;</span> <span class="o">+</span> <span class="n">ip</span><span class="p">[</span><span class="s1">&#39;solution_algorithm&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get loading incrementation</span>
+        <span class="n">increm_lines</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_links_loading_incrementation</span><span class="p">()</span>
+        <span class="c1"># Append loading increment</span>
+        <span class="n">write_lines</span> <span class="o">+=</span> <span class="n">increm_lines</span>
+        <span class="c1"># Save loading incrementation data file</span>
+        <span class="k">if</span> <span class="n">is_save_increm_file</span><span class="p">:</span>
+            <span class="c1"># Set loading incrementation data file path</span>
+            <span class="n">increm_file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">links_file_path</span><span class="p">),</span>
+                                            <span class="s1">&#39;loading_incrementation.dat&#39;</span><span class="p">)</span>
+            <span class="c1"># Open loading incrementation data file</span>
+            <span class="n">increm_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">increm_file_path</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span>
+            <span class="c1"># Write loading incrementation data file</span>
+            <span class="n">increm_file</span><span class="o">.</span><span class="n">writelines</span><span class="p">(</span><span class="n">increm_lines</span><span class="p">)</span>
+            <span class="c1"># Close loading incrementation data file</span>
+            <span class="n">increm_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Continue input file data</span>
+        <span class="n">write_lines</span> <span class="o">+=</span> \
+            <span class="p">[</span><span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">SOLVER &#39;</span> <span class="o">+</span> <span class="n">ip</span><span class="p">[</span><span class="s1">&#39;solver&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">]</span> \
+            <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">PARALLEL_SOLVER &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">ip</span><span class="p">[</span><span class="s1">&#39;parallel_solver&#39;</span><span class="p">])</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">]</span> \
+            <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">VTK_OUTPUT &#39;</span> <span class="o">+</span> <span class="n">ip</span><span class="p">[</span><span class="s1">&#39;vtk_output&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">]</span> \
+            <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">ip</span><span class="p">[</span><span class="s1">&#39;Node_Data_Output&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">]</span> \
+            <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">ip</span><span class="p">[</span><span class="s1">&#39;Global_Data_Output&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">]</span> \
+            <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">VTK_OUTPUT &#39;</span> <span class="o">+</span> <span class="n">ip</span><span class="p">[</span><span class="s1">&#39;vtk_output&#39;</span><span class="p">]</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">]</span> \
+            <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">ELEMENT_GROUPS &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">n_mat_phases</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">]</span> \
+            <span class="o">+</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">mat</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; 1 &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">mat</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">mat</span> <span class="ow">in</span> <span class="n">mat_phases</span><span class="p">]</span> \
+            <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">ELEMENT_TYPES 1&#39;</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">]</span> \
+            <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;1 &#39;</span> <span class="o">+</span> <span class="n">element_type</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">]</span> \
+            <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;  &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">n_gauss_points</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; GP&#39;</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">]</span> \
+            <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">MATERIALS &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">n_mat_phases</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">]</span> \
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Loop over material phases</span>
+        <span class="k">for</span> <span class="n">mat_phase</span> <span class="ow">in</span> <span class="n">mat_phases</span><span class="p">:</span>
+            <span class="c1"># Get constitutive model descriptors</span>
+            <span class="n">descriptors</span> <span class="o">=</span> <span class="n">mat_phases_descriptors</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">mat_phase</span><span class="p">)]</span>
+            <span class="c1"># Get constitutive model name</span>
+            <span class="n">name</span> <span class="o">=</span> <span class="n">descriptors</span><span class="p">[</span><span class="s1">&#39;name&#39;</span><span class="p">]</span>
+            <span class="c1"># Initialize constitutive model</span>
+            <span class="k">if</span> <span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;ELASTIC&#39;</span><span class="p">:</span>
+                <span class="n">model</span> <span class="o">=</span> <span class="n">LinksElastic</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;VON_MISES&#39;</span><span class="p">:</span>
+                <span class="n">model</span> <span class="o">=</span> <span class="n">LinksVonMises</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;DRUCKER_PRAGER&#39;</span><span class="p">:</span>
+                <span class="n">model</span> <span class="o">=</span> <span class="n">LinksDruckerPrager</span><span class="p">()</span>
+            <span class="k">elif</span> <span class="n">name</span> <span class="o">==</span> <span class="s1">&#39;LOU&#39;</span><span class="p">:</span>
+                <span class="n">model</span> <span class="o">=</span> <span class="n">LinksLou</span><span class="p">()</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Unknown Links constitutive model.&#39;</span><span class="p">)</span>
+            <span class="c1"># Append constitutive model descriptors to input file data</span>
+            <span class="n">write_lines</span> <span class="o">+=</span> <span class="n">model</span><span class="o">.</span><span class="n">_format_material_descriptors</span><span class="p">(</span><span class="n">mat_phase</span><span class="p">,</span>
+                                                              <span class="n">descriptors</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~               </span>
+        <span class="c1"># Append elements connectivities to input file data</span>
+        <span class="n">write_lines</span> <span class="o">+=</span> \
+            <span class="p">[</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">ELEMENTS &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">n_elements</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">]</span> \
+            <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;</span><span class="si">{:&gt;3s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">elem</span><span class="p">))</span>
+               <span class="o">+</span> <span class="s1">&#39;</span><span class="si">{:^5d}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">elements_mat_phase</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">elem</span><span class="p">)])</span>
+               <span class="o">+</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">elements</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">elem</span><span class="p">)]])</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span> \
+               <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_elements</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
+        <span class="c1"># Append node coordinates to input file data</span>
+        <span class="n">write_lines</span> <span class="o">+=</span> \
+            <span class="p">[</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">NODE_COORDINATES &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">n_nodes</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; CARTESIAN&#39;</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">]</span> \
+            <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;</span><span class="si">{:&gt;3s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">node</span><span class="p">))</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span>
+               <span class="o">+</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{:16.8e}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">coord</span><span class="p">))</span> \
+                           <span class="k">for</span> <span class="n">coord</span> <span class="ow">in</span> <span class="n">node_coords</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">node</span><span class="p">)]])</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span> \
+               <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_nodes</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Append prescribed node displacements</span>
+        <span class="n">write_lines</span> <span class="o">+=</span> <span class="p">[</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">NODES_WITH_PRESCRIBED_DISPLACEMENTS &#39;</span> \
+                        <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">n_nodes_disps</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">]</span>
+        <span class="n">nodes_sorted</span> <span class="o">=</span> <span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span>
+                        <span class="n">np</span><span class="o">.</span><span class="n">sort</span><span class="p">([</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">node_displacements</span><span class="o">.</span><span class="n">keys</span><span class="p">()])]</span>
+        <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">nodes_sorted</span><span class="p">:</span>
+            <span class="c1"># Get prescribed displacement</span>
+            <span class="n">disp</span> <span class="o">=</span> <span class="n">node_displacements</span><span class="p">[</span><span class="n">node</span><span class="p">]</span>
+            <span class="c1"># Add angle</span>
+            <span class="k">if</span> <span class="n">n_dim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">disp</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">disp</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)</span>
+            <span class="c1"># Generate prescription code</span>
+            <span class="n">code</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span> <span class="k">if</span> <span class="n">x</span> <span class="o">!=</span> <span class="kc">None</span> <span class="k">else</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">disp</span><span class="p">]</span>
+            <span class="c1"># Append node displacement</span>
+            <span class="n">write_lines</span> <span class="o">+=</span> \
+                <span class="p">[</span><span class="s1">&#39; &#39;</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="si">{:&gt;3s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">node</span><span class="p">))</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span> \
+                 <span class="o">+</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">&#39;</span><span class="si">{:^1d}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">code</span><span class="p">])</span> \
+                 <span class="o">+</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">&#39;</span><span class="si">{:16.8e}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">disp</span><span class="p">])</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">]</span>         
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~       </span>
+        <span class="c1"># Write Links input data file</span>
+        <span class="n">links_file</span><span class="o">.</span><span class="n">writelines</span><span class="p">(</span><span class="n">write_lines</span><span class="p">)</span>
+        <span class="c1"># Close Links input data file</span>
+        <span class="n">links_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>        </div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="LinksSimulator._get_links_default_input_params"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.links.links.LinksSimulator.html#hookeai.simulators.links.links.LinksSimulator._get_links_default_input_params">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">_get_links_default_input_params</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Links default input data file parameters.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        default_parameters : dict</span>
+<span class="sd">            Links input data file default parameters.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Initialize Links default input parameters</span>
+        <span class="n">default_parameters</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set title</span>
+        <span class="n">title</span> <span class="o">=</span> <span class="s1">&#39;Links input data file generated automatically.&#39;</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_strain_formulation</span> <span class="o">==</span> <span class="s1">&#39;infinitesimal&#39;</span><span class="p">:</span>
+            <span class="c1"># Set finite strains flag</span>
+            <span class="n">large_strain_formulation</span> <span class="o">=</span> <span class="s1">&#39;OFF&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Set finite strains flag</span>
+            <span class="n">large_strain_formulation</span> <span class="o">=</span> <span class="s1">&#39;ON&#39;</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set analysis type</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_analysis_type</span> <span class="o">==</span> <span class="s1">&#39;plane_stress&#39;</span><span class="p">:</span>
+            <span class="n">analysis_type</span> <span class="o">=</span> <span class="s1">&#39;1&#39;</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_analysis_type</span> <span class="o">==</span> <span class="s1">&#39;plane_strain&#39;</span><span class="p">:</span>
+            <span class="n">analysis_type</span> <span class="o">=</span> <span class="s1">&#39;2&#39;</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_analysis_type</span> <span class="o">==</span> <span class="s1">&#39;axisymmetric&#39;</span><span class="p">:</span>
+            <span class="n">analysis_type</span> <span class="o">=</span> <span class="s1">&#39;3&#39;</span>
+        <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_analysis_type</span> <span class="o">==</span> <span class="s1">&#39;tridimensional&#39;</span><span class="p">:</span>
+            <span class="n">analysis_type</span> <span class="o">=</span> <span class="s1">&#39;6&#39;</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set solution algorithm</span>
+        <span class="n">solution_algorithm</span> <span class="o">=</span> <span class="s1">&#39;2&#39;</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set solver</span>
+        <span class="n">solver</span> <span class="o">=</span> <span class="s1">&#39;PARDISO&#39;</span>
+        <span class="c1"># Set number of threads (solver parallelization)</span>
+        <span class="n">parallel_solver</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set VTK output</span>
+        <span class="n">vtk_output</span> <span class="o">=</span> <span class="s1">&#39;None&#39;</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set node and global features data output</span>
+        <span class="n">node_data_output</span> <span class="o">=</span> <span class="s1">&#39;Node_Data_Output&#39;</span>
+        <span class="n">global_data_output</span> <span class="o">=</span> <span class="s1">&#39;Global_Data_Output&#39;</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set Links default input parameters</span>
+        <span class="n">default_parameters</span><span class="p">[</span><span class="s1">&#39;title&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">title</span>
+        <span class="n">default_parameters</span><span class="p">[</span><span class="s1">&#39;large_strain_formulation&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="n">large_strain_formulation</span>
+        <span class="n">default_parameters</span><span class="p">[</span><span class="s1">&#39;analysis_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">analysis_type</span>
+        <span class="n">default_parameters</span><span class="p">[</span><span class="s1">&#39;solution_algorithm&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">solution_algorithm</span>
+        <span class="n">default_parameters</span><span class="p">[</span><span class="s1">&#39;solver&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">solver</span>
+        <span class="n">default_parameters</span><span class="p">[</span><span class="s1">&#39;parallel_solver&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">parallel_solver</span>
+        <span class="n">default_parameters</span><span class="p">[</span><span class="s1">&#39;vtk_output&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">vtk_output</span>
+        <span class="n">default_parameters</span><span class="p">[</span><span class="s1">&#39;Node_Data_Output&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">node_data_output</span>
+        <span class="n">default_parameters</span><span class="p">[</span><span class="s1">&#39;Global_Data_Output&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">global_data_output</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">default_parameters</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="LinksSimulator._get_links_mesh_data"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.links.links.LinksSimulator.html#hookeai.simulators.links.links.LinksSimulator._get_links_mesh_data">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">_get_links_mesh_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">patch</span><span class="p">,</span> <span class="n">mesh_elem_material</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Links finite element mesh data.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        patch : FiniteElementPatch</span>
+<span class="sd">            Finite element patch.</span>
+<span class="sd">        mesh_elem_material : numpy.ndarray(2d or 3d)</span>
+<span class="sd">            Finite element mesh elements material matrix</span>
+<span class="sd">            (numpy.ndarray[int](n_elems_per_dim) where each element</span>
+<span class="sd">            corresponds to a given finite element position and whose value is</span>
+<span class="sd">            the corresponding material phase (int).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        node_coords : dict</span>
+<span class="sd">            Coordinates (item, numpy.ndarray(n_dim)) of each finite element</span>
+<span class="sd">            mesh node (key, str[int]).</span>
+<span class="sd">        elements : dict</span>
+<span class="sd">            Nodes (item, tuple[int]) of each finite element (key, str[int]).</span>
+<span class="sd">        elements_mat_phase : dict</span>
+<span class="sd">            Material phase (item, int) of each finite element (key, str).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get number of spatial dimensions</span>
+        <span class="n">n_dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_n_dim</span><span class="p">()</span>
+        <span class="c1"># Get patch finite element type</span>
+        <span class="n">elem_type</span> <span class="o">=</span> <span class="n">patch</span><span class="o">.</span><span class="n">get_elem_type</span><span class="p">()</span>
+        <span class="c1"># Get patch number of finite elements per dimension</span>
+        <span class="n">n_elems_per_dim</span> <span class="o">=</span> <span class="n">patch</span><span class="o">.</span><span class="n">get_n_elems_per_dim</span><span class="p">()</span>
+        <span class="c1"># Get patch number of patch edge nodes along each dimension</span>
+        <span class="n">n_edge_nodes_per_dim</span> <span class="o">=</span> <span class="n">patch</span><span class="o">.</span><span class="n">get_n_edge_nodes_per_dim</span><span class="p">()</span>
+        <span class="c1"># Get finite element mesh nodes matrix</span>
+        <span class="n">mesh_nodes_matrix</span> <span class="o">=</span> <span class="n">patch</span><span class="o">.</span><span class="n">get_mesh_nodes_matrix</span><span class="p">()</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get finite element</span>
+        <span class="n">finite_element</span> <span class="o">=</span> <span class="n">FiniteElement</span><span class="p">(</span><span class="n">elem_type</span><span class="p">)</span>
+        <span class="c1"># Get number of nodes per finite element</span>
+        <span class="n">n_nodes_elem</span> <span class="o">=</span> <span class="n">finite_element</span><span class="o">.</span><span class="n">get_n_nodes</span><span class="p">()</span>
+        <span class="c1"># Get number of edge nodes per finite element</span>
+        <span class="n">n_edge_nodes_elem</span> <span class="o">=</span> <span class="n">finite_element</span><span class="o">.</span><span class="n">get_n_edge_nodes</span><span class="p">()</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set node coordinates</span>
+        <span class="n">node_coords</span> <span class="o">=</span> <span class="n">patch</span><span class="o">.</span><span class="n">get_mesh_nodes_coords_ref</span><span class="p">()</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize element number</span>
+        <span class="n">elem_label</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="c1"># Initialize elements connectivities</span>
+        <span class="n">elements</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># Initialize elements material phase</span>
+        <span class="n">elements_mat_phase</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># Build elements data</span>
+        <span class="k">if</span> <span class="n">n_dim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="c1"># Loop over nodes</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_edge_nodes_per_dim</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                           <span class="o">-</span> <span class="n">n_edge_nodes_elem</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+                           <span class="n">n_edge_nodes_elem</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="c1"># Loop over nodes</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_edge_nodes_per_dim</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                               <span class="o">-</span> <span class="n">n_edge_nodes_elem</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+                               <span class="n">n_edge_nodes_elem</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>                   
+                    <span class="c1"># Initialize element nodes</span>
+                    <span class="n">elem_nodes</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="c1"># Loop over element nodes</span>
+                    <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_nodes_elem</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+                        <span class="c1"># Get node local index</span>
+                        <span class="n">local_index</span> <span class="o">=</span> <span class="n">finite_element</span><span class="o">.</span><span class="n">get_node_label_index</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+                        <span class="c1"># Get mesh node index and label</span>
+                        <span class="n">node_index</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">),</span> <span class="n">local_index</span><span class="p">))</span>
+                        <span class="n">node_label</span> <span class="o">=</span> <span class="n">mesh_nodes_matrix</span><span class="p">[</span><span class="n">node_index</span><span class="p">]</span>
+                        <span class="c1"># Store element node</span>
+                        <span class="n">elem_nodes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">node_label</span><span class="p">)</span>
+                    <span class="c1"># Store element nodes</span>
+                    <span class="n">elements</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">elem_label</span><span class="p">)]</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">elem_nodes</span><span class="p">)</span>
+                    <span class="c1"># Increment element number</span>
+                    <span class="n">elem_label</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Initialize element number</span>
+            <span class="n">elem_label</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="c1"># Loop over elements</span>
+            <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_elems_per_dim</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="c1"># Loop over elements</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_elems_per_dim</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>        
+                    <span class="c1"># Store element material phase</span>
+                    <span class="n">elements_mat_phase</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">elem_label</span><span class="p">)]</span> <span class="o">=</span> \
+                        <span class="n">mesh_elem_material</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span>
+                    <span class="c1"># Increment element number</span>
+                    <span class="n">elem_label</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Loop over nodes</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_edge_nodes_per_dim</span><span class="p">[</span><span class="mi">2</span><span class="p">]</span>
+                           <span class="o">-</span> <span class="n">n_edge_nodes_elem</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+                           <span class="n">n_edge_nodes_elem</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="c1"># Loop over nodes</span>
+                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_edge_nodes_per_dim</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+                               <span class="o">-</span> <span class="n">n_edge_nodes_elem</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+                               <span class="n">n_edge_nodes_elem</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>
+                    <span class="c1"># Loop over nodes</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_edge_nodes_per_dim</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                                   <span class="o">-</span> <span class="n">n_edge_nodes_elem</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span>
+                                   <span class="n">n_edge_nodes_elem</span> <span class="o">-</span> <span class="mi">1</span><span class="p">):</span>                   
+                        <span class="c1"># Initialize element nodes</span>
+                        <span class="n">elem_nodes</span> <span class="o">=</span> <span class="p">[]</span>
+                        <span class="c1"># Loop over element nodes</span>
+                        <span class="k">for</span> <span class="n">p</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_nodes_elem</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+                            <span class="c1"># Get node local index</span>
+                            <span class="n">local_index</span> <span class="o">=</span> \
+                                <span class="n">finite_element</span><span class="o">.</span><span class="n">get_node_label_index</span><span class="p">(</span><span class="n">p</span><span class="p">)</span>
+                            <span class="c1"># Get mesh node index and label</span>
+                            <span class="n">node_index</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">add</span><span class="p">((</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">k</span><span class="p">),</span> <span class="n">local_index</span><span class="p">))</span>
+                            <span class="n">node_label</span> <span class="o">=</span> <span class="n">mesh_nodes_matrix</span><span class="p">[</span><span class="n">node_index</span><span class="p">]</span>
+                            <span class="c1"># Store element node</span>
+                            <span class="n">elem_nodes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">node_label</span><span class="p">)</span>
+                        <span class="c1"># Store element nodes</span>
+                        <span class="n">elements</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">elem_label</span><span class="p">)]</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">elem_nodes</span><span class="p">)</span>
+                        <span class="c1"># Increment element number</span>
+                        <span class="n">elem_label</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Initialize element number</span>
+            <span class="n">elem_label</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="c1"># Loop over elements</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_elems_per_dim</span><span class="p">[</span><span class="mi">2</span><span class="p">]):</span>
+                <span class="c1"># Loop over elements</span>
+                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_elems_per_dim</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+                    <span class="c1"># Loop over elements</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_elems_per_dim</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>        
+                        <span class="c1"># Store element material phase</span>
+                        <span class="n">elements_mat_phase</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">elem_label</span><span class="p">)]</span> <span class="o">=</span> \
+                            <span class="n">mesh_elem_material</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">k</span><span class="p">]</span>
+                        <span class="c1"># Increment element number</span>
+                        <span class="n">elem_label</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">node_coords</span><span class="p">,</span> <span class="n">elements</span><span class="p">,</span> <span class="n">elements_mat_phase</span>        </div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="LinksSimulator._get_links_elem_type_data"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.links.links.LinksSimulator.html#hookeai.simulators.links.links.LinksSimulator._get_links_elem_type_data">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">_get_links_elem_type_data</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">patch</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Links finite element type data.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        patch : FiniteElementPatch</span>
+<span class="sd">            Finite element patch.</span>
+<span class="sd">            </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        element_type : str</span>
+<span class="sd">            Finite element type.</span>
+<span class="sd">        n_gauss_points : int</span>
+<span class="sd">            Number of Gauss integration points per element.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get number of spatial dimensions</span>
+        <span class="n">n_dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_get_n_dim</span><span class="p">()</span>
+        <span class="c1"># Get patch finite element type</span>
+        <span class="n">elem_type</span> <span class="o">=</span> <span class="n">patch</span><span class="o">.</span><span class="n">get_elem_type</span><span class="p">()</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set element type and number of Gauss integration points</span>
+        <span class="k">if</span> <span class="n">n_dim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">elem_type</span> <span class="o">==</span> <span class="s1">&#39;SQUAD4&#39;</span><span class="p">:</span>
+                <span class="n">element_type</span> <span class="o">=</span> <span class="s1">&#39;QUAD4&#39;</span>
+                <span class="n">n_gauss_points</span> <span class="o">=</span> <span class="mi">4</span>
+            <span class="k">elif</span> <span class="n">elem_type</span> <span class="o">==</span> <span class="s1">&#39;SQUAD8&#39;</span><span class="p">:</span>
+                <span class="n">element_type</span> <span class="o">=</span> <span class="s1">&#39;QUAD8&#39;</span>
+                <span class="n">n_gauss_points</span> <span class="o">=</span> <span class="mi">4</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Unavailable 2D Links element type &#39;</span>
+                                   <span class="sa">f</span><span class="s1">&#39;data (</span><span class="si">{</span><span class="n">elem_type</span><span class="si">}</span><span class="s1">).&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">elem_type</span> <span class="o">==</span> <span class="s1">&#39;SHEXA8&#39;</span><span class="p">:</span>
+                <span class="n">element_type</span> <span class="o">=</span> <span class="s1">&#39;HEXA8&#39;</span>
+                <span class="n">n_gauss_points</span> <span class="o">=</span> <span class="mi">8</span>
+            <span class="k">elif</span> <span class="n">elem_type</span> <span class="o">==</span> <span class="s1">&#39;SHEXA20&#39;</span><span class="p">:</span>
+                <span class="n">element_type</span> <span class="o">=</span> <span class="s1">&#39;HEXA20&#39;</span>
+                <span class="n">n_gauss_points</span> <span class="o">=</span> <span class="mi">8</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Unavailable 3D Links element type &#39;</span>
+                                   <span class="sa">f</span><span class="s1">&#39;data (</span><span class="si">{</span><span class="n">elem_type</span><span class="si">}</span><span class="s1">).&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">element_type</span><span class="p">,</span> <span class="n">n_gauss_points</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="LinksSimulator._get_links_loading_incrementation"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.links.links.LinksSimulator.html#hookeai.simulators.links.links.LinksSimulator._get_links_loading_incrementation">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">_get_links_loading_incrementation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get Links loading incrementation.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        increm_input_lines : list[str]</span>
+<span class="sd">            Loading incrementation formatted to Links input data file.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Set available incrementation modes</span>
+        <span class="n">available_incrementation_modes</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;n_increments&#39;</span><span class="p">,</span> <span class="s1">&#39;increment_list&#39;</span><span class="p">)</span>
+        <span class="c1"># Set available loading types</span>
+        <span class="n">available_loading_type</span> <span class="o">=</span> <span class="p">(</span>
+            <span class="s1">&#39;proportional&#39;</span><span class="p">,</span> <span class="s1">&#39;cyclic_plus&#39;</span><span class="p">,</span> <span class="s1">&#39;cyclic_sym&#39;</span><span class="p">,</span> <span class="s1">&#39;polynomial&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set incrementation mode</span>
+        <span class="n">incrementation_mode</span> <span class="o">=</span> <span class="n">available_incrementation_modes</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="c1"># Set loading type</span>
+        <span class="n">loading_type</span> <span class="o">=</span> <span class="n">available_loading_type</span><span class="p">[</span><span class="mi">3</span><span class="p">]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set number of loading reversal (effective for cyclic loadings only)</span>
+        <span class="n">n_reverse</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set number of increments</span>
+        <span class="n">n_inc</span> <span class="o">=</span> <span class="mi">100</span>
+        <span class="c1"># Set convergence tolerance</span>
+        <span class="n">conv_tol</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{:&lt;16.8e}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="mf">1e-6</span><span class="p">)</span>
+        <span class="c1"># Set maximum number of iterations</span>
+        <span class="n">max_n_iter</span> <span class="o">=</span> <span class="mi">20</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize formatted loading incrementation</span>
+        <span class="n">increm_input_lines</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set formatted loading incrementation</span>
+        <span class="k">if</span> <span class="n">incrementation_mode</span> <span class="o">==</span> <span class="s1">&#39;n_increments&#39;</span><span class="p">:</span>
+            <span class="c1"># Check loading type</span>
+            <span class="k">if</span> <span class="n">loading_type</span> <span class="o">!=</span> <span class="s1">&#39;proportional&#39;</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s1">&#39;The incrementation mode </span><span class="se">\&#39;</span><span class="si">{</span><span class="n">incrementation_mode</span><span class="si">}</span><span class="se">\&#39;</span><span class="s1"> only &#39;</span>
+                    <span class="sa">f</span><span class="s1">&#39;accepts the loading type </span><span class="se">\&#39;</span><span class="s1">proportional</span><span class="se">\&#39;</span><span class="s1">.&#39;</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Set formatted loading incrementation</span>
+            <span class="n">increm_input_lines</span> <span class="o">+=</span> \
+                <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Number_of_Increments </span><span class="si">{</span><span class="n">n_inc</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">]</span> \
+                <span class="o">+</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">CONVERGENCE_TOLERANCE</span><span class="se">\n</span><span class="si">{</span><span class="n">conv_tol</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">elif</span> <span class="n">incrementation_mode</span> <span class="o">==</span> <span class="s1">&#39;increment_list&#39;</span><span class="p">:</span>
+            <span class="c1"># Set loading incrementation</span>
+            <span class="k">if</span> <span class="n">loading_type</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;proportional&#39;</span><span class="p">,</span> <span class="s1">&#39;cyclic_plus&#39;</span><span class="p">,</span> <span class="s1">&#39;cyclic_sym&#39;</span><span class="p">):</span>
+                <span class="c1"># Override number of loading reversals if proportional loading</span>
+                <span class="k">if</span> <span class="n">loading_type</span> <span class="o">==</span> <span class="s1">&#39;proportional&#39;</span><span class="p">:</span>
+                    <span class="n">n_reverse</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Check minimum number of loading increments</span>
+                <span class="k">if</span> <span class="n">loading_type</span> <span class="o">==</span> <span class="s1">&#39;cyclic_plus&#39;</span> <span class="ow">and</span> <span class="p">(</span><span class="n">n_inc</span> <span class="o">&lt;</span> <span class="n">n_reverse</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s1">&#39;In order to generate a loading path with &#39;</span>
+                        <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">n_reverse</span><span class="si">}</span><span class="s1"> reversions for loading type &#39;</span>
+                        <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">loading_type</span><span class="si">}</span><span class="s1">, the minimum required number of &#39;</span>
+                        <span class="sa">f</span><span class="s1">&#39;loading increments is </span><span class="si">{</span><span class="n">n_reverse</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
+                <span class="k">elif</span> <span class="p">(</span><span class="n">loading_type</span> <span class="o">==</span> <span class="s1">&#39;cyclic_sym&#39;</span>
+                        <span class="ow">and</span> <span class="p">(</span><span class="n">n_inc</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="o">*</span><span class="n">n_reverse</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)):</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s1">&#39;In order to generate a loading path with &#39;</span>
+                        <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">n_reverse</span><span class="si">}</span><span class="s1"> reversions for loading type &#39;</span>
+                        <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">loading_type</span><span class="si">}</span><span class="s1">, the minimum required number of &#39;</span>
+                        <span class="sa">f</span><span class="s1">&#39;loading increments is </span><span class="si">{</span><span class="mi">2</span><span class="o">*</span><span class="n">n_reverse</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Set number of proportional increments and switch frequency</span>
+                <span class="k">if</span> <span class="n">loading_type</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;proportional&#39;</span><span class="p">,</span> <span class="s1">&#39;cyclic_plus&#39;</span><span class="p">):</span>
+                    <span class="n">n_inc_mon</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">n_inc</span><span class="o">/</span><span class="p">(</span><span class="n">n_reverse</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)))</span>
+                    <span class="n">dfact_switch</span> <span class="o">=</span> <span class="mi">1</span>
+                <span class="k">elif</span> <span class="n">loading_type</span> <span class="o">==</span> <span class="s1">&#39;cyclic_sym&#39;</span><span class="p">:</span>
+                    <span class="n">n_inc_mon</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(</span><span class="n">n_inc</span><span class="o">/</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">n_reverse</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)))</span>
+                    <span class="n">dfact_switch</span> <span class="o">=</span> <span class="mi">2</span>
+                <span class="c1"># Compute incremental load factor</span>
+                <span class="n">dfact</span> <span class="o">=</span> <span class="mf">1.0</span><span class="o">/</span><span class="n">n_inc_mon</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Compute effective number of increments</span>
+                <span class="n">n_inc_eff</span> <span class="o">=</span> <span class="n">n_inc_mon</span><span class="o">*</span><span class="p">(</span><span class="n">dfact_switch</span><span class="o">*</span><span class="n">n_reverse</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Set initial proportional loading increments</span>
+                <span class="n">increm_input_lines</span> <span class="o">+=</span> \
+                    <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">INCREMENTS </span><span class="si">{</span><span class="n">n_inc</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> \
+                    <span class="o">+</span> <span class="n">n_inc_mon</span>\
+                        <span class="o">*</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">1.0 </span><span class="si">{</span><span class="n">dfact</span><span class="si">:</span><span class="s1">&gt;16.8e</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">conv_tol</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">max_n_iter</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span>
+                <span class="c1"># Loop over loading reversals</span>
+                <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_reverse</span><span class="p">):</span>
+                    <span class="c1"># Switch loading direction</span>
+                    <span class="n">dfact</span> <span class="o">=</span> <span class="o">-</span><span class="n">dfact</span>
+                    <span class="c1"># Append proportional loading increments</span>
+                    <span class="n">increm_input_lines</span> <span class="o">+=</span> <span class="n">dfact_switch</span><span class="o">*</span><span class="n">n_inc_mon</span><span class="o">*</span><span class="p">[</span>
+                        <span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">1.0 </span><span class="si">{</span><span class="n">dfact</span><span class="si">:</span><span class="s1">&gt;16.8e</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">conv_tol</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">max_n_iter</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Set null increments until prescribed number of increments</span>
+                <span class="c1"># is met</span>
+                <span class="k">if</span> <span class="n">n_inc</span> <span class="o">&gt;</span> <span class="n">n_inc_eff</span><span class="p">:</span>
+                    <span class="c1"># Compute number of null increments</span>
+                    <span class="n">n_inc_diff</span> <span class="o">=</span> <span class="n">n_inc</span> <span class="o">-</span> <span class="n">n_inc_eff</span>
+                    <span class="c1"># Append null loading increments</span>
+                    <span class="n">increm_input_lines</span> <span class="o">+=</span> <span class="n">n_inc_diff</span><span class="o">*</span><span class="p">[</span>
+                        <span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">1.0 </span><span class="si">{</span><span class="mf">0.0</span><span class="si">:</span><span class="s1">&gt;16.8e</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">conv_tol</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">max_n_iter</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Add lineskip</span>
+                <span class="n">increm_input_lines</span> <span class="o">+=</span> <span class="p">[</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">]</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="k">elif</span> <span class="n">loading_type</span> <span class="o">==</span> <span class="s1">&#39;polynomial&#39;</span><span class="p">:</span>
+                <span class="c1"># Set discrete time history</span>
+                <span class="n">time_hist</span> <span class="o">=</span> \
+                    <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">n_inc</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Set number of control points sampling bounds</span>
+                <span class="n">n_control_bounds</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">5</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Sample number of polynomial control points</span>
+                <span class="n">n_control</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">randint</span><span class="p">(</span><span class="n">n_control_bounds</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                                              <span class="n">n_control_bounds</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="c1"># Set polynomial degree</span>
+                <span class="n">polynomial_degree</span> <span class="o">=</span> <span class="n">n_control</span> <span class="o">-</span> <span class="mi">1</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Set strain control times</span>
+                <span class="n">control_time</span> <span class="o">=</span> \
+                    <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">n_control</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+                <span class="c1"># Sample control total load factor</span>
+                <span class="n">l_tfact</span> <span class="o">=</span> <span class="o">-</span><span class="mf">1.0</span>
+                <span class="n">u_tfact</span> <span class="o">=</span> <span class="mf">1.0</span>
+                <span class="n">control_tfact</span> <span class="o">=</span> \
+                    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">low</span><span class="o">=</span><span class="n">l_tfact</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="n">u_tfact</span><span class="p">,</span>
+                                      <span class="n">size</span><span class="o">=</span><span class="n">n_control</span><span class="p">)</span>
+                <span class="c1"># Enforce initial null total load factor</span>
+                <span class="n">control_tfact</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="mf">0.0</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Fit polynomial model</span>
+                <span class="n">polynomial_coefficients</span> <span class="o">=</span> \
+                    <span class="n">np</span><span class="o">.</span><span class="n">polyfit</span><span class="p">(</span><span class="n">control_time</span><span class="p">,</span> <span class="n">control_tfact</span><span class="p">,</span> <span class="n">polynomial_degree</span><span class="p">)</span>
+                <span class="c1"># Get polynomial model</span>
+                <span class="n">polynomial_model</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">poly1d</span><span class="p">(</span><span class="n">polynomial_coefficients</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Get total load factor history with polynomial model</span>
+                <span class="n">tfact_hist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span>
+                    <span class="p">[</span><span class="n">polynomial_model</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">time_hist</span><span class="p">])</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Set strict bound scaling</span>
+                <span class="n">is_scrict_bound_scaling</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="c1"># Scale total load factor history to strictly enforce bounds</span>
+                <span class="k">if</span> <span class="n">is_scrict_bound_scaling</span> <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">tfact_hist</span><span class="p">))</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="c1"># Get minimum and maximum total load factor values</span>
+                    <span class="n">min_tfact</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">tfact_hist</span><span class="p">)</span>
+                    <span class="n">max_tfact</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">tfact_hist</span><span class="p">)</span>
+                    <span class="c1"># Check if bounds are satisfied</span>
+                    <span class="k">if</span> <span class="n">min_tfact</span> <span class="o">&lt;</span> <span class="n">l_tfact</span> <span class="ow">or</span> <span class="n">max_tfact</span> <span class="o">&gt;</span> <span class="n">u_tfact</span><span class="p">:</span>
+                        <span class="c1"># Compute maximum deviation to lower bound</span>
+                        <span class="k">if</span> <span class="n">min_tfact</span> <span class="o">&lt;</span> <span class="n">l_tfact</span><span class="p">:</span>
+                            <span class="n">l_dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">l_tfact</span> <span class="o">-</span> <span class="n">min_tfact</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">l_dist</span> <span class="o">=</span> <span class="mi">0</span>
+                        <span class="c1"># Compute maximum deviation to upper bound</span>
+                        <span class="k">if</span> <span class="n">max_tfact</span> <span class="o">&gt;</span> <span class="n">u_tfact</span><span class="p">:</span>
+                            <span class="n">u_dist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">u_tfact</span> <span class="o">-</span> <span class="n">max_tfact</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">u_dist</span> <span class="o">=</span> <span class="mi">0</span>
+                        <span class="c1"># Compute linear scale factor</span>
+                        <span class="k">if</span> <span class="n">l_dist</span> <span class="o">&gt;</span> <span class="n">u_dist</span><span class="p">:</span>
+                            <span class="n">scale_factor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">l_tfact</span><span class="o">/</span><span class="n">min_tfact</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">scale_factor</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">u_tfact</span><span class="o">/</span><span class="n">max_tfact</span><span class="p">)</span>
+                        <span class="c1"># Scale total load factor history</span>
+                        <span class="n">tfact_hist</span> <span class="o">=</span> <span class="n">scale_factor</span><span class="o">*</span><span class="n">tfact_hist</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Set loading increments header</span>
+                <span class="n">increm_input_lines</span> <span class="o">+=</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">INCREMENTS </span><span class="si">{</span><span class="n">n_inc</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span>
+                <span class="c1"># Loop over increments</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_inc</span><span class="p">):</span>
+                    <span class="c1"># Compute incremental load factor</span>
+                    <span class="n">dfact</span> <span class="o">=</span> <span class="n">tfact_hist</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">tfact_hist</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                    <span class="c1"># Append loading increment</span>
+                    <span class="n">increm_input_lines</span> <span class="o">+=</span> <span class="p">[</span>
+                        <span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">1.0 </span><span class="si">{</span><span class="n">dfact</span><span class="si">:</span><span class="s1">&gt;16.8e</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">conv_tol</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">max_n_iter</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Set plot flag</span>
+                <span class="n">is_display_tfact_hist</span> <span class="o">=</span> <span class="kc">False</span>
+                <span class="c1"># Display total load factor history</span>
+                <span class="k">if</span> <span class="n">is_display_tfact_hist</span><span class="p">:</span>
+                    <span class="c1"># Assemble total load factor history data</span>
+                    <span class="n">data_xy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">column_stack</span><span class="p">((</span><span class="n">time_hist</span><span class="p">,</span> <span class="n">tfact_hist</span><span class="p">))</span>
+                    <span class="c1"># Plot total load factor history data</span>
+                    <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">plot_xy_data</span><span class="p">(</span><span class="n">data_xy</span><span class="p">,</span> <span class="n">x_lims</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+                                        <span class="n">x_label</span><span class="o">=</span><span class="s1">&#39;Time&#39;</span><span class="p">,</span>
+                                        <span class="n">y_label</span><span class="o">=</span><span class="s1">&#39;Total load factor&#39;</span><span class="p">,</span>
+                                        <span class="n">is_latex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="c1"># Display total load factor history</span>
+                    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Unavailable loading type for &#39;</span>
+                                   <span class="s1">&#39;incrementation mode &#39;</span>
+                                   <span class="s1">&#39;</span><span class="se">\&#39;</span><span class="si">{incrementation_mode}</span><span class="se">\&#39;</span><span class="s1">.&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Unavailable loading incrementation mode.&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">increm_input_lines</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="LinksSimulator.remove_mesh_elements"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.links.links.LinksSimulator.html#hookeai.simulators.links.links.LinksSimulator.remove_mesh_elements">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">remove_mesh_elements</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">remove_elements_labels</span><span class="p">,</span> <span class="n">node_coords</span><span class="p">,</span>
+                             <span class="n">elements</span><span class="p">,</span> <span class="n">elements_mat_phase</span><span class="p">,</span> <span class="n">node_disps</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                             <span class="n">boundary_nodes_labels</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Remove elements from finite element mesh.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        remove_elements_labels : tuple[int]</span>
+<span class="sd">            Finite elements to be removed from finite element mesh.</span>
+<span class="sd">        node_coords : dict</span>
+<span class="sd">            Coordinates (item, numpy.ndarray(n_dim)) of each finite element</span>
+<span class="sd">            mesh node (key, str[int]).</span>
+<span class="sd">        elements : dict</span>
+<span class="sd">            Nodes (item, tuple[int]) of each finite element (key, str[int]).</span>
+<span class="sd">        elements_mat_phase : dict</span>
+<span class="sd">            Material phase (item, int) of each finite element (key, str).</span>
+<span class="sd">        node_disps : dict, default=None</span>
+<span class="sd">            Displacements (item, numpy.ndarray(n_dim)) of each finite element</span>
+<span class="sd">            mesh node (key, str[int]).</span>
+<span class="sd">        boundary_nodes_labels : tuple[int], default=None</span>
+<span class="sd">            Finite element mesh boundary nodes labels. If provided, then</span>
+<span class="sd">            removal of elements that would lead to the removal of a boundary</span>
+<span class="sd">            node raises error.</span>
+<span class="sd">            </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        node_coords : dict</span>
+<span class="sd">            Coordinates (item, numpy.ndarray(n_dim)) of each finite element</span>
+<span class="sd">            mesh node (key, str[int]).</span>
+<span class="sd">        elements : dict</span>
+<span class="sd">            Nodes (item, tuple[int]) of each finite element (key, str[int]).</span>
+<span class="sd">        elements_mat_phase : dict</span>
+<span class="sd">            Material phase (item, int) of each finite element (key, str).</span>
+<span class="sd">        node_disps : dict</span>
+<span class="sd">            Displacements (item, numpy.ndarray(n_dim)) of each finite element</span>
+<span class="sd">            mesh node (key, str[int]). None if displacements are not provided.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Store old nodes coordinates</span>
+        <span class="n">node_coords_old</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">node_coords</span><span class="p">)</span>
+        <span class="c1"># Store old elements</span>
+        <span class="n">elements_old</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">elements</span><span class="p">)</span>
+        <span class="c1"># Store old elements material phases</span>
+        <span class="n">elements_mat_phase_old</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">elements_mat_phase</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get old nodes labels</span>
+        <span class="n">nodes_old_labels</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span><span class="o">*</span><span class="nb">list</span><span class="p">(</span><span class="n">elements_old</span><span class="o">.</span><span class="n">values</span><span class="p">())))</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize element number</span>
+        <span class="n">elem_label</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="c1"># Initialize elements</span>
+        <span class="n">elements</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># Initialize elements mapping (old to new)</span>
+        <span class="n">elem_label_map</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># Loop over old elements</span>
+        <span class="k">for</span> <span class="n">elem_old_label</span><span class="p">,</span> <span class="n">elem_old_nodes</span> <span class="ow">in</span> <span class="n">elements_old</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="c1"># Process remaining element</span>
+            <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">elem_old_label</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">remove_elements_labels</span><span class="p">:</span>
+                <span class="c1"># Collect remaining element nodes</span>
+                <span class="n">elements</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">elem_label</span><span class="p">)]</span> <span class="o">=</span> <span class="n">elem_old_nodes</span>
+                <span class="c1"># Assemble elements mapping (old to new)</span>
+                <span class="n">elem_label_map</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">elem_old_label</span><span class="p">)]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">elem_label</span><span class="p">)</span>
+                <span class="c1"># Increment element number</span>
+                <span class="n">elem_label</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get current nodes</span>
+        <span class="n">nodes_labels</span> <span class="o">=</span> <span class="nb">set</span><span class="p">(</span><span class="n">itertools</span><span class="o">.</span><span class="n">chain</span><span class="p">(</span><span class="o">*</span><span class="nb">list</span><span class="p">(</span><span class="n">elements</span><span class="o">.</span><span class="n">values</span><span class="p">())))</span>
+        <span class="c1"># Get nodes to be removed</span>
+        <span class="n">remove_nodes_labels</span> <span class="o">=</span> <span class="n">nodes_old_labels</span> <span class="o">-</span> <span class="n">nodes_labels</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Check removal of boundary nodes</span>
+        <span class="k">if</span> <span class="n">boundary_nodes_labels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Loop over nodes</span>
+            <span class="k">for</span> <span class="n">node_label</span> <span class="ow">in</span> <span class="n">remove_nodes_labels</span><span class="p">:</span>
+                <span class="c1"># Check if removed node is boundary node</span>
+                <span class="k">if</span> <span class="n">node_label</span> <span class="ow">in</span> <span class="n">boundary_nodes_labels</span><span class="p">:</span>
+                    <span class="c1"># Initialize invalid removed elements</span>
+                    <span class="n">inv_remove_elements_labels</span> <span class="o">=</span> <span class="p">[]</span>
+                    <span class="c1"># Loop over elements</span>
+                    <span class="k">for</span> <span class="n">elem_label</span> <span class="ow">in</span> <span class="n">remove_elements_labels</span><span class="p">:</span>
+                        <span class="c1"># Collect invalid removed elements</span>
+                        <span class="k">if</span> <span class="n">node_label</span> <span class="ow">in</span> <span class="n">elements_old</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">elem_label</span><span class="p">)]:</span>
+                            <span class="n">inv_remove_elements_labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">elem_label</span><span class="p">)</span>
+                    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s1">&#39;Removing elements that would lead to the removal of &#39;</span>
+                        <span class="sa">f</span><span class="s1">&#39;boundary nodes is not allowed. The following &#39;</span>
+                        <span class="sa">f</span><span class="s1">&#39;elements cannot be removed due to boundary node &#39;</span>
+                        <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">node_label</span><span class="si">}</span><span class="s1">: </span><span class="si">{</span><span class="n">inv_remove_elements_labels</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize node number</span>
+        <span class="n">node_label</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="c1"># Initialize nodes coordinates</span>
+        <span class="n">node_coords</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># Initialize nodes mapping (old to new)</span>
+        <span class="n">node_label_map</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># Loop over old nodes</span>
+        <span class="k">for</span> <span class="n">node_old_label</span><span class="p">,</span> <span class="n">node_old_coords</span> <span class="ow">in</span> <span class="n">node_coords_old</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="c1"># Process remaining node</span>
+            <span class="k">if</span> <span class="nb">int</span><span class="p">(</span><span class="n">node_old_label</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">remove_nodes_labels</span><span class="p">:</span>
+                <span class="c1"># Collect remaining node coordinates</span>
+                <span class="n">node_coords</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">node_label</span><span class="p">)]</span> <span class="o">=</span> <span class="n">node_old_coords</span>
+                <span class="c1"># Assemble nodes mapping (old to new)</span>
+                <span class="n">node_label_map</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">node_old_label</span><span class="p">)]</span> <span class="o">=</span> <span class="n">node_label</span>
+                <span class="c1"># Increment node number</span>
+                <span class="n">node_label</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Loop over elements</span>
+        <span class="k">for</span> <span class="n">elem_label</span> <span class="ow">in</span> <span class="n">elements</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="c1"># Store old element nodes</span>
+            <span class="n">elem_old_nodes</span> <span class="o">=</span> <span class="n">elements</span><span class="p">[</span><span class="n">elem_label</span><span class="p">]</span>
+            <span class="c1"># Build new element nodes</span>
+            <span class="n">elem_nodes</span> <span class="o">=</span> <span class="p">[</span><span class="n">node_label_map</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">node_old_label</span><span class="p">)]</span>
+                          <span class="k">for</span> <span class="n">node_old_label</span> <span class="ow">in</span> <span class="n">elem_old_nodes</span><span class="p">]</span>
+            <span class="c1"># Store new element nodes</span>
+            <span class="n">elements</span><span class="p">[</span><span class="n">elem_label</span><span class="p">]</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">elem_nodes</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize elements material phases</span>
+        <span class="n">elements_mat_phase</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># Loop over elements</span>
+        <span class="k">for</span> <span class="n">elem_old_label</span><span class="p">,</span> <span class="n">mat_phase</span> <span class="ow">in</span> <span class="n">elements_mat_phase_old</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="c1"># Process remaining element</span>
+            <span class="k">if</span> <span class="n">elem_old_label</span> <span class="ow">in</span> <span class="n">elem_label_map</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="c1"># Collect remaining element material phase</span>
+                <span class="n">elements_mat_phase</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">elem_label_map</span><span class="p">[</span><span class="n">elem_old_label</span><span class="p">])]</span> <span class="o">=</span> \
+                    <span class="n">mat_phase</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Map nodes displacements</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">node_disps</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="c1"># Store old nodes displacements</span>
+            <span class="n">node_disps_old</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">node_disps</span><span class="p">)</span>
+            <span class="c1"># Initialize nodes displacements</span>
+            <span class="n">node_disps</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="c1"># Loop over old nodes</span>
+            <span class="k">for</span> <span class="n">node_old_label</span><span class="p">,</span> <span class="n">node_old_disps</span> <span class="ow">in</span> <span class="n">node_disps_old</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="c1"># Get node label</span>
+                <span class="n">node_label</span> <span class="o">=</span> <span class="n">node_label_map</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">node_old_label</span><span class="p">)]</span>
+                <span class="c1"># Collect node displacements</span>
+                <span class="n">node_disps</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">node_label</span><span class="p">)]</span> <span class="o">=</span> <span class="n">node_old_disps</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">node_disps</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">node_coords</span><span class="p">,</span> <span class="n">elements</span><span class="p">,</span> <span class="n">elements_mat_phase</span><span class="p">,</span> <span class="n">node_disps</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

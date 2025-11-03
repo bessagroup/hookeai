@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>hookeai.simulators.fetorch.math.voigt_notation &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../../" id="documentation_options" src="../../../../../_static/documentation_options.js"></script>
+        <script src="../../../../../_static/doctools.js"></script>
+        <script src="../../../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../_autosummary/hookeai.html">Code</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">hookeai.simulators.fetorch.math.voigt_notation</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for hookeai.simulators.fetorch.math.voigt_notation</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;FETorch: Strain/Stress tensors Voigt notation matricial storage.</span>
+
+<span class="sd">This module contains standard finite element procedures associated with the</span>
+<span class="sd">storage of strain/stress tensorial quantities following the Voigt notation.</span>
+
+<span class="sd">Functions</span>
+<span class="sd">---------</span>
+<span class="sd">get_strain_from_vmf</span>
+<span class="sd">    Recover strain tensor from associated Voigt matricial form.</span>
+<span class="sd">vget_strain_from_vmf</span>
+<span class="sd">    Recover strain tensor from associated Voigt matricial form.</span>
+<span class="sd">get_stress_vmf</span>
+<span class="sd">    Get stress tensor Voigt matricial form.</span>
+<span class="sd">vget_stress_vmf</span>
+<span class="sd">    Get stress tensor Voigt matricial form.</span>
+<span class="sd">get_projection_tensors_vmf(n_dim, comp_order_sym, device=&#39;cpu&#39;)</span>
+<span class="sd">    Get volumetric and deviatoric projection tensors Voigt matricial form.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#                                                                       Modules</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Standard</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">itertools</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">it</span>
+<span class="c1"># Third-party</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="c1">#</span>
+<span class="c1">#                                                          Authorship &amp; Credits</span>
+<span class="c1"># =============================================================================</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Bernardo Ferreira (bernardo_ferreira@brown.edu)&#39;</span>
+<span class="n">__credits__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Bernardo Ferreira&#39;</span><span class="p">,</span> <span class="p">]</span>
+<span class="n">__status__</span> <span class="o">=</span> <span class="s1">&#39;Stable&#39;</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="get_strain_from_vmf"><a class="viewcode-back" href="../../../../../_autosummary/hookeai.simulators.fetorch.math.voigt_notation.get_strain_from_vmf.html#hookeai.simulators.fetorch.math.voigt_notation.get_strain_from_vmf">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">get_strain_from_vmf</span><span class="p">(</span><span class="n">strain_vmf</span><span class="p">,</span> <span class="n">n_dim</span><span class="p">,</span> <span class="n">comp_order_sym</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Recover strain tensor from associated Voigt matricial form.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    strain_vmf : torch.Tensor(1d)</span>
+<span class="sd">        Strain tensor stored in Voigt matricial form.</span>
+<span class="sd">    n_dim : int</span>
+<span class="sd">        Problem number of spatial dimensions.</span>
+<span class="sd">    comp_order_sym : tuple</span>
+<span class="sd">        Strain/Stress components symmetric order.</span>
+<span class="sd">    device : torch.device, default=None</span>
+<span class="sd">        Device on which torch.Tensor is allocated.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    strain : torch.Tensor(2d)</span>
+<span class="sd">        Strain tensor recovered from Voigt matricial form.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get device from input strain tensor</span>
+    <span class="k">if</span> <span class="n">device</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">device</span> <span class="o">=</span> <span class="n">strain_vmf</span><span class="o">.</span><span class="n">device</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Check strain tensor Voigt matricial form</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">strain_vmf</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Strain tensor Voigt matricial form must be &#39;</span>
+                           <span class="s1">&#39;torch.Tensor.&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">strain_vmf</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Strain tensor Voigt matricial form must be &#39;</span>
+                           <span class="s1">&#39;torch.Tensor(1d).&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Check input arguments validity</span>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">([</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_dim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">comp_order_sym</span><span class="p">))]):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Invalid component in strain/stress components &#39;</span>
+                           <span class="s1">&#39;order.&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">any</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">comp</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span> <span class="k">for</span> <span class="n">comp</span> <span class="ow">in</span> <span class="n">comp_order_sym</span><span class="p">]):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Invalid component in strain/stress components &#39;</span>
+                           <span class="s1">&#39;order.&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">comp_order_sym</span><span class="p">)))</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">comp_order_sym</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Duplicated component in strain/stress components &#39;</span>
+                           <span class="s1">&#39;order.&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set second-order and matricial form indexes</span>
+    <span class="n">so_indexes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+    <span class="n">mf_indexes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">comp_order_sym</span><span class="p">)):</span>
+        <span class="n">so_indexes</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">comp_order_sym</span><span class="p">[</span><span class="n">i</span><span class="p">])])</span>
+        <span class="n">mf_indexes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">comp_order_sym</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">comp_order_sym</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize strain tensor</span>
+    <span class="n">strain</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_dim</span><span class="p">,</span> <span class="n">n_dim</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+    <span class="c1"># Get strain tensor from matricial form</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">mf_indexes</span><span class="p">)):</span>
+        <span class="n">mf_idx</span> <span class="o">=</span> <span class="n">mf_indexes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">so_idx</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">so_indexes</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="n">factor</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="k">if</span> <span class="n">so_idx</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">so_idx</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="n">factor</span> <span class="o">=</span> <span class="mf">2.0</span>
+            <span class="n">strain</span><span class="p">[</span><span class="n">so_idx</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">]]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span><span class="o">/</span><span class="n">factor</span><span class="p">)</span><span class="o">*</span><span class="n">strain_vmf</span><span class="p">[</span><span class="n">mf_idx</span><span class="p">]</span>
+        <span class="n">strain</span><span class="p">[</span><span class="n">so_idx</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span><span class="o">/</span><span class="n">factor</span><span class="p">)</span><span class="o">*</span><span class="n">strain_vmf</span><span class="p">[</span><span class="n">mf_idx</span><span class="p">]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">strain</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="vget_strain_from_vmf"><a class="viewcode-back" href="../../../../../_autosummary/hookeai.simulators.fetorch.math.voigt_notation.vget_strain_from_vmf.html#hookeai.simulators.fetorch.math.voigt_notation.vget_strain_from_vmf">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">vget_strain_from_vmf</span><span class="p">(</span><span class="n">strain_vmf</span><span class="p">,</span> <span class="n">n_dim</span><span class="p">,</span> <span class="n">comp_order_sym</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Recover strain tensor from associated Voigt matricial form.</span>
+
+<span class="sd">    Compatible with vectorized mapping.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    strain_vmf : torch.Tensor(1d)</span>
+<span class="sd">        Strain tensor stored in Voigt matricial form.</span>
+<span class="sd">    n_dim : int</span>
+<span class="sd">        Problem number of spatial dimensions.</span>
+<span class="sd">    comp_order_sym : tuple</span>
+<span class="sd">        Strain/Stress components symmetric order.</span>
+<span class="sd">    device : torch.device, default=None</span>
+<span class="sd">        Device on which torch.Tensor is allocated.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    strain : torch.Tensor(2d)</span>
+<span class="sd">        Strain tensor recovered from Voigt matricial form.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get device from input strain tensor</span>
+    <span class="k">if</span> <span class="n">device</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">device</span> <span class="o">=</span> <span class="n">strain_vmf</span><span class="o">.</span><span class="n">device</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set row major components order     </span>
+    <span class="n">row_major_order</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}{</span><span class="n">j</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s1">&#39;</span>
+                            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">it</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">n_dim</span><span class="p">),</span> <span class="n">repeat</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Build indexing inverse Voigt factor</span>
+    <span class="n">index_voigt_inv</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
+        <span class="p">[</span><span class="mf">1.0</span><span class="o">/</span><span class="mf">2.0</span> <span class="k">if</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">else</span> <span class="mf">1.0</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">comp_order_sym</span><span class="p">],</span>
+        <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+    <span class="c1"># Build indexing mapping</span>
+    <span class="n">index_map</span> <span class="o">=</span> <span class="p">[</span><span class="n">comp_order_sym</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">comp_order_sym</span>
+                 <span class="k">else</span> <span class="n">comp_order_sym</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">x</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">row_major_order</span><span class="p">]</span>
+    <span class="c1"># Get tensor from matricial form</span>
+    <span class="n">strain</span> <span class="o">=</span> \
+        <span class="n">torch</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">strain_vmf</span><span class="p">,</span> <span class="n">index_voigt_inv</span><span class="p">)[</span><span class="n">index_map</span><span class="p">]</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">n_dim</span><span class="p">,</span> <span class="n">n_dim</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">strain</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="get_stress_vmf"><a class="viewcode-back" href="../../../../../_autosummary/hookeai.simulators.fetorch.math.voigt_notation.get_stress_vmf.html#hookeai.simulators.fetorch.math.voigt_notation.get_stress_vmf">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">get_stress_vmf</span><span class="p">(</span><span class="n">stress</span><span class="p">,</span> <span class="n">n_dim</span><span class="p">,</span> <span class="n">comp_order_sym</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get stress tensor Voigt matricial form.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    stress : torch.Tensor(2d)</span>
+<span class="sd">        Stress tensor to be stored in Voigt matricial form.</span>
+<span class="sd">    n_dim : int</span>
+<span class="sd">        Problem number of spatial dimensions.</span>
+<span class="sd">    comp_order_sym : tuple</span>
+<span class="sd">        Strain/Stress components symmetric order.</span>
+<span class="sd">    device : torch.device, default=None</span>
+<span class="sd">        Device on which torch.Tensor is allocated.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    stress_vmf : torch.Tensor(1d)</span>
+<span class="sd">        Stress tensor stored in Voigt matricial form.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get device from input stress tensor</span>
+    <span class="k">if</span> <span class="n">device</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">device</span> <span class="o">=</span> <span class="n">stress</span><span class="o">.</span><span class="n">device</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Check stress tensor</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">stress</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Stress tensor must be torch.Tensor.&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">stress</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Stress tensor must be torch.Tensor(2d).&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Check input arguments validity</span>
+    <span class="k">if</span> <span class="nb">any</span><span class="p">([</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_dim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">comp_order_sym</span><span class="p">))]):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Invalid component in strain/stress components &#39;</span>
+                           <span class="s1">&#39;order.&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">any</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">comp</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span> <span class="k">for</span> <span class="n">comp</span> <span class="ow">in</span> <span class="n">comp_order_sym</span><span class="p">]):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Invalid component in strain/stress components &#39;</span>
+                           <span class="s1">&#39;order.&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="nb">list</span><span class="p">(</span><span class="nb">dict</span><span class="o">.</span><span class="n">fromkeys</span><span class="p">(</span><span class="n">comp_order_sym</span><span class="p">)))</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">comp_order_sym</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Duplicated component in strain/stress components &#39;</span>
+                           <span class="s1">&#39;order.&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set second-order and matricial form indexes</span>
+    <span class="n">so_indexes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+    <span class="n">mf_indexes</span> <span class="o">=</span> <span class="nb">list</span><span class="p">()</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">comp_order_sym</span><span class="p">)):</span>
+        <span class="n">so_indexes</span><span class="o">.</span><span class="n">append</span><span class="p">([</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="n">comp_order_sym</span><span class="p">[</span><span class="n">i</span><span class="p">])])</span>
+        <span class="n">mf_indexes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">comp_order_sym</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">comp_order_sym</span><span class="p">[</span><span class="n">i</span><span class="p">]))</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize stress tensor Voigt matricial form</span>
+    <span class="n">stress_vmf</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">comp_order_sym</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+    <span class="c1"># Store stress tensor in Voigt matricial form</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">mf_indexes</span><span class="p">)):</span>
+        <span class="n">mf_idx</span> <span class="o">=</span> <span class="n">mf_indexes</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="n">so_idx</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">so_indexes</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+        <span class="n">stress_vmf</span><span class="p">[</span><span class="n">mf_idx</span><span class="p">]</span> <span class="o">=</span> <span class="n">stress</span><span class="p">[</span><span class="n">so_idx</span><span class="p">]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">stress_vmf</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="vget_stress_vmf"><a class="viewcode-back" href="../../../../../_autosummary/hookeai.simulators.fetorch.math.voigt_notation.vget_stress_vmf.html#hookeai.simulators.fetorch.math.voigt_notation.vget_stress_vmf">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">vget_stress_vmf</span><span class="p">(</span><span class="n">stress</span><span class="p">,</span> <span class="n">n_dim</span><span class="p">,</span> <span class="n">comp_order_sym</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get stress tensor Voigt matricial form.</span>
+
+<span class="sd">    Compatible with vectorized mapping.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    stress : torch.Tensor(2d)</span>
+<span class="sd">        Stress tensor to be stored in Voigt matricial form.</span>
+<span class="sd">    n_dim : int</span>
+<span class="sd">        Problem number of spatial dimensions.</span>
+<span class="sd">    comp_order_sym : tuple</span>
+<span class="sd">        Strain/Stress components symmetric order.</span>
+<span class="sd">    device : torch.device, default=None</span>
+<span class="sd">        Device on which torch.Tensor is allocated.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    stress_vmf : torch.Tensor(1d)</span>
+<span class="sd">        Stress tensor stored in Voigt matricial form.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get device from input stress tensor</span>
+    <span class="k">if</span> <span class="n">device</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">device</span> <span class="o">=</span> <span class="n">stress</span><span class="o">.</span><span class="n">device</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Build indexing mapping</span>
+    <span class="n">index_map</span> <span class="o">=</span> \
+        <span class="nb">tuple</span><span class="p">([</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">comp_order_sym</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+    <span class="c1"># Compute tensor Voigt matricial form</span>
+    <span class="n">stress_vmf</span> <span class="o">=</span> <span class="n">stress</span><span class="p">[</span><span class="n">index_map</span><span class="p">]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">stress_vmf</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="get_projection_tensors_vmf"><a class="viewcode-back" href="../../../../../_autosummary/hookeai.simulators.fetorch.math.voigt_notation.get_projection_tensors_vmf.html#hookeai.simulators.fetorch.math.voigt_notation.get_projection_tensors_vmf">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">get_projection_tensors_vmf</span><span class="p">(</span><span class="n">n_dim</span><span class="p">,</span> <span class="n">comp_order_sym</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get volumetric and deviatoric projection tensors Voigt matricial form.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    n_dim : int</span>
+<span class="sd">        Number of spatial dimensions.</span>
+<span class="sd">    comp_order_sym : tuple</span>
+<span class="sd">        Strain/Stress components symmetric order.</span>
+<span class="sd">    device : torch.device, default=&#39;cpu&#39;</span>
+<span class="sd">        Device on which torch.Tensor is allocated.</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    vol_proj_vmf : torch.Tensor(2d)</span>
+<span class="sd">        Volumetric projection tensor Voigt matricial form.</span>
+<span class="sd">    dev_proj_vmf : torch.Tensor(2d)</span>
+<span class="sd">        Deviatoric projection tensor Voigt matricial form.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get number of strain components</span>
+    <span class="n">n_comp</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">comp_order_sym</span><span class="p">)</span>
+    <span class="c1"># Set second-order identity tensor (strain dimensionality)</span>
+    <span class="n">soid</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">n_comp</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set volumetric indicator</span>
+    <span class="n">vol_indicator</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
+        <span class="p">[</span><span class="mf">1.0</span> <span class="k">if</span> <span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="k">else</span> <span class="mf">0.0</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">comp_order_sym</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Build volumetric projection operator</span>
+    <span class="n">vol_proj_vmf</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span><span class="o">/</span><span class="n">n_dim</span><span class="p">)</span><span class="o">*</span><span class="n">torch</span><span class="o">.</span><span class="n">outer</span><span class="p">(</span><span class="n">vol_indicator</span><span class="p">,</span> <span class="n">vol_indicator</span><span class="p">)</span>
+    <span class="c1"># Build deviatoric projection operator</span>
+    <span class="n">dev_proj_vmf</span> <span class="o">=</span> <span class="n">soid</span> <span class="o">-</span> <span class="n">vol_proj_vmf</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">vol_proj_vmf</span><span class="p">,</span> <span class="n">dev_proj_vmf</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

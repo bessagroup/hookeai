@@ -1,0 +1,639 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="hookeai.miscellaneous.materials.compare_material_models.StrainPathGenerator" href="hookeai.miscellaneous.materials.compare_material_models.StrainPathGenerator.html" />
+    <link rel="prev" title="hookeai.miscellaneous.materials.compare_material_models.LouZhangYoonVMAP" href="hookeai.miscellaneous.materials.compare_material_models.LouZhangYoonVMAP.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="hookeai.html">Code</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="hookeai.data_generation.html">hookeai.data_generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.ioput.html">hookeai.ioput</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.material_model_finder.html">hookeai.material_model_finder</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="hookeai.miscellaneous.html">hookeai.miscellaneous</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="hookeai.miscellaneous.dataset_processing.html">hookeai.miscellaneous.dataset_processing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hookeai.miscellaneous.file_processing.html">hookeai.miscellaneous.file_processing</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="hookeai.miscellaneous.materials.html">hookeai.miscellaneous.materials</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="hookeai.miscellaneous.materials.compare_hardening_laws.html">hookeai.miscellaneous.materials.compare_hardening_laws</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="hookeai.miscellaneous.materials.compare_material_models.html">hookeai.miscellaneous.materials.compare_material_models</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hookeai.miscellaneous.materials.lou_convexity.html">hookeai.miscellaneous.materials.lou_convexity</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hookeai.miscellaneous.materials.plot_yield_surface.html">hookeai.miscellaneous.materials.plot_yield_surface</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="hookeai.miscellaneous.noisy_data.html">hookeai.miscellaneous.noisy_data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hookeai.miscellaneous.other.html">hookeai.miscellaneous.other</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hookeai.miscellaneous.pruning.html">hookeai.miscellaneous.pruning</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.model_architectures.html">hookeai.model_architectures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.simulators.html">hookeai.simulators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.time_series_data.html">hookeai.time_series_data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.utilities.html">hookeai.utilities</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="hookeai.html">hookeai</a></li>
+          <li class="breadcrumb-item"><a href="hookeai.miscellaneous.html">hookeai.miscellaneous</a></li>
+          <li class="breadcrumb-item"><a href="hookeai.miscellaneous.materials.html">hookeai.miscellaneous.materials</a></li>
+          <li class="breadcrumb-item"><a href="hookeai.miscellaneous.materials.compare_material_models.html">hookeai.miscellaneous.materials.compare_material_models</a></li>
+      <li class="breadcrumb-item active">hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="hookeai-miscellaneous-materials-compare-material-models-materialresponsedatasetgenerator">
+<h1>hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator<a class="headerlink" href="#hookeai-miscellaneous-materials-compare-material-models-materialresponsedatasetgenerator" title="Permalink to this heading">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">MaterialResponseDatasetGenerator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">strain_formulation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">problem_type</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/user_scripts/synthetic_data/gen_response_dataset.html#MaterialResponseDatasetGenerator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Strain-stress material response path data set generator.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator._strain_formulation">
+<span class="sig-name descname"><span class="pre">_strain_formulation</span></span><a class="headerlink" href="#hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator._strain_formulation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Strain formulation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>{‘infinitesimal’, ‘finite’}</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator._problem_type">
+<span class="sig-name descname"><span class="pre">_problem_type</span></span><a class="headerlink" href="#hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator._problem_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Problem type: 2D plane strain (1), 2D plane stress (2),
+2D axisymmetric (3) and 3D (4).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator._n_dim">
+<span class="sig-name descname"><span class="pre">_n_dim</span></span><a class="headerlink" href="#hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator._n_dim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Problem number of spatial dimensions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator._comp_order_sym">
+<span class="sig-name descname"><span class="pre">_comp_order_sym</span></span><a class="headerlink" href="#hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator._comp_order_sym" title="Permalink to this definition">¶</a></dt>
+<dd><p>Strain/Stress components symmetric order.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator._comp_order_nsym">
+<span class="sig-name descname"><span class="pre">_comp_order_nsym</span></span><a class="headerlink" href="#hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator._comp_order_nsym" title="Permalink to this definition">¶</a></dt>
+<dd><p>Strain/Stress components nonsymmetric order.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">generate_response_dataset(self,</span> <span class="pre">n_path,</span> <span class="pre">strain_path_type,</span></span></dt>
+<dd><blockquote>
+<div><p>strain_path_kwargs, model_name,                               model_parameters, state_features={},                               is_in_memory_dataset=True,                               dataset_directory=None,                               dataset_basename=None,                               save_dir=None, is_save_fig=False,                               is_verbose=False)</p>
+</div></blockquote>
+<p>Generate strain-stress material response path data set.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator.compute_stress_path">
+<span class="sig-name descname"><span class="pre">compute_stress_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strain_comps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_hist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strain_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">constitutive_model</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/user_scripts/synthetic_data/gen_response_dataset.html#MaterialResponseDatasetGenerator.compute_stress_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator.compute_stress_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute material stress response for given strain path.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator.build_tensor_from_comps">
+<span class="sig-name descname"><span class="pre">build_tensor_from_comps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comps_array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_symmetric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/user_scripts/synthetic_data/gen_response_dataset.html#MaterialResponseDatasetGenerator.build_tensor_from_comps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator.build_tensor_from_comps" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build strain/stress tensor from given components.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator.store_tensor_comps">
+<span class="sig-name descname"><span class="pre">store_tensor_comps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">comps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/user_scripts/synthetic_data/gen_response_dataset.html#MaterialResponseDatasetGenerator.store_tensor_comps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator.store_tensor_comps" title="Permalink to this definition">¶</a></dt>
+<dd><p>Store strain/stress tensor components in array.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator.gen_response_dataset_from_csv">
+<span class="sig-name descname"><span class="pre">gen_response_dataset_from_csv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">response_file_paths</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_in_memory_dataset=True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_directory</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_dir=None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_save_fig=False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_verbose=False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/user_scripts/synthetic_data/gen_response_dataset.html#MaterialResponseDatasetGenerator.gen_response_dataset_from_csv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator.gen_response_dataset_from_csv" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator.gen_response_dataset_from_strain_dataset">
+<span class="sig-name descname"><span class="pre">gen_response_dataset_from_strain_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state_features</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/user_scripts/synthetic_data/gen_response_dataset.html#MaterialResponseDatasetGenerator.gen_response_dataset_from_strain_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator.gen_response_dataset_from_strain_dataset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate material response data set from strain data set.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator.plot_material_response_path">
+<span class="sig-name descname"><span class="pre">plot_material_response_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strain_formulation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strain_comps_order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strain_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stress_comps_order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stress_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_hist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_plot_strain_stress_paths</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_plot_eq_strain_stress</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stress_units</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'response_path'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_save_fig</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_stdout_display</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_latex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/user_scripts/synthetic_data/gen_response_dataset.html#MaterialResponseDatasetGenerator.plot_material_response_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator.plot_material_response_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot strain-stress material response path.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator.plot_stress_space_metrics">
+<span class="sig-name descname"><span class="pre">plot_stress_space_metrics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strain_formulation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stress_comps_order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stress_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_hist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_plot_principal_stress_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_plot_stress_invar_hist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_plot_stress_invar_box</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_plot_stress_path_triax_lode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_plot_stress_triax_lode_hist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_plot_stress_triax_lode_box</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stress_units</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'stress_path'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_save_fig</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_stdout_display</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_latex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/user_scripts/synthetic_data/gen_response_dataset.html#MaterialResponseDatasetGenerator.plot_stress_space_metrics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator.plot_stress_space_metrics" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot strain-stress material response path in principal stress space.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator.compute_stress_invariants">
+<span class="sig-name descname"><span class="pre">compute_stress_invariants</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stress</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/user_scripts/synthetic_data/gen_response_dataset.html#MaterialResponseDatasetGenerator.compute_stress_invariants"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator.compute_stress_invariants" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute stress invariants.</p>
+</dd></dl>
+
+<p>Constructor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>strain_formulation</strong> (<em>{'infinitesimal'</em><em>, </em><em>'finite'}</em>) – Strain formulation.</p></li>
+<li><p><strong>problem_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Problem type: 2D plane strain (1), 2D plane stress (2),
+2D axisymmetric (3) and 3D (4).</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">List of Public Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id0" title="hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator.build_tensor_from_comps"><code class="xref py py-obj docutils literal notranslate"><span class="pre">build_tensor_from_comps</span></code></a></p></td>
+<td><p>Build strain/stress tensor from given components.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#id1" title="hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator.compute_stress_invariants"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_stress_invariants</span></code></a></p></td>
+<td><p>Compute stress invariants.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id2" title="hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator.compute_stress_path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_stress_path</span></code></a></p></td>
+<td><p>Compute material stress response for given strain path.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#id3" title="hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator.gen_response_dataset_from_csv"><code class="xref py py-obj docutils literal notranslate"><span class="pre">gen_response_dataset_from_csv</span></code></a></p></td>
+<td><p>Generate strain-stress path data set from set of .csv files.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id4" title="hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator.gen_response_dataset_from_strain_dataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">gen_response_dataset_from_strain_dataset</span></code></a></p></td>
+<td><p>Generate material response data set from strain data set.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator.generate_response_dataset" title="hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator.generate_response_dataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_response_dataset</span></code></a></p></td>
+<td><p>Generate strain-stress material response path data set.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id5" title="hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator.plot_material_response_path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_material_response_path</span></code></a></p></td>
+<td><p>Plot strain-stress material response path.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator.plot_state_history" title="hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator.plot_state_history"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_state_history</span></code></a></p></td>
+<td><p>Plot constitutive state variable path.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id6" title="hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator.plot_stress_space_metrics"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_stress_space_metrics</span></code></a></p></td>
+<td><p>Plot strain-stress material response path in principal stress space.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#id7" title="hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator.store_tensor_comps"><code class="xref py py-obj docutils literal notranslate"><span class="pre">store_tensor_comps</span></code></a></p></td>
+<td><p>Store strain/stress tensor components in array.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">strain_formulation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">problem_type</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/user_scripts/synthetic_data/gen_response_dataset.html#MaterialResponseDatasetGenerator.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>strain_formulation</strong> (<em>{'infinitesimal'</em><em>, </em><em>'finite'}</em>) – Strain formulation.</p></li>
+<li><p><strong>problem_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Problem type: 2D plane strain (1), 2D plane stress (2),
+2D axisymmetric (3) and 3D (4).</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id0">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">build_tensor_from_comps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comps_array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_symmetric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/user_scripts/synthetic_data/gen_response_dataset.html#MaterialResponseDatasetGenerator.build_tensor_from_comps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id0" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build strain/stress tensor from given components.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_dim</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Problem number of spatial dimensions.</p></li>
+<li><p><strong>comps</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>]</em>) – Strain/Stress components order.</p></li>
+<li><p><strong>comps_array</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>numpy.ndarray</em></a><em>(</em><em>1d</em><em>)</em>) – Strain/Stress components array.</p></li>
+<li><p><strong>is_symmetric</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – If True, then assembles off-diagonal strain components from
+symmetric component.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>tensor</strong> – Strain/Stress tensor.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)">numpy.ndarray</a>(2d)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id1">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">compute_stress_invariants</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stress</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/user_scripts/synthetic_data/gen_response_dataset.html#MaterialResponseDatasetGenerator.compute_stress_invariants"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id1" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute stress invariants.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>stress</strong> (<em>np.ndarray</em><em>(</em><em>2d</em><em>)</em>) – Stress tensor.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>stress_invar</strong> (<em>np.ndarray(1d)</em>) – Stress invariants.</p></li>
+<li><p><strong>stress_invar_dev</strong> (<em>np.ndarray(1d)</em>) – Deviatoric stress invariants</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id2">
+<span class="sig-name descname"><span class="pre">compute_stress_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">strain_comps_order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_hist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strain_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">constitutive_model</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state_features</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/user_scripts/synthetic_data/gen_response_dataset.html#MaterialResponseDatasetGenerator.compute_stress_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute material stress response for given strain path.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>strain_comps_order</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>]</em>) – Strain components order.</p></li>
+<li><p><strong>time_hist</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>numpy.ndarray</em></a><em>(</em><em>1d</em><em>)</em>) – Discrete time history.</p></li>
+<li><p><strong>strain_path</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>numpy.ndarray</em></a><em>(</em><em>2d</em><em>)</em>) – Strain path history stored as numpy.ndarray(2d) of shape
+(sequence_length, n_strain_comps).</p></li>
+<li><p><strong>constitutive_model</strong> (<a class="reference internal" href="hookeai.simulators.fetorch.material.models.interface.ConstitutiveModel.html#hookeai.simulators.fetorch.material.models.interface.ConstitutiveModel" title="hookeai.simulators.fetorch.material.models.interface.ConstitutiveModel"><em>ConstitutiveModel</em></a>) – FETorch material constitutive model.</p></li>
+<li><p><strong>state_features</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em>, </em><em>default={}</em>) – FETorch material constitutive model state variables (key, str) and
+corresponding dimensionality (item, int) for which the path history
+is additionally included in the data set. Tensorial state variables
+stored in matricial form are included in the data set without any
+matricial form coefficients (true components are extracted).
+Unavailable state variables are ignored.</p></li>
+<li><p><strong>is_verbose</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – If True, enable verbose output.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>stress_comps_order</strong> (<em>tuple</em>) – Stress components order.</p></li>
+<li><p><strong>stress_path</strong> (<em>numpy.ndarray(2d)</em>) – Stress path history stored as numpy.ndarray(2d) of shape
+(sequence_length, n_stress_comps).</p></li>
+<li><p><strong>state_path</strong> (<em>dict</em>) – Store each requested constitutive model state variable (key, str)
+path history as numpy.ndarray(2d) of shape
+(sequence_length, n_features).</p></li>
+<li><p><strong>is_stress_path_fail</strong> (<em>bool</em>) – Stress response path failure flag.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id3">
+<span class="sig-name descname"><span class="pre">gen_response_dataset_from_csv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">response_file_paths</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_in_memory_dataset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_directory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_save_fig</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/user_scripts/synthetic_data/gen_response_dataset.html#MaterialResponseDatasetGenerator.gen_response_dataset_from_csv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id3" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate strain-stress path data set from set of .csv files.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>response_file_paths</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a>) – Strain-stress response paths data files paths (.csv).</p></li>
+<li><p><strong>is_in_memory_dataset</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=True</em>) – If True, then generate in-memory time series data set, otherwise
+time series data set samples are stored in local directory.</p></li>
+<li><p><strong>dataset_directory</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>default=None</em>) – Directory where the time series data set is stored (all data set
+samples files). Required if is_in_memory_dataset=False.</p></li>
+<li><p><strong>dataset_basename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>default=None</em>) – Data set file base name. Required if is_in_memory_dataset=False.</p></li>
+<li><p><strong>save_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>default=None</em>) – Directory where figure is saved. If None, then figure is saved in
+current working directory.</p></li>
+<li><p><strong>is_save_fig</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – Save figure.</p></li>
+<li><p><strong>is_verbose</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – If True, enable verbose output.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>dataset</strong> – Time series data set. Each sample is stored as a dictionary where
+each feature (key, str) data is a torch.Tensor(2d) of shape
+(sequence_length, n_features).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.utils.data.Dataset</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id4">
+<span class="sig-name descname"><span class="pre">gen_response_dataset_from_strain_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dataset_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state_features</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/user_scripts/synthetic_data/gen_response_dataset.html#MaterialResponseDatasetGenerator.gen_response_dataset_from_strain_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id4" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate material response data set from strain data set.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>dataset_file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Data set file path.</p></li>
+<li><p><strong>model_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – FETorch material constitutive model name.</p></li>
+<li><p><strong>model_parameters</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – FETorch material constitutive model parameters.</p></li>
+<li><p><strong>state_features</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em>, </em><em>default={}</em>) – FETorch material constitutive model state variables (key, str) and
+corresponding dimensionality (item, int) for which the path history
+is additionally included in the data set. Tensorial state variables
+stored in matricial form are included in the data set without any
+matricial form coefficients (true components are extracted).
+Unavailable state variables are ignored.</p></li>
+<li><p><strong>is_verbose</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – If True, enable verbose output.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>dataset</strong> – Time series data set. Each sample is stored as a dictionary where
+each feature (key, str) data is a torch.Tensor(2d) of shape
+(sequence_length, n_features).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.utils.data.Dataset</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator.generate_response_dataset">
+<span class="sig-name descname"><span class="pre">generate_response_dataset</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strain_path_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strain_path_kwargs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state_features</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">{}</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_in_memory_dataset</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_directory</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_basename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_save_fig</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/user_scripts/synthetic_data/gen_response_dataset.html#MaterialResponseDatasetGenerator.generate_response_dataset"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator.generate_response_dataset" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate strain-stress material response path data set.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of strain-stress paths.</p></li>
+<li><p><strong>strain_path_type</strong> (<em>{'random'</em><em>, </em><em>'proportional'}</em>) – Strain path type that sets the corresponding generator.</p></li>
+<li><p><strong>strain_path_kwargs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Parameters of strain path generator method set by strain_path_type.</p></li>
+<li><p><strong>model_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – FETorch material constitutive model name.</p></li>
+<li><p><strong>model_parameters</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – FETorch material constitutive model parameters.</p></li>
+<li><p><strong>state_features</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em>, </em><em>default={}</em>) – FETorch material constitutive model state variables (key, str) and
+corresponding dimensionality (item, int) for which the path history
+is additionally included in the data set. Tensorial state variables
+stored in matricial form are included in the data set without any
+matricial form coefficients (true components are extracted).
+Unavailable state variables are ignored.</p></li>
+<li><p><strong>is_in_memory_dataset</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=True</em>) – If True, then generate in-memory time series data set, otherwise
+time series data set samples are stored in local directory.</p></li>
+<li><p><strong>dataset_directory</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>default=None</em>) – Directory where the time series data set is stored (all data set
+samples files). Required if is_in_memory_dataset=False.</p></li>
+<li><p><strong>dataset_basename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>default=None</em>) – Data set file base name. Required if is_in_memory_dataset=False.</p></li>
+<li><p><strong>save_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>default=None</em>) – Directory where figure is saved. If None, then figure is saved in
+current working directory.</p></li>
+<li><p><strong>is_save_fig</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – Save figure.</p></li>
+<li><p><strong>is_verbose</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – If True, enable verbose output.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>dataset</strong> – Time series data set. Each sample is stored as a dictionary where
+each feature (key, str) data is a torch.Tensor(2d) of shape
+(sequence_length, n_features).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.utils.data.Dataset</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id5">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">plot_material_response_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">strain_formulation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strain_comps_order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strain_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stress_comps_order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stress_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_hist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_plot_strain_stress_paths</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_plot_eq_strain_stress</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stress_units</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'response_path'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_save_fig</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_stdout_display</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_latex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/user_scripts/synthetic_data/gen_response_dataset.html#MaterialResponseDatasetGenerator.plot_material_response_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id5" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot strain-stress material response path.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>strain_formulation</strong> (<em>{'infinitesimal'</em><em>, </em><em>'finite'}</em>) – Problem strain formulation.</p></li>
+<li><p><strong>n_dim</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Problem number of spatial dimensions.</p></li>
+<li><p><strong>strain_comps_order</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>]</em>) – Strain components order.</p></li>
+<li><p><strong>strain_path</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>numpy.ndarray</em></a><em>(</em><em>2d</em><em>)</em>) – Strain path history stored as numpy.ndarray(2d) of shape
+(sequence_length, n_strain_comps).</p></li>
+<li><p><strong>stress_comps_order</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a>) – Stress components order.</p></li>
+<li><p><strong>stress_path</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>numpy.ndarray</em></a><em>(</em><em>2d</em><em>)</em>) – Stress path history stored as numpy.ndarray(2d) of shape
+(sequence_length, n_stress_comps).</p></li>
+<li><p><strong>time_hist</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>numpy.ndarray</em></a><em>(</em><em>1d</em><em>)</em>) – Discrete time history.</p></li>
+<li><p><strong>is_plot_strain_stress_paths</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – Plot strain and stress components path (only available for single
+path).</p></li>
+<li><p><strong>is_plot_eq_strain_stress</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – Plot equivalent strain-stress path.</p></li>
+<li><p><strong>stress_units</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>default=''</em>) – Stress units label.</p></li>
+<li><p><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>default='response_path'</em>) – Figure name.</p></li>
+<li><p><strong>save_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>default=None</em>) – Directory where figure is saved. If None, then figure is saved in
+current working directory.</p></li>
+<li><p><strong>is_save_fig</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – Save figure.</p></li>
+<li><p><strong>is_stdout_display</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – True if displaying figure to standard output device, False
+otherwise.</p></li>
+<li><p><strong>is_latex</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – If True, then render all strings in LaTeX. If LaTex is not
+available, then this option is silently set to False and all input
+strings are processed to remove $(…)$ enclosure.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator.plot_state_history">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">plot_state_history</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">strain_formulation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strain_comps_order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stress_comps_order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state_variable_name</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state_variable_label</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_hist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state_units</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'state_variable_path'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_save_fig</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_stdout_display</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_latex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/user_scripts/synthetic_data/gen_response_dataset.html#MaterialResponseDatasetGenerator.plot_state_history"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.miscellaneous.materials.compare_material_models.MaterialResponseDatasetGenerator.plot_state_history" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot constitutive state variable path.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>strain_formulation</strong> (<em>{'infinitesimal'</em><em>, </em><em>'finite'}</em>) – Problem strain formulation.</p></li>
+<li><p><strong>n_dim</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Problem number of spatial dimensions.</p></li>
+<li><p><strong>strain_comps_order</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a>) – Stress components order.</p></li>
+<li><p><strong>stress_comps_order</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a>) – Stress components order.</p></li>
+<li><p><strong>state_variable_name</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – State variable name.</p></li>
+<li><p><strong>state_variable_label</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – State variable label.</p></li>
+<li><p><strong>state_path</strong> (<em>{numpy.ndarray</em><em>(</em><em>2d</em><em>)</em><em>, </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>numpy.ndarray</em></a><em>(</em><em>2d</em><em>)</em><em>]</em><em>}</em>) – State variable path history stored as numpy.ndarray(2d) of shape
+(sequence_length, n_features) or list of multiple state variable
+path histories.</p></li>
+<li><p><strong>time_hist</strong> (<em>{numpy.ndarray</em><em>(</em><em>1d</em><em>)</em><em>, </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>numpy.ndarray</em></a><em>(</em><em>1d</em><em>)</em><em>]</em><em>}</em>) – Discrete time history or list of multiple discrete time histories.</p></li>
+<li><p><strong>state_units</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>default=''</em>) – State variable units label.</p></li>
+<li><p><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>default='state_variable_path'</em>) – Figure name.</p></li>
+<li><p><strong>save_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>default=None</em>) – Directory where figure is saved. If None, then figure is saved in
+current working directory.</p></li>
+<li><p><strong>is_save_fig</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – Save figure.</p></li>
+<li><p><strong>is_stdout_display</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – True if displaying figure to standard output device, False
+otherwise.</p></li>
+<li><p><strong>is_latex</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – If True, then render all strings in LaTeX. If LaTex is not
+available, then this option is silently set to False and all input
+strings are processed to remove $(…)$ enclosure.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id6">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">plot_stress_space_metrics</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">strain_formulation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stress_comps_order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stress_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_hist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_plot_principal_stress_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_plot_pi_stress_path_pairs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_plot_stress_invar_hist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_plot_stress_invar_box</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_plot_stress_path_triax_lode</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_plot_stress_triax_lode_space</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_plot_stress_triax_lode_hist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_plot_stress_triax_lode_box</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stress_units</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'stress_path'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_save_fig</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_stdout_display</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_latex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/user_scripts/synthetic_data/gen_response_dataset.html#MaterialResponseDatasetGenerator.plot_stress_space_metrics"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id6" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot strain-stress material response path in principal stress space.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>strain_formulation</strong> (<em>{'infinitesimal'</em><em>, </em><em>'finite'}</em>) – Problem strain formulation.</p></li>
+<li><p><strong>n_dim</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Problem number of spatial dimensions.</p></li>
+<li><p><strong>stress_comps_order</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a>) – Stress components order.</p></li>
+<li><p><strong>stress_path</strong> (<em>{numpy.ndarray</em><em>(</em><em>2d</em><em>)</em><em>, </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>numpy.ndarray</em></a><em>(</em><em>2d</em><em>)</em><em>]</em><em>}</em>) – Stress path history stored as numpy.ndarray(2d) of shape
+(sequence_length, n_stress_comps) or list of multiple stress path
+histories.</p></li>
+<li><p><strong>time_hist</strong> (<em>{numpy.ndarray</em><em>(</em><em>1d</em><em>)</em><em>, </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>numpy.ndarray</em></a><em>(</em><em>1d</em><em>)</em><em>]</em><em>}</em>) – Discrete time history or list of multiple discrete time histories.</p></li>
+<li><p><strong>is_plot_principal_stress_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – Plot stress path in the principal stress space.</p></li>
+<li><p><strong>is_plot_pi_stress_path_pairs</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – Plot the stress path for pairs of pi-stress components in the
+principal stress space.</p></li>
+<li><p><strong>is_plot_stress_invar_hist</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – Plot distribution of stress invariants.</p></li>
+<li><p><strong>is_plot_stress_invar_box</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – Plot box plot with stress invariants.</p></li>
+<li><p><strong>is_plot_stress_path_triax_lode</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – Plot stress triaxiality and Lode parameter paths.</p></li>
+<li><p><strong>is_plot_stress_triax_lode_space</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – Plot stress triaxiality and Lode parameter space.</p></li>
+<li><p><strong>is_plot_stress_triax_lode_hist</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – Plot stress triaxiality and Lode parameter distributions.</p></li>
+<li><p><strong>is_plot_stress_triax_lode_box</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – Plot box plot with stress triaxiality and Lodeb parameter.</p></li>
+<li><p><strong>stress_units</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>default=''</em>) – Stress units label.</p></li>
+<li><p><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>default='stress_path'</em>) – Figure name.</p></li>
+<li><p><strong>save_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>default=None</em>) – Directory where figure is saved. If None, then figure is saved in
+current working directory.</p></li>
+<li><p><strong>is_save_fig</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – Save figure.</p></li>
+<li><p><strong>is_stdout_display</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – True if displaying figure to standard output device, False
+otherwise.</p></li>
+<li><p><strong>is_latex</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – If True, then render all strings in LaTeX. If LaTex is not
+available, then this option is silently set to False and all input
+strings are processed to remove $(…)$ enclosure.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id7">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">store_tensor_comps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">comps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/user_scripts/synthetic_data/gen_response_dataset.html#MaterialResponseDatasetGenerator.store_tensor_comps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id7" title="Permalink to this definition">¶</a></dt>
+<dd><p>Store strain/stress tensor components in array.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>comps</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>]</em>) – Strain/Stress components order.</p></li>
+<li><p><strong>tensor</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>numpy.ndarray</em></a><em>(</em><em>2d</em><em>)</em>) – Strain/Stress tensor.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>comps_array</strong> – Strain/Stress components array.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)">numpy.ndarray</a>(1d)</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="hookeai.miscellaneous.materials.compare_material_models.LouZhangYoonVMAP.html" class="btn btn-neutral float-left" title="hookeai.miscellaneous.materials.compare_material_models.LouZhangYoonVMAP" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="hookeai.miscellaneous.materials.compare_material_models.StrainPathGenerator.html" class="btn btn-neutral float-right" title="hookeai.miscellaneous.materials.compare_material_models.StrainPathGenerator" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

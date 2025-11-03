@@ -1,0 +1,1051 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>user_scripts.global_model_update.material_finder.gen_specimen_data &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../_autosummary/hookeai.html">Code</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">user_scripts.global_model_update.material_finder.gen_specimen_data</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for user_scripts.global_model_update.material_finder.gen_specimen_data</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Generate specimen data and material state files.</span>
+
+<span class="sd">Functions</span>
+<span class="sd">---------</span>
+<span class="sd">gen_specimen_dataset</span>
+<span class="sd">    Generate specimen data and material state files (training data set).</span>
+<span class="sd">get_specimen_mesh_from_inp_file</span>
+<span class="sd">    Get specimen finite element mesh data from mesh input file (.inp).</span>
+<span class="sd">elem_type_abaqus_to_fetorch</span>
+<span class="sd">    Convert ABAQUS element type to FETorch element type object.</span>
+<span class="sd">get_specimen_history_paths</span>
+<span class="sd">    Get specimen history time step file paths from directory.</span>
+<span class="sd">get_specimen_numerical_data</span>
+<span class="sd">    Get specimen numerical data from history data files (.csv).</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#                                                                       Modules</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Standard</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pathlib</span>
+<span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+<span class="c1"># Add project root directory to sys.path</span>
+<span class="n">root_dir</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parents</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+<span class="k">if</span> <span class="n">root_dir</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">root_dir</span><span class="p">)</span>
+<span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
+<span class="c1"># Third-party</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="c1"># Local</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">simulators.fetorch.element.type.tri3</span><span class="w"> </span><span class="kn">import</span> <span class="n">FETri3</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">simulators.fetorch.element.type.quad4</span><span class="w"> </span><span class="kn">import</span> <span class="n">FEQuad4</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">simulators.fetorch.element.type.tetra4</span><span class="w"> </span><span class="kn">import</span> <span class="n">FETetra4</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">simulators.fetorch.element.type.hexa8</span><span class="w"> </span><span class="kn">import</span> <span class="n">FEHexa8</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">simulators.fetorch.element.type.hexa20</span><span class="w"> </span><span class="kn">import</span> <span class="n">FEHexa20</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">simulators.fetorch.structure.structure_state</span><span class="w"> </span><span class="kn">import</span> <span class="n">StructureMaterialState</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">simulators.fetorch.math.matrixops</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_problem_type_parameters</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">simulators.fetorch.material.models.standard.hardening</span><span class="w"> </span><span class="kn">import</span> \
+    <span class="n">get_hardening_law</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">material_model_finder.data.specimen_data</span><span class="w"> </span><span class="kn">import</span> <span class="n">SpecimenNumericalData</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">time_series_data.time_dataset</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_dataset</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">user_scripts.local_model_update.hybrid_material_model.train_model</span><span class="w"> </span><span class="kn">import</span> \
+    <span class="n">set_hybridized_gru_model</span><span class="p">,</span> <span class="n">set_hybridized_rcm_model</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ioput.iostandard</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_directory</span>
+<span class="c1">#</span>
+<span class="c1">#                                                          Authorship &amp; Credits</span>
+<span class="c1"># =============================================================================</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Bernardo Ferreira (bernardo_ferreira@brown.edu)&#39;</span>
+<span class="n">__credits__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Bernardo Ferreira&#39;</span><span class="p">,</span> <span class="p">]</span>
+<span class="n">__status__</span> <span class="o">=</span> <span class="s1">&#39;Stable&#39;</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">gen_specimen_dataset</span><span class="p">(</span><span class="n">specimen_name</span><span class="p">,</span> <span class="n">specimen_raw_dir</span><span class="p">,</span> <span class="n">specimen_inp_path</span><span class="p">,</span>
+                         <span class="n">specimen_history_paths</span><span class="p">,</span> <span class="n">strain_formulation</span><span class="p">,</span>
+                         <span class="n">problem_type</span><span class="p">,</span> <span class="n">n_dim</span><span class="p">,</span> <span class="n">model_name</span><span class="p">,</span> <span class="n">model_parameters</span><span class="p">,</span>
+                         <span class="n">model_kwargs</span><span class="p">,</span> <span class="n">training_dataset_dir</span><span class="p">,</span>
+                         <span class="n">is_save_specimen_data</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                         <span class="n">is_save_specimen_material_state</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate specimen data and material state files (training data set).</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    specimen_name : str</span>
+<span class="sd">        Specimen name.</span>
+<span class="sd">    specimen_raw_dir : str</span>
+<span class="sd">        Specimen raw data directory.</span>
+<span class="sd">    specimen_inp_path : str</span>
+<span class="sd">        Specimen mesh input file path (.inp).</span>
+<span class="sd">    specimen_history_paths : tuple</span>
+<span class="sd">        Specimen history time step files paths (.csv). Files paths must be</span>
+<span class="sd">        sorted according to history time.</span>
+<span class="sd">    strain_formulation: {&#39;infinitesimal&#39;, &#39;finite&#39;}</span>
+<span class="sd">        Problem strain formulation.</span>
+<span class="sd">    problem_type : int</span>
+<span class="sd">        Problem type: 2D plane strain (1), 2D plane stress (2),</span>
+<span class="sd">        2D axisymmetric (3) and 3D (4).</span>
+<span class="sd">    n_dim : int</span>
+<span class="sd">        Number of spatial dimensions.</span>
+<span class="sd">    model_name : str</span>
+<span class="sd">        Material constitutive model name.</span>
+<span class="sd">    model_parameters : dict</span>
+<span class="sd">        Material constitutive model parameters.</span>
+<span class="sd">    model_kwargs : dict, default={}</span>
+<span class="sd">        Other parameters required to initialize constitutive model.</span>
+<span class="sd">    training_dataset_dir : str</span>
+<span class="sd">        Specimen training data set directory.</span>
+<span class="sd">    is_save_specimen_data : bool, default=True</span>
+<span class="sd">        If True, then save the specimen data file.</span>
+<span class="sd">    is_save_specimen_material_state : bool, default=True</span>
+<span class="sd">        If True, then save the specimen material state file.</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    specimen_data_path : str</span>
+<span class="sd">        Path of file containing the specimen numerical data translated from</span>
+<span class="sd">        experimental results.</span>
+<span class="sd">    specimen_material_state_path : str</span>
+<span class="sd">        Path of file containing the FETorch specimen material state.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Initialize specimen numerical data</span>
+    <span class="n">specimen_data</span> <span class="o">=</span> <span class="n">SpecimenNumericalData</span><span class="p">()</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get specimen finite element mesh data</span>
+    <span class="n">nodes_coords_mesh_init</span><span class="p">,</span> <span class="n">elements_type</span><span class="p">,</span> <span class="n">connectivities</span><span class="p">,</span> \
+        <span class="n">dirichlet_bool_mesh</span> <span class="o">=</span> \
+            <span class="n">get_specimen_mesh_from_inp_file</span><span class="p">(</span><span class="n">specimen_inp_path</span><span class="p">,</span> <span class="n">n_dim</span><span class="p">)</span>
+    <span class="c1"># Set specimen finite element mesh</span>
+    <span class="n">specimen_data</span><span class="o">.</span><span class="n">set_specimen_mesh</span><span class="p">(</span><span class="n">nodes_coords_mesh_init</span><span class="p">,</span> <span class="n">elements_type</span><span class="p">,</span>
+                                    <span class="n">connectivities</span><span class="p">,</span> <span class="n">dirichlet_bool_mesh</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get finite element mesh</span>
+    <span class="n">specimen_mesh</span> <span class="o">=</span> <span class="n">specimen_data</span><span class="o">.</span><span class="n">specimen_mesh</span>
+    <span class="c1"># Get number of nodes and elements</span>
+    <span class="n">n_node_mesh</span> <span class="o">=</span> <span class="n">specimen_mesh</span><span class="o">.</span><span class="n">get_n_node_mesh</span><span class="p">()</span>
+    <span class="n">n_elem</span> <span class="o">=</span> <span class="n">specimen_mesh</span><span class="o">.</span><span class="n">get_n_elem</span><span class="p">()</span>
+    <span class="c1"># Get type of elements of finite element mesh</span>
+    <span class="n">elements_type</span> <span class="o">=</span> <span class="n">specimen_mesh</span><span class="o">.</span><span class="n">get_elements_type</span><span class="p">()</span>
+    <span class="c1"># Get elements labels</span>
+    <span class="n">elements_ids</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span><span class="n">elem_id</span> <span class="k">for</span> <span class="n">elem_id</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_elem</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)])</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get specimen numerical data</span>
+    <span class="n">nodes_disps_mesh_hist</span><span class="p">,</span> <span class="n">reaction_forces_mesh_hist</span><span class="p">,</span> <span class="n">dirichlet_bc_mesh_hist</span><span class="p">,</span> \
+        <span class="n">time_hist</span> <span class="o">=</span> <span class="n">get_specimen_numerical_data</span><span class="p">(</span>
+            <span class="n">specimen_history_paths</span><span class="p">,</span> <span class="n">n_dim</span><span class="p">,</span> <span class="n">n_node_mesh</span><span class="p">)</span>
+    <span class="c1"># Set specimen numerical data</span>
+    <span class="n">specimen_data</span><span class="o">.</span><span class="n">set_specimen_data</span><span class="p">(</span>
+        <span class="n">nodes_disps_mesh_hist</span><span class="p">,</span> <span class="n">reaction_forces_mesh_hist</span><span class="p">,</span>
+        <span class="n">dirichlet_bc_mesh_hist</span><span class="p">,</span> <span class="n">time_hist</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Save specimen data</span>
+    <span class="k">if</span> <span class="n">is_save_specimen_data</span><span class="p">:</span>
+        <span class="c1"># Set specimen numerical data file path</span>
+        <span class="n">specimen_data_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">training_dataset_dir</span><span class="p">),</span> <span class="s1">&#39;specimen_data.pt&#39;</span><span class="p">)</span>
+        <span class="c1"># Save specimen data</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">specimen_data</span><span class="p">,</span> <span class="n">specimen_data_path</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize specimen material state</span>
+    <span class="k">if</span> <span class="n">is_save_specimen_material_state</span><span class="p">:</span>
+        <span class="c1"># Initialize specimen material state</span>
+        <span class="n">specimen_material_state</span> <span class="o">=</span> <span class="n">StructureMaterialState</span><span class="p">(</span>
+            <span class="n">strain_formulation</span><span class="p">,</span> <span class="n">problem_type</span><span class="p">,</span> <span class="n">n_elem</span><span class="p">)</span>
+        <span class="c1"># Initialize elements constitutive model</span>
+        <span class="n">specimen_material_state</span><span class="o">.</span><span class="n">init_elements_model</span><span class="p">(</span>
+            <span class="n">model_name</span><span class="p">,</span> <span class="n">model_parameters</span><span class="p">,</span> <span class="n">elements_ids</span><span class="p">,</span> <span class="n">elements_type</span><span class="p">,</span>
+            <span class="n">model_kwargs</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set specimen material state file path</span>
+        <span class="n">specimen_material_state_path</span> <span class="o">=</span> \
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">training_dataset_dir</span><span class="p">),</span>
+                         <span class="s1">&#39;specimen_material_state.pt&#39;</span><span class="p">)</span>
+        <span class="c1"># Save specimen material state</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">specimen_material_state</span><span class="p">,</span> <span class="n">specimen_material_state_path</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">specimen_data_path</span><span class="p">,</span> <span class="n">specimen_material_state_path</span>
+<span class="c1"># =============================================================================</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_specimen_mesh_from_inp_file</span><span class="p">(</span><span class="n">specimen_inp_path</span><span class="p">,</span> <span class="n">n_dim</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get specimen finite element mesh data from mesh input file (.inp).</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    specimen_inp_path : str</span>
+<span class="sd">        Specimen mesh input file path (.inp).</span>
+<span class="sd">    n_dim : int</span>
+<span class="sd">        Number of spatial dimensions.</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    nodes_coords_mesh_init : torch.Tensor(2d)</span>
+<span class="sd">        Initial coordinates of finite element mesh nodes stored as</span>
+<span class="sd">        torch.Tensor(2d) of shape (n_node_mesh, n_dim).</span>
+<span class="sd">    elements_type : dict</span>
+<span class="sd">        FETorch element type (item, ElementType) of each finite element</span>
+<span class="sd">        mesh element (str[int]). Elements labels must be within the range</span>
+<span class="sd">        of 1 to n_elem (included).</span>
+<span class="sd">    connectivities : dict</span>
+<span class="sd">        Nodes (item, tuple[int]) of each finite element mesh element</span>
+<span class="sd">        (key, str[int]). Nodes must be within the range of 1 to n_node_mesh</span>
+<span class="sd">        (included). Elements labels must be within the range of 1 to n_elem</span>
+<span class="sd">        (included).</span>
+<span class="sd">    dirichlet_bool_mesh : torch.Tensor(2d)</span>
+<span class="sd">        Degrees of freedom of finite element mesh subject to Dirichlet</span>
+<span class="sd">        boundary conditions. Stored as torch.Tensor(2d) of shape</span>
+<span class="sd">        (n_node_mesh, n_dim) where constrained degrees of freedom are</span>
+<span class="sd">        labeled 1, otherwise 0.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Open specimen mesh input file</span>
+    <span class="n">input_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">specimen_inp_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize nodes coordinates</span>
+    <span class="n">nodes_coords</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Reset file position</span>
+    <span class="n">input_file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="c1"># Initialize search flags</span>
+    <span class="n">is_keyword_found</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="c1"># Search for NODE keyword and collect nodes coordinates</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">input_file</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">bool</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\*node\b&#39;</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)):</span>
+            <span class="c1"># Start processing NODE section</span>
+            <span class="n">is_keyword_found</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">elif</span> <span class="n">is_keyword_found</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">bool</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^&#39;</span> <span class="o">+</span> <span class="sa">r</span><span class="s1">&#39;[*][A-Z]+&#39;</span><span class="p">,</span> <span class="n">line</span><span class="p">))</span>
+                                   <span class="ow">or</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">):</span>
+            <span class="c1"># Finished processing NODE section</span>
+            <span class="k">break</span>
+        <span class="k">elif</span> <span class="n">is_keyword_found</span><span class="p">:</span>
+            <span class="c1"># Get node coordinates</span>
+            <span class="n">nodes_coords</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">sep</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">:</span><span class="mi">1</span><span class="o">+</span><span class="n">n_dim</span><span class="p">]])</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Build mesh nodes initial coordinates</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">nodes_coords</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The *NODE keyword has not been found in the &#39;</span>
+                           <span class="s1">&#39;specimen mesh input file (.inp).&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">nodes_coords_mesh_init</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">nodes_coords</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get number of nodes</span>
+    <span class="n">n_node_mesh</span> <span class="o">=</span> <span class="n">nodes_coords_mesh_init</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize elements types</span>
+    <span class="n">elements_type</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="c1"># Initialize elements connectivities</span>
+    <span class="n">connectivities</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="c1"># Initialize connectivities nodes</span>
+    <span class="n">connect_nodes</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Reset file position</span>
+    <span class="n">input_file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="c1"># Initialize search flags</span>
+    <span class="n">is_keyword_found</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="c1"># Search for ELEMENT keyword and collect nodes connectivities</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">input_file</span><span class="p">:</span>
+        <span class="c1">#if &#39;*ELEMENT, TYPE&#39; in line or &#39;*Element, type&#39; in line:</span>
+        <span class="k">if</span> <span class="nb">bool</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\*element, type\b&#39;</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)):</span>
+            <span class="c1"># Start processing ELEMENT section</span>
+            <span class="n">is_keyword_found</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="c1"># Get ABAQUS element type</span>
+            <span class="n">elem_abaqus_type</span> <span class="o">=</span> \
+                <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;type=([A-Z0-9]+)&#39;</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="c1"># Get FETorch element type</span>
+            <span class="k">if</span> <span class="n">elem_abaqus_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The *ELEMENT keyword TYPE parameter has &#39;</span>
+                                   <span class="s1">&#39;not been found in the specimen mesh input &#39;</span>
+                                   <span class="s1">&#39;file (.inp).&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">elem_type</span> <span class="o">=</span> <span class="n">elem_type_abaqus_to_fetorch</span><span class="p">(</span><span class="n">elem_abaqus_type</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">is_keyword_found</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">bool</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^&#39;</span> <span class="o">+</span> <span class="sa">r</span><span class="s1">&#39;[*][A-Z]+&#39;</span><span class="p">,</span> <span class="n">line</span><span class="p">))</span>
+                                   <span class="ow">or</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">):</span>
+            <span class="c1"># Finished processing ELEMENT section</span>
+            <span class="n">is_keyword_found</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">elif</span> <span class="n">is_keyword_found</span><span class="p">:</span>
+            <span class="c1"># Get element label and nodes</span>
+            <span class="n">elem_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">sep</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">elem_nodes</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">sep</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">:]])</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Store element type</span>
+            <span class="n">elements_type</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">elem_id</span><span class="p">)]</span> <span class="o">=</span> <span class="n">elem_type</span>
+            <span class="c1"># Check element nodes</span>
+            <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">elem_nodes</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">node</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_node_mesh</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Invalid node in element </span><span class="si">{</span><span class="n">elem_id</span><span class="si">}</span><span class="s1"> &#39;</span>
+                                       <span class="sa">f</span><span class="s1">&#39;connectivities. Node labels must be &#39;</span>
+                                       <span class="sa">f</span><span class="s1">&#39;within the range 1 to </span><span class="si">{</span><span class="n">n_node_mesh</span><span class="si">}</span><span class="s1"> &#39;</span>
+                                       <span class="sa">f</span><span class="s1">&#39;for the provided mesh.&#39;</span><span class="p">)</span>
+            <span class="c1"># Store element nodes</span>
+            <span class="n">connectivities</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">elem_id</span><span class="p">)]</span> <span class="o">=</span> <span class="n">elem_nodes</span>
+            <span class="n">connect_nodes</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">elem_nodes</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Check nodes connectivities</span>
+    <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_node_mesh</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span> <span class="o">!=</span> <span class="nb">set</span><span class="p">(</span><span class="n">connect_nodes</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Invalid mesh connectivities. Mesh has &#39;</span>
+                           <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="p">(</span><span class="n">n_node_mesh</span><span class="p">)</span><span class="si">}</span><span class="s1"> nodes, but only &#39;</span>
+                           <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">connect_nodes</span><span class="p">))</span><span class="si">}</span><span class="s1"> nodes are part of the &#39;</span>
+                           <span class="sa">f</span><span class="s1">&#39;elements connectivities.&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize Dirichlet bounds conditions</span>
+    <span class="n">dirichlet_bool_mesh</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_node_mesh</span><span class="p">,</span> <span class="n">n_dim</span><span class="p">))</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Reset file position</span>
+    <span class="n">input_file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="c1"># Initialize search flags</span>
+    <span class="n">is_keyword_found</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="c1"># Search for BOUNDARY keyword and collect nodes constraints</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">input_file</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">bool</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\*boundary\b&#39;</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)):</span>
+            <span class="c1"># Start processing BOUNDARY section</span>
+            <span class="n">is_keyword_found</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">elif</span> <span class="n">is_keyword_found</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">bool</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^&#39;</span> <span class="o">+</span> <span class="sa">r</span><span class="s1">&#39;[*][A-Z]+&#39;</span><span class="p">,</span> <span class="n">line</span><span class="p">))</span>
+                                   <span class="ow">or</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">):</span>
+            <span class="c1"># Finished processing BOUNDARY section</span>
+            <span class="n">is_keyword_found</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">elif</span> <span class="n">is_keyword_found</span><span class="p">:</span>
+            <span class="c1"># Get node label and constraints</span>
+            <span class="n">node_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">sep</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">node_dofs</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">sep</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="p">]])</span>
+            <span class="c1"># Store node constrained degrees of freedom</span>
+            <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">node_dofs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">node_dofs</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="k">if</span> <span class="n">dim</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_dim</span><span class="p">):</span>
+                    <span class="n">dirichlet_bool_mesh</span><span class="p">[</span><span class="n">node_id</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">nodes_coords_mesh_init</span><span class="p">,</span> <span class="n">elements_type</span><span class="p">,</span> <span class="n">connectivities</span><span class="p">,</span> \
+        <span class="n">dirichlet_bool_mesh</span>
+<span class="c1"># =============================================================================</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">elem_type_abaqus_to_fetorch</span><span class="p">(</span><span class="n">elem_abaqus_type</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert ABAQUS element type to FETorch element type object.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    elem_abaqus_type : str</span>
+<span class="sd">        ABAQUS element type.</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    elem_fetorch_type : ElementType</span>
+<span class="sd">        FETorch element type.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">elem_abaqus_type</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;CPE3&#39;</span><span class="p">,):</span>
+        <span class="n">elem_fetorch_type</span> <span class="o">=</span> <span class="n">FETri3</span><span class="p">(</span><span class="n">n_gauss</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">elem_abaqus_type</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;CPE4&#39;</span><span class="p">,):</span>
+        <span class="n">elem_fetorch_type</span> <span class="o">=</span> <span class="n">FEQuad4</span><span class="p">(</span><span class="n">n_gauss</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">elem_abaqus_type</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;C3D4&#39;</span><span class="p">,):</span>
+        <span class="n">elem_fetorch_type</span> <span class="o">=</span> <span class="n">FETetra4</span><span class="p">(</span><span class="n">n_gauss</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">elem_abaqus_type</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;C3D8&#39;</span><span class="p">,):</span>
+        <span class="n">elem_fetorch_type</span> <span class="o">=</span> <span class="n">FEHexa8</span><span class="p">(</span><span class="n">n_gauss</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">elem_abaqus_type</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;C3D8R&#39;</span><span class="p">,):</span>
+        <span class="n">elem_fetorch_type</span> <span class="o">=</span> <span class="n">FEHexa8</span><span class="p">(</span><span class="n">n_gauss</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">elem_abaqus_type</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;C3D20R&#39;</span><span class="p">,):</span>
+        <span class="n">elem_fetorch_type</span> <span class="o">=</span> <span class="n">FEHexa20</span><span class="p">(</span><span class="n">n_gauss</span><span class="o">=</span><span class="mi">8</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The ABAQUS element type </span><span class="si">{</span><span class="n">elem_abaqus_type</span><span class="si">}</span><span class="s1"> &#39;</span>
+                           <span class="sa">f</span><span class="s1">&#39;is unknown or cannot be converted to a FETorch &#39;</span>
+                           <span class="sa">f</span><span class="s1">&#39;element type.&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">elem_fetorch_type</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="get_specimen_history_paths"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.links.utilities.links_data_to_adimu.get_specimen_history_paths.html#hookeai.simulators.links.utilities.links_data_to_adimu.get_specimen_history_paths">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">get_specimen_history_paths</span><span class="p">(</span><span class="n">specimen_history_dir</span><span class="p">,</span> <span class="n">specimen_name</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get specimen history time step file paths from directory.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    specimen_history_dir : str</span>
+<span class="sd">        Specimen history data directory.</span>
+<span class="sd">    specimen_name : str</span>
+<span class="sd">        Specimen name.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    specimen_history_paths : tuple</span>
+<span class="sd">        Specimen history time step files paths (.csv). Files paths are sorted</span>
+<span class="sd">        according to history time.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check specimen history data directory</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">specimen_history_dir</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The specimen history data directory has not been &#39;</span>
+                           <span class="s1">&#39;found:</span><span class="se">\n\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">specimen_history_dir</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize specimen history data file paths (.csv files)</span>
+    <span class="n">specimen_history_paths</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># Get files in specimen history data directory</span>
+    <span class="n">directory_list</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">specimen_history_dir</span><span class="p">)</span>
+    <span class="c1"># Loop over files</span>
+    <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">directory_list</span><span class="p">:</span>
+        <span class="c1"># Check if file is specimen history time step file</span>
+        <span class="n">is_time_step_file</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span>
+            <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^&#39;</span> <span class="o">+</span> <span class="n">specimen_name</span> <span class="o">+</span> <span class="sa">r</span><span class="s1">&#39;_tstep_[0-9]+&#39;</span> <span class="o">+</span> <span class="sa">r</span><span class="s1">&#39;\.csv&#39;</span><span class="p">,</span>
+                      <span class="n">filename</span><span class="p">))</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Append specimen history time step file</span>
+        <span class="k">if</span> <span class="n">is_time_step_file</span><span class="p">:</span>
+            <span class="n">specimen_history_paths</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">specimen_history_dir</span><span class="p">),</span> <span class="n">filename</span><span class="p">))</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Check specimen history time step files</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">specimen_history_paths</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;No specimen history time step files (.csv) have &#39;</span>
+                           <span class="s1">&#39;been found in the specimen history data &#39;</span>
+                           <span class="s1">&#39;directory:</span><span class="se">\n\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">specimen_history_dir</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Sort specimen history time step files</span>
+    <span class="n">specimen_history_paths</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+        <span class="nb">sorted</span><span class="p">(</span><span class="n">specimen_history_paths</span><span class="p">,</span>
+               <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;(\d+)\D*$&#39;</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">])))</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">specimen_history_paths</span></div>
+<span class="c1"># =============================================================================</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_specimen_numerical_data</span><span class="p">(</span><span class="n">specimen_history_paths</span><span class="p">,</span> <span class="n">n_dim</span><span class="p">,</span> <span class="n">n_node_mesh</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get specimen numerical data from history data files (.csv).</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    specimen_history_paths : tuple</span>
+<span class="sd">        Specimen history time step files paths (.csv). Files paths must be</span>
+<span class="sd">        sorted according to history time.</span>
+<span class="sd">    n_dim : int</span>
+<span class="sd">        Number of spatial dimensions.</span>
+<span class="sd">    n_node_mesh : int</span>
+<span class="sd">        Number of nodes of finite element mesh.</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    nodes_disps_mesh_hist : torch.Tensor(3d)</span>
+<span class="sd">        Displacements history of finite element mesh nodes stored as</span>
+<span class="sd">        torch.Tensor(3d) of shape (n_node_mesh, n_dim, n_time).</span>
+<span class="sd">    reaction_forces_mesh_hist : torch.Tensor(3d)</span>
+<span class="sd">        Reaction forces (Dirichlet boundary conditions) history of finite</span>
+<span class="sd">        element mesh nodes stored as torch.Tensor(3d) of shape</span>
+<span class="sd">        (n_node_mesh, n_dim, n_time).</span>
+<span class="sd">    dirichlet_bc_mesh_hist : torch.Tensor(3d)</span>
+<span class="sd">        Dirichlet boundary constraints history of finite element mesh nodes</span>
+<span class="sd">        stored as torch.Tensor(3d) of shape (n_node_mesh, n_dim, n_time).</span>
+<span class="sd">        Encodes if each degree of freedom is free (assigned 0) or constrained</span>
+<span class="sd">        (greater than 0) under Dirichlet boundary conditions. The encoding</span>
+<span class="sd">        depends on the selected force equilibrium loss type.</span>
+<span class="sd">    time_hist : torch.Tensor(1d)</span>
+<span class="sd">        Discrete time history.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get number of time steps</span>
+    <span class="n">n_time</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">specimen_history_paths</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize node data</span>
+    <span class="n">node_data</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_node_mesh</span><span class="p">,</span> <span class="mi">13</span><span class="p">,</span> <span class="n">n_time</span><span class="p">))</span>
+    <span class="c1"># Loop over time step files</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">data_file_path</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">specimen_history_paths</span><span class="p">):</span>
+        <span class="c1"># Load data</span>
+        <span class="n">df</span> <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">data_file_path</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Check data</span>
+        <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">n_node_mesh</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Mismatch between expected number of nodes &#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;(</span><span class="si">{</span><span class="n">n_node_mesh</span><span class="si">}</span><span class="s1">) and number of nodes in the &#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;time step data file (</span><span class="si">{</span><span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1">).&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">13</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Expecting data frame to have 13 columns, but &#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">df</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s1"> were found. </span><span class="se">\n\n</span><span class="s1">&#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;Expected columns: NODE | X1 X2 X3 | &#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;U1 U2 U3 | RF1 RF2 RF3 | DBC1 DBC2 DBC3&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Store time step data</span>
+        <span class="n">node_data</span><span class="p">[:,</span> <span class="p">:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">df</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Extract displacements history</span>
+    <span class="n">nodes_disps_mesh_hist</span> <span class="o">=</span> <span class="n">node_data</span><span class="p">[:,</span> <span class="mi">4</span><span class="p">:</span><span class="mi">4</span><span class="o">+</span><span class="n">n_dim</span><span class="p">,</span> <span class="p">:]</span>
+    <span class="c1"># Extract reaction forces history</span>
+    <span class="n">reaction_forces_mesh_hist</span> <span class="o">=</span> <span class="n">node_data</span><span class="p">[:,</span> <span class="mi">7</span><span class="p">:</span><span class="mi">7</span><span class="o">+</span><span class="n">n_dim</span><span class="p">,</span> <span class="p">:]</span>
+    <span class="c1"># Extract Dirichlet boundary constraints</span>
+    <span class="n">dirichlet_bc_mesh_hist</span> <span class="o">=</span> <span class="n">node_data</span><span class="p">[:,</span> <span class="mi">10</span><span class="p">:</span><span class="mi">10</span><span class="o">+</span><span class="n">n_dim</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">int</span><span class="p">()</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Build time discrete history</span>
+    <span class="n">time_hist</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_time</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">steps</span><span class="o">=</span><span class="n">n_time</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">nodes_disps_mesh_hist</span><span class="p">,</span> <span class="n">reaction_forces_mesh_hist</span><span class="p">,</span> \
+        <span class="n">dirichlet_bc_mesh_hist</span><span class="p">,</span> <span class="n">time_hist</span>
+<span class="c1"># =============================================================================</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">set_material_model_parameters</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Set material model parameters.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    strain_formulation: {&#39;infinitesimal&#39;, &#39;finite&#39;}</span>
+<span class="sd">        Problem strain formulation.</span>
+<span class="sd">    problem_type : int</span>
+<span class="sd">        Problem type: 2D plane strain (1), 2D plane stress (2),</span>
+<span class="sd">        2D axisymmetric (3) and 3D (4).</span>
+<span class="sd">    n_dim : int</span>
+<span class="sd">        Number of spatial dimensions.</span>
+<span class="sd">    model_name : str</span>
+<span class="sd">        Material constitutive model name.</span>
+<span class="sd">    model_parameters : dict</span>
+<span class="sd">        Material constitutive model parameters.</span>
+<span class="sd">    model_kwargs : dict, default={}</span>
+<span class="sd">        Other parameters required to initialize constitutive model.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Set strain formulation</span>
+    <span class="n">strain_formulation</span> <span class="o">=</span> <span class="s1">&#39;infinitesimal&#39;</span>
+    <span class="c1"># Set problem type</span>
+    <span class="n">problem_type</span> <span class="o">=</span> <span class="mi">4</span>
+    <span class="c1"># Get problem type parameters</span>
+    <span class="n">n_dim</span><span class="p">,</span> <span class="n">comp_order_sym</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">get_problem_type_parameters</span><span class="p">(</span><span class="n">problem_type</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set constitutive model name</span>
+    <span class="n">model_name</span> <span class="o">=</span> <span class="s1">&#39;rc_von_mises_vmap&#39;</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set constitutive model name parameters</span>
+    <span class="k">if</span> <span class="nb">bool</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^rc_.*$&#39;</span><span class="p">,</span> <span class="n">model_name</span><span class="p">)):</span>
+        <span class="c1"># Set constitutive model specific parameters</span>
+        <span class="k">if</span> <span class="n">model_name</span> <span class="o">==</span> <span class="s1">&#39;rc_elastic&#39;</span><span class="p">:</span>
+            <span class="c1"># Set constitutive model parameters</span>
+            <span class="n">model_parameters</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;elastic_symmetry&#39;</span><span class="p">:</span> <span class="s1">&#39;isotropic&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;E&#39;</span><span class="p">:</span> <span class="mi">100</span><span class="p">,</span> <span class="s1">&#39;v&#39;</span><span class="p">:</span> <span class="mf">0.3</span><span class="p">,</span>
+                <span class="s1">&#39;euler_angles&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">)}</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Set learnable parameters</span>
+            <span class="n">learnable_parameters</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">learnable_parameters</span><span class="p">[</span><span class="s1">&#39;E&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;initial_value&#39;</span><span class="p">:</span> <span class="mf">70.0</span><span class="p">,</span>
+                                         <span class="s1">&#39;bounds&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="mi">150</span><span class="p">)}</span>
+            <span class="c1">#learnable_parameters[&#39;v&#39;] = {&#39;initial_value&#39;: 0.25,</span>
+            <span class="c1">#                             &#39;bounds&#39;: (0.2, 0.4)}</span>
+            <span class="c1"># Set material constitutive model name</span>
+            <span class="n">material_model_name</span> <span class="o">=</span> <span class="s1">&#39;elastic&#39;</span>
+            <span class="c1"># Set material constitutive state variables (prediction)</span>
+            <span class="n">state_features_out</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">elif</span> <span class="n">model_name</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;rc_von_mises&#39;</span><span class="p">,</span> <span class="s1">&#39;rc_von_mises_vmap&#39;</span><span class="p">):</span>            
+            <span class="c1"># Set constitutive model parameters</span>
+            <span class="n">model_parameters</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;elastic_symmetry&#39;</span><span class="p">:</span> <span class="s1">&#39;isotropic&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;E&#39;</span><span class="p">:</span> <span class="mi">118640</span><span class="p">,</span> <span class="s1">&#39;v&#39;</span><span class="p">:</span> <span class="mf">0.334</span><span class="p">,</span>
+                <span class="s1">&#39;euler_angles&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
+                <span class="s1">&#39;hardening_law&#39;</span><span class="p">:</span> <span class="n">get_hardening_law</span><span class="p">(</span><span class="s1">&#39;nadai_ludwik&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;hardening_parameters&#39;</span><span class="p">:</span>
+                    <span class="p">{</span><span class="s1">&#39;s0&#39;</span><span class="p">:</span> <span class="mf">823.14484</span><span class="p">,</span>
+                     <span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="mf">522.23411</span><span class="p">,</span>
+                     <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="mf">0.375146</span><span class="p">,</span>
+                     <span class="s1">&#39;ep0&#39;</span><span class="p">:</span> <span class="mf">1e-5</span><span class="p">}}</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Set learnable parameters</span>
+            <span class="n">learnable_parameters</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">learnable_parameters</span><span class="p">[</span><span class="s1">&#39;E&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;initial_value&#39;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">80e3</span><span class="p">,</span> <span class="mf">140e3</span><span class="p">),</span>
+                <span class="s1">&#39;bounds&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mf">80e3</span><span class="p">,</span> <span class="mf">140e3</span><span class="p">)}</span>
+            <span class="n">learnable_parameters</span><span class="p">[</span><span class="s1">&#39;v&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;initial_value&#39;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">),</span>
+                <span class="s1">&#39;bounds&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">0.4</span><span class="p">)}</span>
+            <span class="n">learnable_parameters</span><span class="p">[</span><span class="s1">&#39;s0&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;initial_value&#39;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">500</span><span class="p">,</span> <span class="mi">2000</span><span class="p">),</span>
+                <span class="s1">&#39;bounds&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mi">500</span><span class="p">,</span> <span class="mi">2000</span><span class="p">)}</span>
+            <span class="n">learnable_parameters</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;initial_value&#39;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">500</span><span class="p">,</span> <span class="mi">2000</span><span class="p">),</span>
+                <span class="s1">&#39;bounds&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mi">500</span><span class="p">,</span> <span class="mi">2000</span><span class="p">)}</span>
+            <span class="n">learnable_parameters</span><span class="p">[</span><span class="s1">&#39;b&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;initial_value&#39;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+                <span class="s1">&#39;bounds&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)}</span>
+            <span class="c1"># Set material constitutive model name</span>
+            <span class="k">if</span> <span class="n">model_name</span> <span class="o">==</span> <span class="s1">&#39;rc_von_mises_vmap&#39;</span><span class="p">:</span>
+                <span class="n">material_model_name</span> <span class="o">=</span> <span class="s1">&#39;von_mises_vmap&#39;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">material_model_name</span> <span class="o">=</span> <span class="s1">&#39;von_mises&#39;</span>
+            <span class="c1"># Set material constitutive state variables (prediction)</span>
+            <span class="n">state_features_out</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">elif</span> <span class="n">model_name</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;rc_drucker_prager&#39;</span><span class="p">,</span> <span class="s1">&#39;rc_drucker_prager_vmap&#39;</span><span class="p">):</span>            
+            <span class="c1"># Set frictional angle</span>
+            <span class="n">friction_angle</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">radians</span><span class="p">(</span><span class="mi">5</span><span class="p">)</span>
+            <span class="c1"># Set dilatancy angle</span>
+            <span class="n">dilatancy_angle</span> <span class="o">=</span> <span class="n">friction_angle</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Compute angle-related material parameters</span>
+            <span class="c1"># (matching with Mohr-Coulomb under uniaxial tension and</span>
+            <span class="c1"># compression)</span>
+            <span class="c1"># Set yield surface cohesion parameter</span>
+            <span class="n">yield_cohesion_parameter</span> <span class="o">=</span> \
+                <span class="p">(</span><span class="mf">2.0</span><span class="o">/</span><span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span><span class="o">*</span><span class="n">math</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">friction_angle</span><span class="p">)</span>
+            <span class="c1"># Set yield pressure parameter</span>
+            <span class="n">yield_pressure_parameter</span> <span class="o">=</span> \
+                <span class="p">(</span><span class="mf">3.0</span><span class="o">/</span><span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span><span class="o">*</span><span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">friction_angle</span><span class="p">)</span>
+            <span class="c1"># Set plastic flow pressure parameter</span>
+            <span class="n">flow_pressure_parameter</span> <span class="o">=</span> \
+                <span class="p">(</span><span class="mf">3.0</span><span class="o">/</span><span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span><span class="o">*</span><span class="n">math</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">dilatancy_angle</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Set constitutive model parameters</span>
+            <span class="n">model_parameters</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;elastic_symmetry&#39;</span><span class="p">:</span> <span class="s1">&#39;isotropic&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;E&#39;</span><span class="p">:</span> <span class="mi">110000</span><span class="p">,</span> <span class="s1">&#39;v&#39;</span><span class="p">:</span> <span class="mf">0.33</span><span class="p">,</span>
+                <span class="s1">&#39;euler_angles&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
+                <span class="s1">&#39;hardening_law&#39;</span><span class="p">:</span> <span class="n">get_hardening_law</span><span class="p">(</span><span class="s1">&#39;nadai_ludwik&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;hardening_parameters&#39;</span><span class="p">:</span>
+                    <span class="p">{</span><span class="s1">&#39;s0&#39;</span><span class="p">:</span> <span class="mi">900</span><span class="o">/</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">*</span><span class="n">yield_cohesion_parameter</span><span class="p">),</span>
+                     <span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="mi">700</span><span class="o">/</span><span class="p">(</span><span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">*</span><span class="n">yield_cohesion_parameter</span><span class="p">),</span>
+                     <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
+                     <span class="s1">&#39;ep0&#39;</span><span class="p">:</span> <span class="mf">1e-5</span><span class="p">},</span>
+                <span class="s1">&#39;yield_cohesion_parameter&#39;</span><span class="p">:</span> <span class="n">yield_cohesion_parameter</span><span class="p">,</span>
+                <span class="s1">&#39;yield_pressure_parameter&#39;</span><span class="p">:</span> <span class="n">yield_pressure_parameter</span><span class="p">,</span>
+                <span class="s1">&#39;flow_pressure_parameter&#39;</span><span class="p">:</span> <span class="n">flow_pressure_parameter</span><span class="p">,</span>
+                <span class="s1">&#39;friction_angle&#39;</span><span class="p">:</span> <span class="n">friction_angle</span><span class="p">}</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Set learnable parameters</span>
+            <span class="n">learnable_parameters</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="c1">#learnable_parameters[&#39;E&#39;] = {</span>
+            <span class="c1">#    &#39;initial_value&#39;: random.uniform(80e3, 140e3),</span>
+            <span class="c1">#    &#39;bounds&#39;: (80e3, 140e3)}</span>
+            <span class="c1">#learnable_parameters[&#39;v&#39;] = {</span>
+            <span class="c1">#    &#39;initial_value&#39;: random.uniform(0.2, 0.4),</span>
+            <span class="c1">#    &#39;bounds&#39;: (0.2, 0.4)}</span>
+            <span class="c1">#learnable_parameters[&#39;s0&#39;] = {</span>
+            <span class="c1">#    &#39;initial_value&#39;: random.uniform(500, 2000),</span>
+            <span class="c1">#    &#39;bounds&#39;: (500, 2000)}</span>
+            <span class="c1">#learnable_parameters[&#39;a&#39;] = {</span>
+            <span class="c1">#    &#39;initial_value&#39;: random.uniform(500, 2000),</span>
+            <span class="c1">#    &#39;bounds&#39;: (500, 2000)}</span>
+            <span class="c1">#learnable_parameters[&#39;b&#39;] = {</span>
+            <span class="c1">#    &#39;initial_value&#39;: random.uniform(0.2, 1.0),</span>
+            <span class="c1">#    &#39;bounds&#39;: (0.2, 1.0)}</span>
+            <span class="c1">#learnable_parameters[&#39;friction_angle&#39;] = \</span>
+            <span class="c1">#    {&#39;initial_value&#39;: math.radians(random.uniform(0.01, 10.0)),</span>
+            <span class="c1">#     &#39;bounds&#39;: (math.radians(0.01), math.radians(10.0))}</span>
+            <span class="c1"># Set material constitutive model name</span>
+            <span class="k">if</span> <span class="n">model_name</span> <span class="o">==</span> <span class="s1">&#39;rc_drucker_prager_vmap&#39;</span><span class="p">:</span>
+                <span class="n">material_model_name</span> <span class="o">=</span> <span class="s1">&#39;drucker_prager_vmap&#39;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">material_model_name</span> <span class="o">=</span> <span class="s1">&#39;drucker_prager&#39;</span>
+            <span class="c1"># Set material constitutive state variables (prediction)</span>
+            <span class="n">state_features_out</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">elif</span> <span class="n">model_name</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;rc_lou_zhang_yoon&#39;</span><span class="p">,</span> <span class="s1">&#39;rc_lou_zhang_yoon_vmap&#39;</span><span class="p">):</span>
+            <span class="c1"># Set constitutive model parameters</span>
+            <span class="n">model_parameters</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;elastic_symmetry&#39;</span><span class="p">:</span> <span class="s1">&#39;isotropic&#39;</span><span class="p">,</span>
+                <span class="s1">&#39;E&#39;</span><span class="p">:</span> <span class="mf">110e3</span><span class="p">,</span> <span class="s1">&#39;v&#39;</span><span class="p">:</span> <span class="mf">0.33</span><span class="p">,</span>
+                <span class="s1">&#39;euler_angles&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">),</span>
+                <span class="s1">&#39;hardening_law&#39;</span><span class="p">:</span> <span class="n">get_hardening_law</span><span class="p">(</span><span class="s1">&#39;nadai_ludwik&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;hardening_parameters&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;s0&#39;</span><span class="p">:</span> <span class="mi">900</span><span class="p">,</span>
+                                         <span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="mi">700</span><span class="p">,</span>
+                                         <span class="s1">&#39;b&#39;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">,</span>
+                                         <span class="s1">&#39;ep0&#39;</span><span class="p">:</span> <span class="mf">1e-5</span><span class="p">},</span>
+                <span class="s1">&#39;a_hardening_law&#39;</span><span class="p">:</span> <span class="n">get_hardening_law</span><span class="p">(</span><span class="s1">&#39;linear&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;a_hardening_parameters&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;s0&#39;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+                                           <span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">},</span>
+                <span class="s1">&#39;b_hardening_law&#39;</span><span class="p">:</span> <span class="n">get_hardening_law</span><span class="p">(</span><span class="s1">&#39;linear&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;b_hardening_parameters&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;s0&#39;</span><span class="p">:</span> <span class="mf">0.05</span><span class="p">,</span>
+                                           <span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">},</span>
+                <span class="s1">&#39;c_hardening_law&#39;</span><span class="p">:</span> <span class="n">get_hardening_law</span><span class="p">(</span><span class="s1">&#39;linear&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;c_hardening_parameters&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;s0&#39;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+                                           <span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">},</span>
+                <span class="s1">&#39;d_hardening_law&#39;</span><span class="p">:</span> <span class="n">get_hardening_law</span><span class="p">(</span><span class="s1">&#39;linear&#39;</span><span class="p">),</span>
+                <span class="s1">&#39;d_hardening_parameters&#39;</span><span class="p">:</span> <span class="p">{</span><span class="s1">&#39;s0&#39;</span><span class="p">:</span> <span class="mf">0.50</span><span class="p">,</span>
+                                           <span class="s1">&#39;a&#39;</span><span class="p">:</span> <span class="mi">0</span><span class="p">},</span>
+                <span class="s1">&#39;is_associative_hardening&#39;</span><span class="p">:</span> <span class="kc">True</span><span class="p">}</span>
+            <span class="c1"># Set learnable parameters</span>
+            <span class="n">learnable_parameters</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">learnable_parameters</span><span class="p">[</span><span class="s1">&#39;s0&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;initial_value&#39;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">500</span><span class="p">,</span> <span class="mi">2000</span><span class="p">),</span>
+                <span class="s1">&#39;bounds&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mi">500</span><span class="p">,</span> <span class="mi">2000</span><span class="p">)}</span>
+            <span class="n">learnable_parameters</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;initial_value&#39;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">500</span><span class="p">,</span> <span class="mi">2000</span><span class="p">),</span>
+                <span class="s1">&#39;bounds&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mi">500</span><span class="p">,</span> <span class="mi">2000</span><span class="p">)}</span>
+            <span class="n">learnable_parameters</span><span class="p">[</span><span class="s1">&#39;b&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;initial_value&#39;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+                <span class="s1">&#39;bounds&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.2</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)}</span>
+            <span class="c1">#learnable_parameters[&#39;yield_a_s0&#39;] = \</span>
+            <span class="c1">#    {&#39;initial_value&#39;: random.uniform(0.5, 1.5),</span>
+            <span class="c1">#     &#39;bounds&#39;: (0.5, 1.5)}</span>
+            <span class="n">learnable_parameters</span><span class="p">[</span><span class="s1">&#39;yield_b_s0&#39;</span><span class="p">]</span> <span class="o">=</span> \
+                <span class="p">{</span><span class="s1">&#39;initial_value&#39;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span>
+                 <span class="s1">&#39;bounds&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">)}</span>
+            <span class="n">learnable_parameters</span><span class="p">[</span><span class="s1">&#39;yield_c_s0&#39;</span><span class="p">]</span> <span class="o">=</span> \
+                <span class="p">{</span><span class="s1">&#39;initial_value&#39;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mf">3.5</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">),</span>
+                 <span class="s1">&#39;bounds&#39;</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="mf">3.5</span><span class="p">,</span> <span class="mf">2.5</span><span class="p">)}</span>
+            <span class="n">learnable_parameters</span><span class="p">[</span><span class="s1">&#39;yield_d_s0&#39;</span><span class="p">]</span> <span class="o">=</span> \
+                <span class="p">{</span><span class="s1">&#39;initial_value&#39;</span><span class="p">:</span> <span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="o">-</span><span class="mf">1.5</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">),</span>
+                 <span class="s1">&#39;bounds&#39;</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.5</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">)}</span>
+            <span class="c1"># Set material constitutive model name</span>
+            <span class="k">if</span> <span class="n">model_name</span> <span class="o">==</span> <span class="s1">&#39;rc_lou_zhang_yoon_vmap&#39;</span><span class="p">:</span>
+                <span class="n">material_model_name</span> <span class="o">=</span> <span class="s1">&#39;lou_zhang_yoon_vmap&#39;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">material_model_name</span> <span class="o">=</span> <span class="s1">&#39;lou_zhang_yoon&#39;</span>
+            <span class="c1"># Set material constitutive state variables (prediction)</span>
+            <span class="n">state_features_out</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Unknown recurrent constitutive model.&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set automatic synchronization of material model parameters</span>
+        <span class="k">if</span> <span class="nb">bool</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;_vmap$&#39;</span><span class="p">,</span> <span class="n">model_name</span><span class="p">)):</span>
+            <span class="n">is_auto_sync_parameters</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">is_auto_sync_parameters</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="c1"># Set state update failure checking flag</span>
+        <span class="n">is_check_su_fail</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="c1"># Set parameters normalization</span>
+        <span class="n">is_normalized_parameters</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="c1"># Set model input and output features normalization</span>
+        <span class="n">is_model_in_normalized</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">is_model_out_normalized</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="c1"># Set device type</span>
+        <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
+            <span class="n">device_type</span> <span class="o">=</span> <span class="s1">&#39;cuda&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">device_type</span> <span class="o">=</span> <span class="s1">&#39;cpu&#39;</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set other parameters required to initialize constitutive model</span>
+        <span class="n">model_kwargs</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;n_features_in&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">comp_order_sym</span><span class="p">),</span>
+            <span class="s1">&#39;n_features_out&#39;</span><span class="p">:</span> <span class="nb">len</span><span class="p">(</span><span class="n">comp_order_sym</span><span class="p">),</span>
+            <span class="s1">&#39;learnable_parameters&#39;</span><span class="p">:</span> <span class="n">learnable_parameters</span><span class="p">,</span>
+            <span class="s1">&#39;strain_formulation&#39;</span><span class="p">:</span> <span class="n">strain_formulation</span><span class="p">,</span>
+            <span class="s1">&#39;problem_type&#39;</span><span class="p">:</span> <span class="n">problem_type</span><span class="p">,</span>
+            <span class="s1">&#39;material_model_name&#39;</span><span class="p">:</span> <span class="n">material_model_name</span><span class="p">,</span>
+            <span class="s1">&#39;material_model_parameters&#39;</span><span class="p">:</span> <span class="n">model_parameters</span><span class="p">,</span>
+            <span class="s1">&#39;state_features_out&#39;</span><span class="p">:</span> <span class="n">state_features_out</span><span class="p">,</span>
+            <span class="s1">&#39;is_auto_sync_parameters&#39;</span><span class="p">:</span> <span class="n">is_auto_sync_parameters</span><span class="p">,</span>
+            <span class="s1">&#39;is_check_su_fail&#39;</span><span class="p">:</span> <span class="n">is_check_su_fail</span><span class="p">,</span>
+            <span class="s1">&#39;model_directory&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+            <span class="s1">&#39;model_name&#39;</span><span class="p">:</span> <span class="n">model_name</span><span class="p">,</span>
+            <span class="s1">&#39;is_normalized_parameters&#39;</span><span class="p">:</span> <span class="n">is_normalized_parameters</span><span class="p">,</span>
+            <span class="s1">&#39;is_model_in_normalized&#39;</span><span class="p">:</span> <span class="n">is_model_in_normalized</span><span class="p">,</span>
+            <span class="s1">&#39;is_model_out_normalized&#39;</span><span class="p">:</span> <span class="n">is_model_out_normalized</span><span class="p">,</span>
+            <span class="s1">&#39;device_type&#39;</span><span class="p">:</span> <span class="n">device_type</span><span class="p">}</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">elif</span> <span class="n">model_name</span> <span class="o">==</span> <span class="s1">&#39;gru_material_model&#39;</span><span class="p">:</span>
+        <span class="c1"># Set model parameters</span>
+        <span class="n">model_parameters</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set number of input features</span>
+        <span class="n">n_features_in</span> <span class="o">=</span> <span class="mi">6</span>
+        <span class="c1"># Set number of output features</span>
+        <span class="n">n_features_out</span> <span class="o">=</span> <span class="mi">6</span>
+        <span class="c1"># Set hidden layer size</span>
+        <span class="n">hidden_layer_size</span> <span class="o">=</span> <span class="mi">444</span>
+        <span class="c1"># Set number of recurrent layers (stacked RNN)</span>
+        <span class="n">n_recurrent_layers</span> <span class="o">=</span> <span class="mi">3</span>
+        <span class="c1"># Set dropout probability</span>
+        <span class="n">dropout</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c1"># Set model input and output features normalization</span>
+        <span class="n">is_model_in_normalized</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">is_model_out_normalized</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="c1"># Set data scaling type</span>
+        <span class="n">scaling_type</span> <span class="o">=</span> <span class="s1">&#39;mean-std&#39;</span>
+        <span class="c1"># Set data scaling parameters (testing data set)</span>
+        <span class="n">scaling_parameters</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">scaling_parameters</span><span class="p">[</span><span class="s1">&#39;features_in&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="p">{</span><span class="s1">&#39;mean&#39;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="o">-</span><span class="mf">5.75018498e-04</span><span class="p">,</span> <span class="o">-</span><span class="mf">7.73680528e-05</span><span class="p">,</span>
+                                   <span class="o">-</span><span class="mf">9.02668260e-05</span><span class="p">,</span>  <span class="mf">2.19364518e-04</span><span class="p">,</span>
+                                   <span class="o">-</span><span class="mf">6.39204673e-04</span><span class="p">,</span> <span class="mf">6.77340276e-05</span><span class="p">]),</span>
+             <span class="s1">&#39;std&#39;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">1.23985704e-02</span><span class="p">,</span> <span class="mf">1.27823620e-02</span><span class="p">,</span>
+                                  <span class="mf">1.28287382e-02</span><span class="p">,</span> <span class="mf">1.22431086e-02</span><span class="p">,</span>
+                                  <span class="mf">1.24313367e-02</span><span class="p">,</span> <span class="mf">1.26229510e-02</span><span class="p">])}</span>
+        <span class="n">scaling_parameters</span><span class="p">[</span><span class="s1">&#39;features_out&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="p">{</span><span class="s1">&#39;mean&#39;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="o">-</span><span class="mf">7.57134320e+01</span><span class="p">,</span> <span class="o">-</span><span class="mf">7.55536062e+01</span><span class="p">,</span>
+                                   <span class="o">-</span><span class="mf">8.90032504e+01</span><span class="p">,</span> <span class="mf">6.46513484e+00</span><span class="p">,</span>
+                                   <span class="o">-</span><span class="mf">4.87017372e+00</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.07057845e+00</span><span class="p">]),</span>
+             <span class="s1">&#39;std&#39;</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="mf">2.45050662e+03</span><span class="p">,</span> <span class="mf">2.46619470e+03</span><span class="p">,</span>
+                                  <span class="mf">2.46052590e+03</span><span class="p">,</span> <span class="mf">5.04265033e+02</span><span class="p">,</span>
+                                  <span class="mf">5.06194672e+02</span><span class="p">,</span> <span class="mf">5.14648632e+02</span><span class="p">])}</span>
+        <span class="c1"># Set GRU model source</span>
+        <span class="n">gru_model_source</span> <span class="o">=</span> <span class="s1">&#39;custom&#39;</span>
+        <span class="c1"># Set device type</span>
+        <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
+            <span class="n">device_type</span> <span class="o">=</span> <span class="s1">&#39;cuda&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">device_type</span> <span class="o">=</span> <span class="s1">&#39;cpu&#39;</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set other parameters required to initialize constitutive model</span>
+        <span class="n">model_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;n_features_in&#39;</span><span class="p">:</span> <span class="n">n_features_in</span><span class="p">,</span>
+                        <span class="s1">&#39;n_features_out&#39;</span><span class="p">:</span> <span class="n">n_features_out</span><span class="p">,</span>
+                        <span class="s1">&#39;hidden_layer_size&#39;</span><span class="p">:</span> <span class="n">hidden_layer_size</span><span class="p">,</span>
+                        <span class="s1">&#39;n_recurrent_layers&#39;</span><span class="p">:</span> <span class="n">n_recurrent_layers</span><span class="p">,</span>
+                        <span class="s1">&#39;dropout&#39;</span><span class="p">:</span> <span class="n">dropout</span><span class="p">,</span>
+                        <span class="s1">&#39;model_directory&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+                        <span class="s1">&#39;model_name&#39;</span><span class="p">:</span> <span class="n">model_name</span><span class="p">,</span>
+                        <span class="s1">&#39;is_model_in_normalized&#39;</span><span class="p">:</span> <span class="n">is_model_in_normalized</span><span class="p">,</span>
+                        <span class="s1">&#39;is_model_out_normalized&#39;</span><span class="p">:</span> <span class="n">is_model_out_normalized</span><span class="p">,</span>
+                        <span class="s1">&#39;scaling_type&#39;</span><span class="p">:</span> <span class="n">scaling_type</span><span class="p">,</span>
+                        <span class="s1">&#39;scaling_parameters&#39;</span><span class="p">:</span> <span class="n">scaling_parameters</span><span class="p">,</span>
+                        <span class="s1">&#39;gru_model_source&#39;</span><span class="p">:</span> <span class="n">gru_model_source</span><span class="p">,</span>
+                        <span class="s1">&#39;device_type&#39;</span><span class="p">:</span> <span class="n">device_type</span><span class="p">}</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">elif</span> <span class="n">model_name</span> <span class="o">==</span> <span class="s1">&#39;hybrid_material_model&#39;</span><span class="p">:</span>
+        <span class="c1"># Set model parameters</span>
+        <span class="n">model_parameters</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set number of input features</span>
+        <span class="n">n_features_in</span> <span class="o">=</span> <span class="mi">6</span>
+        <span class="c1"># Set number of output features</span>
+        <span class="n">n_features_out</span> <span class="o">=</span> <span class="mi">6</span>
+        <span class="c1"># Set model input and output features normalization</span>
+        <span class="n">is_model_in_normalized</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="n">is_model_out_normalized</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set device type</span>
+        <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
+            <span class="n">device_type</span> <span class="o">=</span> <span class="s1">&#39;cuda&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">device_type</span> <span class="o">=</span> <span class="s1">&#39;cpu&#39;</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize hybridized models dictionary</span>
+        <span class="n">hyb_models_dict</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Description:</span>
+        <span class="c1">#</span>
+        <span class="c1"># HybridModel(e) = RCM(e) + GRU(e)</span>
+        <span class="c1">#</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set hybridized model name</span>
+        <span class="n">hyb_model_name</span> <span class="o">=</span> <span class="s1">&#39;rcm_strain_to_stress&#39;</span>
+        <span class="c1"># Set hybridized model indices</span>
+        <span class="n">hyb_indices</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="c1"># Set hybridized model: RCM (strain to stress)</span>
+        <span class="n">hyb_models_dict</span><span class="p">[</span><span class="n">hyb_model_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">set_hybridized_rcm_model</span><span class="p">(</span>
+            <span class="n">hyb_indices</span><span class="p">,</span> <span class="s1">&#39;von_mises_vmap&#39;</span><span class="p">,</span> <span class="n">device_type</span><span class="o">=</span><span class="n">device_type</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set hybridized model name</span>
+        <span class="n">hyb_model_name</span> <span class="o">=</span> <span class="s1">&#39;gru_strain_to_stress&#39;</span>
+        <span class="c1"># Set hybridized model indices</span>
+        <span class="n">hyb_indices</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="c1"># Set scaling data set file path (testing data set)</span>
+        <span class="n">scaling_dataset_file_path</span> <span class="o">=</span> \
+            <span class="p">(</span><span class="s1">&#39;/home/username/Documents/brown/projects/&#39;</span>
+             <span class="s1">&#39;darpa_paper_examples/global/random_material_patch_von_mises/&#39;</span>
+             <span class="s1">&#39;deformation_bounds_0d1/local/polynomial/datasets/&#39;</span>
+             <span class="s1">&#39;single_precision/n10/5_testing_id_dataset/&#39;</span>
+             <span class="s1">&#39;ss_paths_dataset_n512.pkl&#39;</span><span class="p">)</span>
+        <span class="c1"># Load scaling data set</span>
+        <span class="n">scaling_dataset</span> <span class="o">=</span> <span class="n">load_dataset</span><span class="p">(</span><span class="n">scaling_dataset_file_path</span><span class="p">)</span>
+        <span class="c1"># Set hybridized model: GRU (strain to stress)</span>
+        <span class="n">hyb_models_dict</span><span class="p">[</span><span class="n">hyb_model_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">set_hybridized_gru_model</span><span class="p">(</span>
+            <span class="n">hyb_indices</span><span class="p">,</span> <span class="s1">&#39;strain_to_stress&#39;</span><span class="p">,</span> <span class="n">scaling_dataset</span><span class="p">,</span>
+            <span class="n">device_type</span><span class="o">=</span><span class="n">device_type</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set hybridization model type</span>
+        <span class="n">hybridization_type</span> <span class="o">=</span> <span class="s1">&#39;additive&#39;</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set other parameters required to initialize constitutive model</span>
+        <span class="n">model_kwargs</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;n_features_in&#39;</span><span class="p">:</span> <span class="n">n_features_in</span><span class="p">,</span>
+                        <span class="s1">&#39;n_features_out&#39;</span><span class="p">:</span> <span class="n">n_features_out</span><span class="p">,</span>
+                        <span class="s1">&#39;model_directory&#39;</span><span class="p">:</span> <span class="kc">None</span><span class="p">,</span>
+                        <span class="s1">&#39;model_name&#39;</span><span class="p">:</span> <span class="n">model_name</span><span class="p">,</span>
+                        <span class="s1">&#39;hyb_models_dict&#39;</span><span class="p">:</span> <span class="n">hyb_models_dict</span><span class="p">,</span>
+                        <span class="s1">&#39;hybridization_type&#39;</span><span class="p">:</span> <span class="n">hybridization_type</span><span class="p">,</span>
+                        <span class="s1">&#39;is_model_in_normalized&#39;</span><span class="p">:</span> <span class="n">is_model_in_normalized</span><span class="p">,</span>
+                        <span class="s1">&#39;is_model_out_normalized&#39;</span><span class="p">:</span> <span class="n">is_model_out_normalized</span><span class="p">,</span>
+                        <span class="s1">&#39;device_type&#39;</span><span class="p">:</span> <span class="n">device_type</span><span class="p">}</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">strain_formulation</span><span class="p">,</span> <span class="n">problem_type</span><span class="p">,</span> <span class="n">n_dim</span><span class="p">,</span> <span class="n">model_name</span><span class="p">,</span> \
+        <span class="n">model_parameters</span><span class="p">,</span> <span class="n">model_kwargs</span>
+<span class="c1"># =============================================================================</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="c1"># Set float precision</span>
+    <span class="n">is_double_precision</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="n">is_double_precision</span><span class="p">:</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">set_default_dtype</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">set_default_dtype</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set computation processes</span>
+    <span class="n">is_save_specimen_data</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">is_save_specimen_material_state</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set case study base directory</span>
+    <span class="n">base_dir</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;/home/username/Documents/brown/projects/&#39;</span>
+                <span class="s1">&#39;darpa_project/5_global_specimens/rowan_specimen_ti6242_hip2/&#39;</span>
+                <span class="s1">&#39;1_preliminary_discovery_E&#39;</span><span class="p">)</span>
+    <span class="c1"># Set case study directory</span>
+    <span class="n">case_study_name</span> <span class="o">=</span> <span class="s1">&#39;material_model_finder&#39;</span>
+    <span class="n">case_study_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">base_dir</span><span class="p">),</span>
+                                  <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">case_study_name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set specimen name</span>
+    <span class="n">specimen_name</span> <span class="o">=</span> <span class="s1">&#39;Ti6242_HIP2_UT_Specimen2_J2&#39;</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set strain formulation</span>
+    <span class="n">strain_formulation</span> <span class="o">=</span> <span class="s1">&#39;infinitesimal&#39;</span>
+    <span class="c1"># Set problem type</span>
+    <span class="n">problem_type</span> <span class="o">=</span> <span class="mi">4</span>
+    <span class="c1"># Get problem type parameters</span>
+    <span class="n">n_dim</span><span class="p">,</span> <span class="n">comp_order_sym</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">get_problem_type_parameters</span><span class="p">(</span><span class="n">problem_type</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set material model name and parameters</span>
+    <span class="n">strain_formulation</span><span class="p">,</span> <span class="n">problem_type</span><span class="p">,</span> <span class="n">n_dim</span><span class="p">,</span> <span class="n">model_name</span><span class="p">,</span> \
+        <span class="n">model_parameters</span><span class="p">,</span> <span class="n">model_kwargs</span> <span class="o">=</span> <span class="n">set_material_model_parameters</span><span class="p">()</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Check case study directory</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">case_study_dir</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The case study directory has not been found:</span><span class="se">\n\n</span><span class="s1">&#39;</span>
+                           <span class="o">+</span> <span class="n">case_study_dir</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set specimen raw data directory</span>
+    <span class="n">specimen_raw_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">case_study_dir</span><span class="p">),</span>
+                                    <span class="s1">&#39;0_simulation&#39;</span><span class="p">)</span>
+    <span class="c1"># Check specimen raw data directory</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">specimen_raw_dir</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The specimen raw data directory has not been &#39;</span>
+                           <span class="s1">&#39;found:</span><span class="se">\n\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">specimen_raw_dir</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set specimen mesh input file path (.inp file)</span>
+    <span class="n">specimen_inp_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">specimen_raw_dir</span><span class="p">),</span>
+                                    <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">specimen_name</span><span class="si">}</span><span class="s1">.inp&#39;</span><span class="p">)</span>
+    <span class="c1"># Check specimen mesh input file path</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">specimen_inp_path</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The specimen mesh input file &#39;</span>
+                           <span class="sa">f</span><span class="s1">&#39;(</span><span class="si">{</span><span class="n">specimen_name</span><span class="si">}</span><span class="s1">.inp) has not been found in &#39;</span>
+                           <span class="sa">f</span><span class="s1">&#39;specimen raw data directory:</span><span class="se">\n\n</span><span class="s1">&#39;</span>
+                           <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">specimen_raw_dir</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set specimen history data directory</span>
+    <span class="n">specimen_history_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">specimen_raw_dir</span><span class="p">),</span>
+                                        <span class="s1">&#39;specimen_history_data&#39;</span><span class="p">)</span>
+    <span class="c1"># Get specimen history time step file paths</span>
+    <span class="n">specimen_history_paths</span> <span class="o">=</span> \
+        <span class="n">get_specimen_history_paths</span><span class="p">(</span><span class="n">specimen_history_dir</span><span class="p">,</span> <span class="n">specimen_name</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set training data set directory</span>
+    <span class="n">training_dataset_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">case_study_dir</span><span class="p">),</span>
+                                        <span class="s1">&#39;1_training_dataset&#39;</span><span class="p">)</span>
+    <span class="c1"># Create training data set directory</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">training_dataset_dir</span><span class="p">):</span>
+        <span class="n">make_directory</span><span class="p">(</span><span class="n">training_dataset_dir</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Create material models initialization subdirectory</span>
+    <span class="k">if</span> <span class="n">is_save_specimen_material_state</span><span class="p">:</span>
+        <span class="c1"># Set material models initialization subdirectory</span>
+        <span class="n">material_models_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">training_dataset_dir</span><span class="p">),</span> <span class="s1">&#39;material_models_init&#39;</span><span class="p">)</span>
+        <span class="c1"># Create material models initialization subdirectory</span>
+        <span class="n">make_directory</span><span class="p">(</span><span class="n">material_models_dir</span><span class="p">,</span> <span class="n">is_overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set material model directory</span>
+        <span class="n">material_model_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">material_models_dir</span><span class="p">),</span> <span class="s1">&#39;model_1&#39;</span><span class="p">)</span>
+        <span class="c1"># Create material model directory</span>
+        <span class="n">make_directory</span><span class="p">(</span><span class="n">material_model_dir</span><span class="p">,</span> <span class="n">is_overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># Assign material model directory</span>
+        <span class="n">model_kwargs</span><span class="p">[</span><span class="s1">&#39;model_directory&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">material_model_dir</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Generate specimen data and material state files (training data set)</span>
+    <span class="n">specimen_data_path</span><span class="p">,</span> <span class="n">specimen_material_state_path</span> <span class="o">=</span> <span class="n">gen_specimen_dataset</span><span class="p">(</span>
+        <span class="n">specimen_name</span><span class="p">,</span> <span class="n">specimen_raw_dir</span><span class="p">,</span> <span class="n">specimen_inp_path</span><span class="p">,</span>
+        <span class="n">specimen_history_paths</span><span class="p">,</span> <span class="n">strain_formulation</span><span class="p">,</span> <span class="n">problem_type</span><span class="p">,</span> <span class="n">n_dim</span><span class="p">,</span>
+        <span class="n">model_name</span><span class="p">,</span> <span class="n">model_parameters</span><span class="p">,</span> <span class="n">model_kwargs</span><span class="p">,</span> <span class="n">training_dataset_dir</span><span class="p">,</span>
+        <span class="n">is_save_specimen_data</span><span class="p">,</span> <span class="n">is_save_specimen_material_state</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

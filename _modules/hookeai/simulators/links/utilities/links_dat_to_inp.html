@@ -1,0 +1,542 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>hookeai.simulators.links.utilities.links_dat_to_inp &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../../" id="documentation_options" src="../../../../../_static/documentation_options.js"></script>
+        <script src="../../../../../_static/doctools.js"></script>
+        <script src="../../../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../_autosummary/hookeai.html">Code</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">hookeai.simulators.links.utilities.links_dat_to_inp</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for hookeai.simulators.links.utilities.links_dat_to_inp</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Convert Links &#39;.dat&#39; file to Abaqus-like &#39;.inp&#39; file.</span>
+
+<span class="sd">Functions</span>
+<span class="sd">---------</span>
+<span class="sd">links_dat_to_abaqus_inp</span>
+<span class="sd">    Convert Links input data file to Abaqus data input data file.</span>
+<span class="sd">abaqus_inp_to_links_dat</span>
+<span class="sd">    Convert Abaqus data input data file to Links input data file.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#                                                                       Modules</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Standard</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="c1"># Third-party</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="c1">#</span>
+<span class="c1">#                                                          Authorship &amp; Credits</span>
+<span class="c1"># =============================================================================</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Bernardo Ferreira (bernardo_ferreira@brown.edu)&#39;</span>
+<span class="n">__credits__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Bernardo Ferreira&#39;</span><span class="p">,</span> <span class="p">]</span>
+<span class="n">__status__</span> <span class="o">=</span> <span class="s1">&#39;Stable&#39;</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="links_dat_to_abaqus_inp"><a class="viewcode-back" href="../../../../../_autosummary/hookeai.simulators.links.utilities.links_dat_to_inp.links_dat_to_abaqus_inp.html#hookeai.simulators.links.utilities.links_dat_to_inp.links_dat_to_abaqus_inp">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">links_dat_to_abaqus_inp</span><span class="p">(</span><span class="n">links_input_file_path</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert Links input data file to Abaqus data input data file.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    links_input_file_path : str</span>
+<span class="sd">        Links input data file path.</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    abaqus_inp_file_path : str</span>
+<span class="sd">        Abaqus input data file path.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check if Links simulation input data file exists</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">links_input_file_path</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Links simulation input data file has not been &#39;</span>
+                           <span class="sa">f</span><span class="s1">&#39;found:</span><span class="se">\n\n</span><span class="si">{</span><span class="n">links_input_file_path</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get simulation name</span>
+    <span class="n">simulation_name</span> <span class="o">=</span> \
+        <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">links_input_file_path</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="c1"># Get Links simulation input data file directory</span>
+    <span class="n">links_input_file_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">links_input_file_path</span><span class="p">)</span>
+    <span class="c1"># Set ABAQUS &#39;.inp&#39; data file path</span>
+    <span class="n">abaqus_inp_file_path</span> <span class="o">=</span> \
+        <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">links_input_file_dir</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">simulation_name</span><span class="si">}</span><span class="s1">.inp&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Open Links simulation input data file</span>
+    <span class="n">links_input_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">links_input_file_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Reset file position</span>
+    <span class="n">links_input_file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="c1"># Initialize search flags</span>
+    <span class="n">is_keyword_found</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="c1"># Search for ELEMENT_TYPES keyword and collect element type</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">links_input_file</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">bool</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;ELEMENT_TYPES\b&#39;</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)):</span>        
+            <span class="c1"># Start processing ELEMENT_TYPES section</span>
+            <span class="n">is_keyword_found</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="c1"># Collect number of element types</span>
+            <span class="n">n_elem_types</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="c1"># Check number of element types</span>
+            <span class="k">if</span> <span class="n">n_elem_types</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;This script can only process meshes with &#39;</span>
+                                   <span class="s1">&#39;a single element type.&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">is_keyword_found</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">bool</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^&#39;</span> <span class="o">+</span> <span class="sa">r</span><span class="s1">&#39;[*][A-Z]+&#39;</span><span class="p">,</span> <span class="n">line</span><span class="p">))</span>
+                                   <span class="ow">or</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">):</span>
+            <span class="c1"># Finished processing ELEMENT_TYPES section</span>
+            <span class="k">break</span>
+        <span class="k">elif</span> <span class="n">is_keyword_found</span><span class="p">:</span>
+            <span class="c1"># Get element type or number of Gauss integration points</span>
+            <span class="k">if</span> <span class="nb">bool</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\bGP\b&#39;</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)):</span>
+                <span class="n">n_gauss</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">links_elem_type</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get number of spatial dimensions</span>
+    <span class="k">if</span> <span class="n">links_elem_type</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;TRI_3&#39;</span><span class="p">,</span> <span class="s1">&#39;TRI_6&#39;</span><span class="p">,</span> <span class="s1">&#39;QUAD_4&#39;</span><span class="p">,</span> <span class="s1">&#39;QUAD_8&#39;</span><span class="p">):</span>
+        <span class="n">n_dim</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">n_dim</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="c1"># Set Links to ABAQUS element type conversion</span>
+    <span class="n">elem_type_converter</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;TRI_3_1&#39;</span><span class="p">:</span> <span class="s1">&#39;CPE3&#39;</span><span class="p">,</span> <span class="s1">&#39;TRI3_1&#39;</span><span class="p">:</span> <span class="s1">&#39;CPE3&#39;</span><span class="p">,</span>
+                           <span class="s1">&#39;QUAD_4_4&#39;</span><span class="p">:</span> <span class="s1">&#39;CPE4&#39;</span><span class="p">,</span> <span class="s1">&#39;QUAD4_4&#39;</span><span class="p">:</span> <span class="s1">&#39;CPE4&#39;</span><span class="p">,</span>
+                           <span class="s1">&#39;TETRA_4_4&#39;</span><span class="p">:</span> <span class="s1">&#39;C3D4&#39;</span><span class="p">,</span> <span class="s1">&#39;TETRA4_4&#39;</span><span class="p">:</span> <span class="s1">&#39;C3D4&#39;</span><span class="p">,</span>
+                           <span class="s1">&#39;HEXA_8_8&#39;</span><span class="p">:</span> <span class="s1">&#39;C3D8&#39;</span><span class="p">,</span> <span class="s1">&#39;HEXA8_8&#39;</span><span class="p">:</span> <span class="s1">&#39;C3D8&#39;</span><span class="p">,</span>
+                           <span class="s1">&#39;HEXA_20_8&#39;</span><span class="p">:</span> <span class="s1">&#39;C3D20R&#39;</span><span class="p">,</span> <span class="s1">&#39;HEXA20_8&#39;</span><span class="p">:</span> <span class="s1">&#39;C3D20R&#39;</span><span class="p">}</span>
+    <span class="c1"># Get matching ABAQUS element type</span>
+    <span class="k">if</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">links_elem_type</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">n_gauss</span><span class="si">}</span><span class="s1">&#39;</span> <span class="ow">in</span> <span class="n">elem_type_converter</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">abaqus_elem_type</span> <span class="o">=</span> <span class="n">elem_type_converter</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">links_elem_type</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">n_gauss</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Unknown Links to ABAQUS element type conversion.&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Reset file position</span>
+    <span class="n">links_input_file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="c1"># Initialize search flags</span>
+    <span class="n">is_keyword_found</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="c1"># Search for NODE_COORDINATES keyword and collect nodes coordinates</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">links_input_file</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">bool</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;NODE_COORDINATES\b&#39;</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)):</span>
+            <span class="c1"># Start processing NODE_COORDINATES section</span>
+            <span class="n">is_keyword_found</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="c1"># Collect number of nodes</span>
+            <span class="n">n_node</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="c1"># Initialize list of nodes coordinates</span>
+            <span class="n">nodes_coords_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">elif</span> <span class="n">is_keyword_found</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">bool</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^&#39;</span> <span class="o">+</span> <span class="sa">r</span><span class="s1">&#39;[*][A-Z]+&#39;</span><span class="p">,</span> <span class="n">line</span><span class="p">))</span>
+                                   <span class="ow">or</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">):</span>
+            <span class="c1"># Finished processing NODE_COORDINATES section</span>
+            <span class="k">break</span>
+        <span class="k">elif</span> <span class="n">is_keyword_found</span><span class="p">:</span>
+            <span class="c1"># Get node coordinates</span>
+            <span class="n">node_coords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">:]])</span>
+            <span class="c1"># Append node coordinates</span>
+            <span class="n">nodes_coords_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">node_coords</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Build node coordinates</span>
+    <span class="n">nodes_coords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">nodes_coords_list</span><span class="p">)</span>
+    <span class="c1"># Set number of nodes</span>
+    <span class="n">n_node</span> <span class="o">=</span> <span class="n">nodes_coords</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Reset file position</span>
+    <span class="n">links_input_file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="c1"># Initialize search flags</span>
+    <span class="n">is_keyword_found</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="c1"># Search for ELEMENTS keyword and collect elements connectivities</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">links_input_file</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">bool</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;ELEMENTS\b&#39;</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)):</span>
+            <span class="c1"># Start processing ELEMENTS section</span>
+            <span class="n">is_keyword_found</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="c1"># Collect number of elements</span>
+            <span class="n">n_elem</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="c1"># Initialize list of elements connectivities</span>
+            <span class="n">connectivities_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">elif</span> <span class="n">is_keyword_found</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">bool</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^&#39;</span> <span class="o">+</span> <span class="sa">r</span><span class="s1">&#39;[*][A-Z]+&#39;</span><span class="p">,</span> <span class="n">line</span><span class="p">))</span>
+                                   <span class="ow">or</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">):</span>
+            <span class="c1"># Finished processing ELEMENTS section</span>
+            <span class="k">break</span>
+        <span class="k">elif</span> <span class="n">is_keyword_found</span><span class="p">:</span>
+            <span class="c1"># Get element connectivities</span>
+            <span class="n">element_nodes</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">2</span><span class="p">:]]</span>
+            <span class="c1"># Assemble element connectivities</span>
+            <span class="n">connectivities_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">element_nodes</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Build element connectivities</span>
+    <span class="n">connectivities</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">connectivities_list</span><span class="p">)</span>
+    <span class="c1"># Set number of elements</span>
+    <span class="n">n_elem</span> <span class="o">=</span> <span class="n">connectivities</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Reset file position</span>
+    <span class="n">links_input_file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="c1"># Initialize search flags</span>
+    <span class="n">is_keyword_found</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="c1"># Search for NODES_WITH_PRESCRIBED_DISPLACEMENTS keyword and collect</span>
+    <span class="c1"># Dirichlet boundary conditions</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">links_input_file</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">bool</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;NODES_WITH_PRESCRIBED_DISPLACEMENTS\b&#39;</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span>
+                          <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)):</span>
+            <span class="c1"># Start processing NODES_WITH_PRESCRIBED_DISPLACEMENTS section</span>
+            <span class="n">is_keyword_found</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="c1"># Initialize Dirichlet boundary conditions</span>
+            <span class="n">dirichlet_bc</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="k">elif</span> <span class="n">is_keyword_found</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">bool</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^&#39;</span> <span class="o">+</span> <span class="sa">r</span><span class="s1">&#39;[*][A-Z]+&#39;</span><span class="p">,</span> <span class="n">line</span><span class="p">))</span>
+                                   <span class="ow">or</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">):</span>
+            <span class="c1"># Finished processing NODES_WITH_PRESCRIBED_DISPLACEMENTS section</span>
+            <span class="k">break</span>
+        <span class="k">elif</span> <span class="n">is_keyword_found</span><span class="p">:</span>
+            <span class="c1"># Get node label</span>
+            <span class="n">node_label</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="c1"># Get node prescription code and values</span>
+            <span class="n">node_code</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="n">node_vals</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">2</span><span class="p">:</span><span class="mi">5</span><span class="p">])</span>
+            <span class="c1"># Initialize node Dirichlet boundary conditions</span>
+            <span class="n">dirichlet_bc</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">node_label</span><span class="p">)]</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="c1"># Assemble node Dirichlet boundary conditions</span>
+            <span class="k">for</span> <span class="n">i_dof</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+                <span class="k">if</span> <span class="n">node_code</span><span class="p">[</span><span class="n">i_dof</span><span class="p">]</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">dirichlet_bc</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">node_label</span><span class="p">)][</span><span class="nb">str</span><span class="p">(</span><span class="n">i_dof</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span> <span class="o">=</span> \
+                        <span class="n">node_vals</span><span class="p">[</span><span class="n">i_dof</span><span class="p">]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize ABAQUS &#39;.inp&#39; data file content</span>
+    <span class="n">write_lines</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># Set header</span>
+    <span class="n">write_lines</span> <span class="o">+=</span> <span class="p">[</span><span class="s1">&#39;Automatically generated ABAQUS format input file&#39;</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">]</span>
+    <span class="c1"># Set node coordinates</span>
+    <span class="n">write_lines</span> <span class="o">+=</span> <span class="p">[</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="s1">&#39;*Node&#39;</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">]</span>
+    <span class="n">write_lines</span> <span class="o">+=</span> \
+        <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">i</span><span class="si">:</span><span class="s1">&gt;3d</span><span class="si">}</span><span class="s1">, &#39;</span>
+         <span class="o">+</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">coord</span><span class="si">:</span><span class="s1">16.8e</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">coord</span> <span class="ow">in</span> <span class="n">nodes_coords</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="p">:])</span>
+         <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_node</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
+    <span class="c1"># Set element connectivities</span>
+    <span class="n">write_lines</span> <span class="o">+=</span> <span class="p">[</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;*Element, type=</span><span class="si">{</span><span class="n">abaqus_elem_type</span><span class="si">}</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">]</span>
+    <span class="n">write_lines</span> <span class="o">+=</span> \
+        <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">i</span><span class="si">:</span><span class="s1">&gt;3d</span><span class="si">}</span><span class="s1">, &#39;</span>
+         <span class="o">+</span> <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">node</span><span class="si">:</span><span class="s1">d</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">connectivities</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="p">:])</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span>
+         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_elem</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
+    <span class="c1"># Set Dirichlet boundary conditions</span>
+    <span class="n">write_lines</span> <span class="o">+=</span> <span class="p">[</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="s1">&#39;*Boundary&#39;</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">]</span>
+    <span class="n">write_lines</span> <span class="o">+=</span> \
+        <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">int</span><span class="p">(</span><span class="n">i</span><span class="p">)</span><span class="si">:</span><span class="s1">&gt;3d</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">j</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">j</span><span class="si">}</span><span class="s1">, </span><span class="si">{</span><span class="n">dirichlet_bc</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="n">j</span><span class="p">]</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span>
+         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">dirichlet_bc</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="n">dirichlet_bc</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">keys</span><span class="p">()]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Open ABAQUS &#39;.inp&#39; data file</span>
+    <span class="n">abaqus_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">abaqus_inp_file_path</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span>
+    <span class="c1"># Write ABAQUS &#39;.inp&#39; data file</span>
+    <span class="n">abaqus_file</span><span class="o">.</span><span class="n">writelines</span><span class="p">(</span><span class="n">write_lines</span><span class="p">)</span>
+    <span class="c1"># Close ABAQUS &#39;.inp&#39; data file</span>
+    <span class="n">abaqus_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">abaqus_inp_file_path</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="abaqus_inp_to_links_dat"><a class="viewcode-back" href="../../../../../_autosummary/hookeai.simulators.links.utilities.links_dat_to_inp.abaqus_inp_to_links_dat.html#hookeai.simulators.links.utilities.links_dat_to_inp.abaqus_inp_to_links_dat">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">abaqus_inp_to_links_dat</span><span class="p">(</span><span class="n">specimen_inp_path</span><span class="p">,</span> <span class="n">n_dim</span><span class="o">=</span><span class="mi">3</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert Abaqus data input data file to Links input data file.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    specimen_inp_path : str</span>
+<span class="sd">        Specimen mesh input file path (.inp).</span>
+<span class="sd">    n_dim : int, default=3</span>
+<span class="sd">        Number of spatial dimensions.</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    abaqus_inp_file_path : str</span>
+<span class="sd">        Abaqus input data file path.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Set unique Links group ID (element type + material type)</span>
+    <span class="n">group_id</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get specimen name</span>
+    <span class="n">specimen_name</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">specimen_inp_path</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="c1"># Open specimen mesh input file</span>
+    <span class="n">input_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">specimen_inp_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize nodes coordinates</span>
+    <span class="n">nodes_coords</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Reset file position</span>
+    <span class="n">input_file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="c1"># Initialize search flags</span>
+    <span class="n">is_keyword_found</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="c1"># Search for NODE keyword and collect nodes coordinates</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">input_file</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">bool</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\*node\b&#39;</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)):</span>
+            <span class="c1"># Start processing NODE section</span>
+            <span class="n">is_keyword_found</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">elif</span> <span class="n">is_keyword_found</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">bool</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^&#39;</span> <span class="o">+</span> <span class="sa">r</span><span class="s1">&#39;[*][A-Z]+&#39;</span><span class="p">,</span> <span class="n">line</span><span class="p">))</span>
+                                   <span class="ow">or</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">):</span>
+            <span class="c1"># Finished processing NODE section</span>
+            <span class="k">break</span>
+        <span class="k">elif</span> <span class="n">is_keyword_found</span><span class="p">:</span>
+            <span class="c1"># Get node coordinates</span>
+            <span class="n">nodes_coords</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">sep</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">:</span><span class="mi">1</span><span class="o">+</span><span class="n">n_dim</span><span class="p">]])</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Check mesh nodes initial coordinates</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">nodes_coords</span><span class="p">)</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The *NODE keyword has not been found in the &#39;</span>
+                           <span class="s1">&#39;specimen mesh input file (.inp).&#39;</span><span class="p">)</span>
+    <span class="c1"># Get total number of nodes</span>
+    <span class="n">n_node_mesh</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">nodes_coords</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize elements connectivities</span>
+    <span class="n">connectivities</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="c1"># Initialize connectivities nodes (validation only)</span>
+    <span class="n">connect_nodes</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Reset file position</span>
+    <span class="n">input_file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="c1"># Initialize search flags</span>
+    <span class="n">is_keyword_found</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="c1"># Search for ELEMENT keyword and collect nodes connectivities</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">input_file</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">bool</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\*element, type\b&#39;</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)):</span>
+            <span class="c1"># Start processing ELEMENT section</span>
+            <span class="n">is_keyword_found</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="c1"># Get ABAQUS element type</span>
+            <span class="n">elem_abaqus_type</span> <span class="o">=</span> \
+                <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;type=([A-Z0-9]+)&#39;</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="c1"># Get Links element type</span>
+            <span class="k">if</span> <span class="n">elem_abaqus_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The *ELEMENT keyword TYPE parameter has &#39;</span>
+                                   <span class="s1">&#39;not been found in the specimen mesh input &#39;</span>
+                                   <span class="s1">&#39;file (.inp).&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">is_keyword_found</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">bool</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^&#39;</span> <span class="o">+</span> <span class="sa">r</span><span class="s1">&#39;[*][A-Z]+&#39;</span><span class="p">,</span> <span class="n">line</span><span class="p">))</span>
+                                   <span class="ow">or</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">):</span>
+            <span class="c1"># Finished processing ELEMENT section</span>
+            <span class="n">is_keyword_found</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">elif</span> <span class="n">is_keyword_found</span><span class="p">:</span>
+            <span class="c1"># Get element label and nodes</span>
+            <span class="n">elem_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">sep</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="n">elem_nodes</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">sep</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">)[</span><span class="mi">1</span><span class="p">:]])</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Check element nodes</span>
+            <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">elem_nodes</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">node</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_node_mesh</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Invalid node in element </span><span class="si">{</span><span class="n">elem_id</span><span class="si">}</span><span class="s1"> &#39;</span>
+                                       <span class="sa">f</span><span class="s1">&#39;connectivities. Node labels must be &#39;</span>
+                                       <span class="sa">f</span><span class="s1">&#39;within the range 1 to </span><span class="si">{</span><span class="n">n_node_mesh</span><span class="si">}</span><span class="s1"> &#39;</span>
+                                       <span class="sa">f</span><span class="s1">&#39;for the provided mesh.&#39;</span><span class="p">)</span>
+            <span class="c1"># Store element nodes</span>
+            <span class="n">connectivities</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">elem_id</span><span class="p">)]</span> <span class="o">=</span> <span class="n">elem_nodes</span>
+            <span class="n">connect_nodes</span> <span class="o">+=</span> <span class="nb">list</span><span class="p">(</span><span class="n">elem_nodes</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Check nodes connectivities</span>
+    <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_node_mesh</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span> <span class="o">!=</span> <span class="nb">set</span><span class="p">(</span><span class="n">connect_nodes</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Invalid mesh connectivities. Mesh has &#39;</span>
+                           <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="p">(</span><span class="n">n_node_mesh</span><span class="p">)</span><span class="si">}</span><span class="s1"> nodes, but only &#39;</span>
+                           <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">connect_nodes</span><span class="p">))</span><span class="si">}</span><span class="s1"> nodes are part of the &#39;</span>
+                           <span class="sa">f</span><span class="s1">&#39;elements connectivities.&#39;</span><span class="p">)</span>
+    <span class="c1"># Get total number of elements</span>
+    <span class="n">n_element</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">connectivities</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize Dirichlet boundary conditions</span>
+    <span class="n">nodes_dirichlet_bc</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Reset file position</span>
+    <span class="n">input_file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="c1"># Initialize search flags</span>
+    <span class="n">is_keyword_found</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="c1"># Search for BOUNDARY keyword and collect nodes constraints</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">input_file</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">bool</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\*boundary\b&#39;</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)):</span>
+            <span class="c1"># Start processing BOUNDARY section</span>
+            <span class="n">is_keyword_found</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">elif</span> <span class="n">is_keyword_found</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">bool</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^&#39;</span> <span class="o">+</span> <span class="sa">r</span><span class="s1">&#39;[*][A-Z]+&#39;</span><span class="p">,</span> <span class="n">line</span><span class="p">))</span>
+                                   <span class="ow">or</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">):</span>
+            <span class="c1"># Finished processing BOUNDARY section</span>
+            <span class="n">is_keyword_found</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="k">elif</span> <span class="n">is_keyword_found</span><span class="p">:</span>
+            <span class="c1"># Get Dirichlet boundary condition data</span>
+            <span class="n">dirichlet_bc</span> <span class="o">=</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">sep</span><span class="o">=</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+            <span class="c1"># Get node label</span>
+            <span class="n">node_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">dirichlet_bc</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="c1"># Get prescribed degrees of freedom</span>
+            <span class="n">node_dofs</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">dirichlet_bc</span><span class="p">[</span><span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="p">]])</span>
+            <span class="c1"># Get prescribed displacement</span>
+            <span class="n">dirichlet_disp</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">dirichlet_bc</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+            <span class="c1"># Initialize node Dirichlet boundary condition data</span>
+            <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">node_id</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">nodes_dirichlet_bc</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">nodes_dirichlet_bc</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">node_id</span><span class="p">)]</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="c1"># Store node Dirichlet boundary condition data</span>
+            <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">node_dofs</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="n">node_dofs</span><span class="p">[</span><span class="mi">1</span><span class="p">]):</span>
+                <span class="n">nodes_dirichlet_bc</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">node_id</span><span class="p">)][</span><span class="nb">str</span><span class="p">(</span><span class="n">dim</span><span class="p">)]</span> <span class="o">=</span> <span class="n">dirichlet_disp</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get total number of nodes with Dirichlet boundary conditions</span>
+    <span class="n">n_node_dirichlet</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">nodes_dirichlet_bc</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set Links input data file path</span>
+    <span class="n">links_file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">specimen_inp_path</span><span class="p">),</span>
+                                   <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">specimen_name</span><span class="si">}</span><span class="s1">_links.dat&#39;</span><span class="p">)</span>
+    <span class="c1"># Open Links input data file</span>
+    <span class="n">links_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">links_file_path</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize Links input file data</span>
+    <span class="n">write_lines</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># Append elements connectivities to Links input file data</span>
+    <span class="n">write_lines</span> <span class="o">+=</span> \
+        <span class="p">[</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">ELEMENTS &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">n_element</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">]</span> \
+        <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;</span><span class="si">{:&gt;3s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">elem</span><span class="p">))</span>
+            <span class="o">+</span> <span class="s1">&#39;</span><span class="si">{:^5d}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">group_id</span><span class="p">)</span>
+            <span class="o">+</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">node</span><span class="p">)</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="n">connectivities</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">elem</span><span class="p">)]])</span>
+            <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">elem</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_element</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span> 
+    <span class="c1"># Append node coordinates to Links input file data</span>
+    <span class="n">write_lines</span> <span class="o">+=</span> \
+        <span class="p">[</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">NODE_COORDINATES &#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">n_node_mesh</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39; CARTESIAN&#39;</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">]</span> \
+        <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;</span><span class="si">{:&gt;3s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span>
+           <span class="o">+</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="s1">&#39;</span><span class="si">{:16.8e}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">coord</span><span class="p">))</span> \
+                       <span class="k">for</span> <span class="n">coord</span> <span class="ow">in</span> <span class="n">nodes_coords</span><span class="p">[</span><span class="n">i</span><span class="p">]])</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span> \
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_node_mesh</span><span class="p">)]</span>
+    <span class="c1"># Append nodes Dirichlet boundary conditions</span>
+    <span class="n">write_lines</span> <span class="o">+=</span> <span class="p">[</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">NODES_WITH_PRESCRIBED_DISPLACEMENTS &#39;</span> \
+                    <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">n_node_dirichlet</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">]</span>
+    <span class="n">nodes_id_sorted</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">([</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">nodes_dirichlet_bc</span><span class="o">.</span><span class="n">keys</span><span class="p">()])</span>
+    <span class="k">for</span> <span class="n">node_id</span> <span class="ow">in</span> <span class="n">nodes_id_sorted</span><span class="p">:</span>
+        <span class="c1"># Get node Dirichlet boundary conditions</span>
+        <span class="n">node_dirichlet_bc</span> <span class="o">=</span> <span class="n">nodes_dirichlet_bc</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">node_id</span><span class="p">)]</span>
+        <span class="c1"># Get Dirichlet code</span>
+        <span class="n">dirichlet_code</span> <span class="o">=</span> <span class="p">[</span><span class="mi">1</span> <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">dim</span><span class="p">)</span> <span class="ow">in</span> <span class="n">node_dirichlet_bc</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">else</span> <span class="mi">0</span>
+                          <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)]</span>
+        <span class="c1"># Get Dirichlet displacements</span>
+        <span class="n">dirichlet_disps</span> <span class="o">=</span> <span class="p">[</span><span class="n">node_dirichlet_bc</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">dim</span><span class="p">)]</span> <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">dim</span><span class="p">)</span> <span class="ow">in</span>
+                           <span class="n">node_dirichlet_bc</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span> <span class="k">else</span> <span class="mf">0.0</span>
+                           <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)]</span>
+        <span class="c1"># Add required angle (2D only)</span>
+        <span class="k">if</span> <span class="n">n_dim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">dirichlet_disps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="mf">0.0</span><span class="p">)</span>
+        <span class="c1"># Append node Dirichlet boundary conditions</span>
+        <span class="n">write_lines</span> <span class="o">+=</span> \
+            <span class="p">[</span><span class="s1">&#39; &#39;</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="si">{:&gt;3s}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">node_id</span><span class="p">))</span> <span class="o">+</span> <span class="s1">&#39; &#39;</span>
+             <span class="o">+</span> <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">&#39;</span><span class="si">{:^1d}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">dirichlet_code</span><span class="p">])</span> \
+             <span class="o">+</span> <span class="s1">&#39; &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">&#39;</span><span class="si">{:16.8e}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">dirichlet_disps</span><span class="p">])</span>
+             <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~     </span>
+    <span class="c1"># Write Links input data file</span>
+    <span class="n">links_file</span><span class="o">.</span><span class="n">writelines</span><span class="p">(</span><span class="n">write_lines</span><span class="p">)</span>
+    <span class="c1"># Close Links input data file</span>
+    <span class="n">links_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span></div>
+<span class="c1"># =============================================================================</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="c1"># Set Links simulation input data file</span>
+    <span class="n">links_input_file_path</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;/home/username/Documents/brown/projects/&#39;</span>
+                            <span class="s1">&#39;darpa_project/8_global_random_specimen/von_mises/&#39;</span>
+                            <span class="s1">&#39;2_random_specimen_hexa8/&#39;</span>
+                            <span class="s1">&#39;voids_lattice/&#39;</span>
+                            <span class="s1">&#39;0_links_simulation/random_specimen/simulations/&#39;</span>
+                            <span class="s1">&#39;random_specimen.dat&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Convert Links input data file to Abaqus data input data file</span>
+    <span class="n">_</span> <span class="o">=</span> <span class="n">links_dat_to_abaqus_inp</span><span class="p">(</span><span class="n">links_input_file_path</span><span class="p">)</span>
+
+
+
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

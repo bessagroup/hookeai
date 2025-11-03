@@ -1,0 +1,808 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>utilities.output_prediction_metrics &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../_autosummary/hookeai.html">Code</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">utilities.output_prediction_metrics</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for utilities.output_prediction_metrics</h1><div class="highlight"><pre>
+<span></span><span class="c1"># Standard</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pathlib</span>
+<span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+<span class="c1"># Add project root directory to sys.path</span>
+<span class="n">root_dir</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parents</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+<span class="k">if</span> <span class="n">root_dir</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">root_dir</span><span class="p">)</span>
+<span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
+<span class="c1"># Third-party</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="c1"># Local</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utilities.prediction_metrics</span><span class="w"> </span><span class="kn">import</span> <span class="n">compute_prediction_metrics</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ioput.iostandard</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_directory</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ioput.plots</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_xy_data</span><span class="p">,</span> <span class="n">save_figure</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Summary: Output mean prediction metrics from prediction directories</span>
+<span class="c1"># =============================================================================</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_processes_prediction_metrics</span><span class="p">(</span><span class="n">predictions_dirs</span><span class="p">,</span>
+                                         <span class="n">mean_prediction_metrics</span><span class="p">,</span>
+                                         <span class="n">save_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_save_file</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                         <span class="n">is_display_results</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute mean prediction metrics for multiple prediction processes.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    predictions_dirs : dict</span>
+<span class="sd">        For each prediction process (key, str), store the directory (item, str)</span>
+<span class="sd">        where the corresponding samples predictions results files are stored.</span>
+<span class="sd">    mean_prediction_metrics : list[str]</span>
+<span class="sd">        Mean prediction metrics.</span>
+<span class="sd">    save_dir : str, default=None</span>
+<span class="sd">        Directory where file with mean prediction metrics is saved.</span>
+<span class="sd">    is_save_file : bool, default=False</span>
+<span class="sd">        If True, then save file with mean prediction metrics in predictions</span>
+<span class="sd">        dedicated subdirectory.</span>
+<span class="sd">    is_display_results : bool, default=False</span>
+<span class="sd">        If True, then display mean prediction metrics to standard output</span>
+<span class="sd">        device.</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    processes_results : dict</span>
+<span class="sd">        For each prediction process (key, str), store the corresponding</span>
+<span class="sd">        mean prediction metrics data (item, dict).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Initialize display</span>
+    <span class="k">if</span> <span class="n">is_display_results</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Mean prediction metrics&#39;</span>
+              <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">-----------------------&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize prediction processes results</span>
+    <span class="n">processes_results</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Loop over predictions processes directories</span>
+    <span class="k">for</span> <span class="n">process_label</span><span class="p">,</span> <span class="n">predictions_dir</span> <span class="ow">in</span> <span class="n">predictions_dirs</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="c1"># Compute mean prediction metrics</span>
+        <span class="n">n_sample</span><span class="p">,</span> <span class="n">mean_metrics_results</span> <span class="o">=</span> \
+            <span class="n">compute_directory_prediction_metrics</span><span class="p">(</span><span class="n">predictions_dir</span><span class="p">,</span>
+                                                 <span class="n">mean_prediction_metrics</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Store prediction process results</span>
+        <span class="n">processes_results</span><span class="p">[</span><span class="n">process_label</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="s1">&#39;n_sample&#39;</span><span class="p">:</span> <span class="n">n_sample</span><span class="p">,</span>
+            <span class="s1">&#39;mean_metrics_results&#39;</span><span class="p">:</span> <span class="n">mean_metrics_results</span><span class="p">}</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Save file with mean prediction metrics</span>
+        <span class="k">if</span> <span class="n">is_save_file</span><span class="p">:</span>
+            <span class="c1"># Write prediction metrics file</span>
+            <span class="n">write_mean_metrics_results_file</span><span class="p">(</span><span class="n">save_dir</span><span class="p">,</span> <span class="n">n_sample</span><span class="p">,</span>
+                                            <span class="n">mean_metrics_results</span><span class="p">,</span>
+                                            <span class="n">process_label</span><span class="o">=</span><span class="n">process_label</span><span class="p">,</span>
+                                            <span class="n">is_overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Display mean prediction metrics</span>
+        <span class="k">if</span> <span class="n">is_display_results</span><span class="p">:</span>
+            <span class="c1"># Get formatted mean prediction metrics</span>
+            <span class="n">formatted_results</span> <span class="o">=</span> \
+                <span class="n">format_mean_metrics_results</span><span class="p">(</span><span class="n">n_sample</span><span class="p">,</span> <span class="n">mean_metrics_results</span><span class="p">,</span>
+                                            <span class="n">process_label</span><span class="o">=</span><span class="n">process_label</span><span class="p">)</span>
+            <span class="c1"># Display</span>
+            <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">writelines</span><span class="p">(</span><span class="n">formatted_results</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">processes_results</span>
+<span class="c1"># =============================================================================</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_directory_prediction_metrics</span><span class="p">(</span>
+        <span class="n">predictions_dir</span><span class="p">,</span> <span class="n">mean_prediction_metrics</span><span class="p">,</span> <span class="n">process_label</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+        <span class="n">is_save_file</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_display_results</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute mean prediction metrics for given prediction directory.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    predictions_dir : str</span>
+<span class="sd">        Directory where samples predictions results files are stored.</span>
+<span class="sd">    mean_prediction_metrics : list[str]</span>
+<span class="sd">        Mean prediction metrics.</span>
+<span class="sd">    process_label : str, default=&#39;&#39;</span>
+<span class="sd">        Prediction process label.</span>
+<span class="sd">    is_save_file : bool, default=False</span>
+<span class="sd">        If True, then save file with mean prediction metrics in predictions</span>
+<span class="sd">        dedicated subdirectory.</span>
+<span class="sd">    is_display_results : bool, default=False</span>
+<span class="sd">        If True, then display mean prediction metrics to standard output</span>
+<span class="sd">        device.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    n_sample : int</span>
+<span class="sd">        Number of samples.</span>
+<span class="sd">    mean_metrics_results : dict</span>
+<span class="sd">        Samples mean value (item, torch.Tensor) of each prediction metric</span>
+<span class="sd">        (key, str).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get samples prediction files</span>
+    <span class="n">prediction_file_paths</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> \
+        <span class="n">get_samples_prediction_files</span><span class="p">(</span><span class="n">predictions_dir</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get number of samples</span>
+    <span class="n">n_sample</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">prediction_file_paths</span><span class="p">)</span>
+    <span class="c1"># Compute samples mean prediction metrics</span>
+    <span class="n">mean_metrics_results</span> <span class="o">=</span> \
+        <span class="n">compute_mean_prediction_metrics</span><span class="p">(</span><span class="n">prediction_file_paths</span><span class="p">,</span>
+                                        <span class="n">mean_prediction_metrics</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Save file with mean prediction metrics</span>
+    <span class="k">if</span> <span class="n">is_save_file</span><span class="p">:</span>
+        <span class="c1"># Set prediction metrics directory</span>
+        <span class="n">prediction_metrics_dir</span> <span class="o">=</span> <span class="n">set_prediction_metrics_dir</span><span class="p">(</span><span class="n">predictions_dir</span><span class="p">)</span>
+        <span class="c1"># Write prediction metrics file</span>
+        <span class="n">write_mean_metrics_results_file</span><span class="p">(</span><span class="n">prediction_metrics_dir</span><span class="p">,</span> <span class="n">n_sample</span><span class="p">,</span>
+                                        <span class="n">mean_metrics_results</span><span class="p">,</span>
+                                        <span class="n">process_label</span><span class="o">=</span><span class="n">process_label</span><span class="p">,</span>
+                                        <span class="n">is_overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Display mean prediction metrics</span>
+    <span class="k">if</span> <span class="n">is_display_results</span><span class="p">:</span>
+        <span class="c1"># Get formatted mean prediction metrics</span>
+        <span class="n">formatted_results</span> <span class="o">=</span> \
+            <span class="n">format_mean_metrics_results</span><span class="p">(</span><span class="n">n_sample</span><span class="p">,</span> <span class="n">mean_metrics_results</span><span class="p">,</span>
+                                        <span class="n">process_label</span><span class="o">=</span><span class="n">process_label</span><span class="p">)</span>
+        <span class="c1"># Display</span>
+        <span class="n">sys</span><span class="o">.</span><span class="n">stdout</span><span class="o">.</span><span class="n">writelines</span><span class="p">(</span><span class="n">formatted_results</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">n_sample</span><span class="p">,</span> <span class="n">mean_metrics_results</span>
+<span class="c1"># =============================================================================</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">set_prediction_metrics_dir</span><span class="p">(</span><span class="n">predictions_dir</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Set prediction metrics directory.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    predictions_dir : str</span>
+<span class="sd">        Directory where samples predictions results files are stored.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    prediction_metrics_dir : str</span>
+<span class="sd">        Prediction metrics directory.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check sample predictions directory</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">predictions_dir</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The samples predictions directory has not been &#39;</span>
+                           <span class="s1">&#39;found:</span><span class="se">\n\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">predictions_dir</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set prediction metrics directory</span>
+    <span class="n">prediction_metrics_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">predictions_dir</span><span class="p">),</span>
+                                          <span class="sa">f</span><span class="s1">&#39;prediction_metrics&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Create prediction metrics directory</span>
+    <span class="n">make_directory</span><span class="p">(</span><span class="n">prediction_metrics_dir</span><span class="p">,</span> <span class="n">is_overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">prediction_metrics_dir</span>
+<span class="c1"># =============================================================================</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_samples_prediction_files</span><span class="p">(</span><span class="n">predictions_dir</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get samples prediction files from prediction directory.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    predictions_dir : str</span>
+<span class="sd">        Directory where samples predictions results files are stored.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    prediction_file_paths : list[str]</span>
+<span class="sd">        Samples prediction files paths.</span>
+<span class="sd">    prediction_files_ids : list[int]</span>
+<span class="sd">        Samples IDs.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get files in samples predictions results directory</span>
+    <span class="n">directory_list</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">predictions_dir</span><span class="p">)</span>
+    <span class="c1"># Check directory</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">directory_list</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;No files have been found in directory where &#39;</span>
+                           <span class="s1">&#39;samples predictions results files are stored.&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize samples prediction files paths and samples IDs</span>
+    <span class="n">prediction_file_paths</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">prediction_files_ids</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># Loop over files</span>
+    <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">directory_list</span><span class="p">:</span>
+        <span class="c1"># Check if file is sample prediction file</span>
+        <span class="nb">id</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^prediction_sample_([0-9]+).pkl$&#39;</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+        <span class="c1"># Store sample prediction file and ID</span>
+        <span class="k">if</span> <span class="nb">id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Store sample file path</span>
+            <span class="n">prediction_file_paths</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">predictions_dir</span><span class="p">),</span> <span class="n">filename</span><span class="p">))</span>
+            <span class="c1"># Store sample ID</span>
+            <span class="n">prediction_files_ids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="nb">id</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="mi">0</span><span class="p">]))</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">prediction_file_paths</span><span class="p">,</span> <span class="n">prediction_files_ids</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="compute_mean_prediction_metrics"><a class="viewcode-back" href="../../_autosummary/hookeai.miscellaneous.file_processing.plot_prediction_files.compute_mean_prediction_metrics.html#hookeai.miscellaneous.file_processing.plot_prediction_files.compute_mean_prediction_metrics">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">compute_mean_prediction_metrics</span><span class="p">(</span><span class="n">prediction_file_paths</span><span class="p">,</span>
+                                    <span class="n">mean_prediction_metrics</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute samples mean prediction metrics from prediction files.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    prediction_file_paths : list[str]</span>
+<span class="sd">        Samples prediction files paths.</span>
+<span class="sd">    mean_prediction_metrics : list[str]</span>
+<span class="sd">        Mean prediction metrics.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    mean_metrics_results : dict</span>
+<span class="sd">        Samples mean value (item, torch.Tensor) of each prediction metric</span>
+<span class="sd">        (key, str).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Initialize samples prediction metrics</span>
+    <span class="n">samples_metrics_results</span> <span class="o">=</span> <span class="p">{</span><span class="n">x</span><span class="p">:</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">mean_prediction_metrics</span><span class="p">}</span>
+    <span class="c1"># Loop over samples prediction files</span>
+    <span class="k">for</span> <span class="n">sample_prediction_path</span> <span class="ow">in</span> <span class="n">prediction_file_paths</span><span class="p">:</span>
+        <span class="c1"># Compute sample prediction metrics</span>
+        <span class="n">sample_metrics_results</span> <span class="o">=</span> \
+            <span class="n">compute_prediction_metrics</span><span class="p">(</span><span class="n">sample_prediction_path</span><span class="p">,</span>
+                                       <span class="p">[</span><span class="s1">&#39;rmse&#39;</span><span class="p">,</span> <span class="s1">&#39;mav_gt&#39;</span><span class="p">])</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get sample prediction metrics</span>
+        <span class="n">sample_rmse</span> <span class="o">=</span> <span class="n">sample_metrics_results</span><span class="p">[</span><span class="s1">&#39;rmse&#39;</span><span class="p">]</span>
+        <span class="n">sample_mav_gt</span> <span class="o">=</span> <span class="n">sample_metrics_results</span><span class="p">[</span><span class="s1">&#39;mav_gt&#39;</span><span class="p">]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Loop over mean prediction metrics</span>
+        <span class="k">for</span> <span class="n">metric</span> <span class="ow">in</span> <span class="n">mean_prediction_metrics</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">metric</span> <span class="o">==</span> <span class="s1">&#39;rmse&#39;</span><span class="p">:</span>
+                <span class="c1"># Collect sample Root Mean Squared Error (RMSE)</span>
+                <span class="n">samples_metrics_results</span><span class="p">[</span><span class="n">metric</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sample_rmse</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">metric</span> <span class="o">==</span> <span class="s1">&#39;nrmse&#39;</span><span class="p">:</span>
+                <span class="c1"># Compute sample Normalized Root Mean Squared Error (NRMSE)</span>
+                <span class="n">samples_metrics_results</span><span class="p">[</span><span class="n">metric</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">sample_rmse</span><span class="o">/</span><span class="n">sample_mav_gt</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Unknown mean prediction metric: &#39;</span>
+                                   <span class="sa">f</span><span class="s1">&#39;</span><span class="se">\&#39;</span><span class="si">{</span><span class="n">metric</span><span class="si">}</span><span class="se">\&#39;</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize mean prediction metrics</span>
+    <span class="n">mean_metrics_results</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="c1"># Loop over mean prediction metrics</span>
+    <span class="k">for</span> <span class="n">metric</span> <span class="ow">in</span> <span class="n">mean_prediction_metrics</span><span class="p">:</span>
+        <span class="c1"># Compute mean prediction metric</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">samples_metrics_results</span><span class="p">[</span><span class="n">metric</span><span class="p">])</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">mean_metrics_results</span><span class="p">[</span><span class="n">metric</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span>
+                <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">samples_metrics_results</span><span class="p">[</span><span class="n">metric</span><span class="p">],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">mean_metrics_results</span><span class="p">[</span><span class="n">metric</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">empty</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">mean_metrics_results</span></div>
+<span class="c1"># =============================================================================</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">write_mean_metrics_results_file</span><span class="p">(</span><span class="n">save_dir</span><span class="p">,</span> <span class="n">n_sample</span><span class="p">,</span> <span class="n">mean_metrics_results</span><span class="p">,</span>
+                                    <span class="n">process_label</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+                                    <span class="n">filename</span><span class="o">=</span><span class="s1">&#39;mean_prediction_metrics&#39;</span><span class="p">,</span>
+                                    <span class="n">is_overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Write file with mean prediction metrics.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    save_dir : str</span>
+<span class="sd">        Directory where file with mean prediction metrics is saved.        </span>
+<span class="sd">    n_sample : int</span>
+<span class="sd">        Number of samples.</span>
+<span class="sd">    mean_metrics_results : dict</span>
+<span class="sd">        Samples mean value (item, torch.Tensor) of each prediction metric</span>
+<span class="sd">        (key, str).</span>
+<span class="sd">    process_label : str, default=&#39;&#39;</span>
+<span class="sd">        Prediction process label.</span>
+<span class="sd">    filename : str, default=&#39;mean_prediction_metrics&#39;</span>
+<span class="sd">        File name.</span>
+<span class="sd">    is_overwrite : bool, default=False</span>
+<span class="sd">        If True, then overwrite existing file.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check saving directory</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">save_dir</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The saving directory has not been found:&#39;</span>
+                           <span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n\n</span><span class="si">{</span><span class="n">save_dir</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set file path</span>
+    <span class="n">file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">save_dir</span><span class="p">),</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s1">.dat&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize file content</span>
+    <span class="n">file_content</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set default opening mode</span>
+    <span class="n">open_mode</span> <span class="o">=</span> <span class="s1">&#39;w&#39;</span>
+    <span class="c1"># Set appending mode</span>
+    <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">file_path</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_overwrite</span><span class="p">:</span>
+        <span class="n">open_mode</span> <span class="o">=</span> <span class="s1">&#39;a&#39;</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set file header</span>
+    <span class="k">if</span> <span class="n">open_mode</span> <span class="o">==</span> <span class="s1">&#39;w&#39;</span><span class="p">:</span>
+        <span class="n">string</span> <span class="o">=</span> <span class="s1">&#39;Mean prediction metrics&#39;</span>
+        <span class="n">sep</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">string</span><span class="p">)</span><span class="o">*</span><span class="s1">&#39;-&#39;</span>
+        <span class="n">file_content</span> <span class="o">+=</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="si">{</span><span class="n">string</span><span class="si">}</span><span class="se">\n</span><span class="si">{</span><span class="n">sep</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get formatted mean prediction metrics</span>
+    <span class="n">formatted_results</span> <span class="o">=</span> \
+        <span class="n">format_mean_metrics_results</span><span class="p">(</span><span class="n">n_sample</span><span class="p">,</span> <span class="n">mean_metrics_results</span><span class="p">,</span>
+                                    <span class="n">process_label</span><span class="o">=</span><span class="n">process_label</span><span class="p">)</span>
+    <span class="c1"># Add formatted mean prediction metrics to file content</span>
+    <span class="n">file_content</span> <span class="o">+=</span> <span class="n">formatted_results</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Write file</span>
+    <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">open_mode</span><span class="p">)</span><span class="o">.</span><span class="n">writelines</span><span class="p">(</span><span class="n">file_content</span><span class="p">)</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="read_mean_metrics_results_file"><a class="viewcode-back" href="../../_autosummary/hookeai.miscellaneous.pruning.pruning_dataset.read_mean_metrics_results_file.html#hookeai.miscellaneous.file_processing.plot_prediction_files.read_mean_metrics_results_file">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">read_mean_metrics_results_file</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="n">n_sample</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Read mean prediction metrics from file.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    file_path : str</span>
+<span class="sd">        Mean prediction metrics file path.</span>
+<span class="sd">    n_sample : int, default=None</span>
+<span class="sd">        Number of samples for which mean prediction metrics are read from file.</span>
+<span class="sd">        If None, then return the first mean prediction metrics found.</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    mean_metrics_results : dict</span>
+<span class="sd">        Samples mean value (item, torch.Tensor) of each prediction metric</span>
+<span class="sd">        (key, str).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check mean prediction metrics file path</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">file_path</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Mean prediction metrics file has not been &#39;</span>
+                           <span class="s1">&#39;found:</span><span class="se">\n\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">file_path</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize mean prediction metrics</span>
+    <span class="n">mean_metrics_results</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Open mean prediction metrics file</span>
+    <span class="n">_input_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">file_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Reset file position</span>
+    <span class="n">_input_file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="c1"># Initialize search flags</span>
+    <span class="n">is_keyword_found</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="c1"># Search for number of samples keyword and collect mean prediction metrics</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">_input_file</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">bool</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;n_sample =&#39;</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)):</span>
+            <span class="c1"># Collect number of samples</span>
+            <span class="n">n_sample_read</span> <span class="o">=</span> \
+                <span class="nb">int</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;n_sample\s*=\s*(\d+)&#39;</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">))</span>
+            <span class="c1"># Check number of samples</span>
+            <span class="k">if</span> <span class="n">n_sample</span> <span class="ow">is</span> <span class="kc">None</span> <span class="ow">or</span> <span class="n">n_sample_read</span> <span class="o">==</span> <span class="n">n_sample</span><span class="p">:</span>
+                <span class="c1"># Start processing data</span>
+                <span class="n">is_keyword_found</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">elif</span> <span class="n">is_keyword_found</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">bool</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^&#39;</span> <span class="o">+</span> <span class="sa">r</span><span class="s1">&#39;[*][A-Z]+&#39;</span><span class="p">,</span> <span class="n">line</span><span class="p">))</span>
+                                   <span class="ow">or</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">):</span>
+            <span class="c1"># Finished processing data</span>
+            <span class="k">break</span>
+        <span class="k">elif</span> <span class="n">is_keyword_found</span><span class="p">:</span>
+            <span class="c1"># Collect metric data (assumes values are formatted in scientific</span>
+            <span class="c1"># notation)</span>
+            <span class="n">prefix_pattern</span> <span class="o">=</span> <span class="sa">r</span><span class="s1">&#39;^\s*&gt;\s*(\w+):\s*&#39;</span>
+            <span class="n">number_list_pattern</span> <span class="o">=</span> <span class="p">(</span><span class="sa">r</span><span class="s1">&#39;\[\s*&#39;</span>
+                                   <span class="sa">r</span><span class="s1">&#39;((?:-?\d*\.?\d*(?:e[-+]?\d+)&#39;</span>
+                                   <span class="sa">r</span><span class="s1">&#39;?(?:\s*,\s*-?\d*\.?\d*(?:e[-+]?\d+)?)*))&#39;</span>
+                                   <span class="sa">r</span><span class="s1">&#39;\s*\]&#39;</span><span class="p">)</span>
+            <span class="n">metric_data</span> <span class="o">=</span> \
+                <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="n">prefix_pattern</span> <span class="o">+</span> <span class="n">number_list_pattern</span><span class="p">,</span> <span class="n">line</span><span class="p">)</span>
+            <span class="c1"># Extract metric name and values</span>
+            <span class="n">metric</span> <span class="o">=</span> <span class="n">metric_data</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">1</span><span class="p">)</span>
+            <span class="n">metric_results_str</span> <span class="o">=</span> <span class="n">metric_data</span><span class="o">.</span><span class="n">group</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">metric_results</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
+                <span class="p">[</span><span class="nb">float</span><span class="p">(</span><span class="n">val</span><span class="p">)</span> <span class="k">for</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">metric_results_str</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;,&#39;</span><span class="p">)</span>
+                 <span class="k">if</span> <span class="n">val</span><span class="o">.</span><span class="n">strip</span><span class="p">()])</span>
+            <span class="c1"># Store mean prediction results</span>
+            <span class="n">mean_metrics_results</span><span class="p">[</span><span class="n">metric</span><span class="p">]</span> <span class="o">=</span> <span class="n">metric_results</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Check mean prediction metrics</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">mean_metrics_results</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The mean prediction metrics have not been &#39;</span>
+                           <span class="s1">&#39;successfully read from the following file:&#39;</span>
+                           <span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n\n</span><span class="si">{</span><span class="n">file_path</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">mean_metrics_results</span> </div>
+<span class="c1"># =============================================================================</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">format_mean_metrics_results</span><span class="p">(</span><span class="n">n_sample</span><span class="p">,</span> <span class="n">mean_metrics_results</span><span class="p">,</span>
+                                <span class="n">process_label</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Format samples mean prediction metrics.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    n_sample : int</span>
+<span class="sd">        Number of samples.</span>
+<span class="sd">    mean_metrics_results : dict</span>
+<span class="sd">        Samples mean value (item, torch.Tensor) of each prediction metric</span>
+<span class="sd">        (key, str).</span>
+<span class="sd">    process_label : str, default=&#39;&#39;</span>
+<span class="sd">        Prediction process label.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    formatted_results : list[str]</span>
+<span class="sd">        Formatted samples mean prediction metrics results.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Initialize formatted results</span>
+    <span class="n">formatted_results</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set process label</span>
+    <span class="n">formatted_results</span> <span class="o">+=</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&gt; Process: </span><span class="si">{</span><span class="n">process_label</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span>
+    <span class="c1"># Add number of samples</span>
+    <span class="n">formatted_results</span> <span class="o">+=</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">    &gt; n_sample = </span><span class="si">{</span><span class="n">n_sample</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span>
+    <span class="c1"># Loop over mean prediction metrics</span>
+    <span class="k">for</span> <span class="n">metric</span><span class="p">,</span> <span class="n">metric_results</span> <span class="ow">in</span> <span class="n">mean_metrics_results</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="c1"># Convert mean prediction metrics to list</span>
+        <span class="n">metric_results_list</span> <span class="o">=</span> \
+            <span class="s1">&#39;, &#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">x</span><span class="si">:</span><span class="s1">15.8e</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">metric_results</span><span class="o">.</span><span class="n">tolist</span><span class="p">()])</span>
+        <span class="c1"># Add mean prediction metric results</span>
+        <span class="n">formatted_results</span> <span class="o">+=</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">    &gt; </span><span class="si">{</span><span class="n">metric</span><span class="si">}</span><span class="s1">: [</span><span class="si">{</span><span class="n">metric_results_list</span><span class="si">}</span><span class="s1">]&#39;</span><span class="p">]</span>
+    <span class="c1"># Add blankline</span>
+    <span class="n">formatted_results</span> <span class="o">+=</span> <span class="p">[</span><span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">&#39;</span><span class="p">,]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">formatted_results</span>
+<span class="c1"># =============================================================================</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_prediction_metrics_convergence</span><span class="p">(</span>
+        <span class="n">processes_results</span><span class="p">,</span> <span class="n">mean_prediction_metrics</span><span class="p">,</span>
+        <span class="n">metric_features_labels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">save_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_save_plot_data</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+        <span class="n">is_save_fig</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_stdout_display</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_latex</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot mean prediction metrics convergence analysis.</span>
+<span class="sd">    </span>
+<span class="sd">    Only prediction processes named as &#39;nX&#39;, where X is a given training</span>
+<span class="sd">    dataset size, are processed.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    processes_results : dict</span>
+<span class="sd">        For each prediction process (key, str), store the corresponding</span>
+<span class="sd">        mean prediction metrics data (item, dict).</span>
+<span class="sd">    mean_prediction_metrics : list[str]</span>
+<span class="sd">        Mean prediction metrics.</span>
+<span class="sd">    metric_features_labels : dict, default=None</span>
+<span class="sd">        For each prediction metric (key, str), store the corresponding features</span>
+<span class="sd">        labels (list, str).</span>
+<span class="sd">    save_dir : str, default=None</span>
+<span class="sd">        Directory where data set plots are saved.</span>
+<span class="sd">    is_save_fig : bool, default=False</span>
+<span class="sd">        Save figure.</span>
+<span class="sd">    is_save_plot_data : bool, default=False</span>
+<span class="sd">        Save plot data. Plot data is stored in a file with a single dictionary</span>
+<span class="sd">        where each item corresponds to a relevant variable used to generate the</span>
+<span class="sd">        plot. If the figure directory is provided, then plot data is saved in</span>
+<span class="sd">        the same directory, otherwise is saved in the current working</span>
+<span class="sd">        directory.</span>
+<span class="sd">    is_stdout_display : bool, default=False</span>
+<span class="sd">        True if displaying figure to standard output device, False otherwise.</span>
+<span class="sd">    is_latex : bool, default=False</span>
+<span class="sd">        If True, then render all strings in LaTeX. If LaTex is not available,</span>
+<span class="sd">        then this option is silently set to False and all input strings are</span>
+<span class="sd">        processed to remove $(...)$ enclosure.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Initialize training data set sizes</span>
+    <span class="n">training_sizes</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># Collect training data set sizes</span>
+    <span class="k">for</span> <span class="n">process_label</span> <span class="ow">in</span> <span class="n">processes_results</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="c1"># Check if process label is training data set size</span>
+        <span class="n">training_size</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^n([0-9]+)$&#39;</span><span class="p">,</span> <span class="n">process_label</span><span class="p">)</span>
+        <span class="c1"># Store prediction process training data set size</span>
+        <span class="k">if</span> <span class="nb">id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Get training data set size</span>
+            <span class="n">training_size</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">training_size</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="c1"># Store training data set size</span>
+            <span class="n">training_sizes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">training_size</span><span class="p">)</span>
+    <span class="c1"># Get number of training data set sizes</span>
+    <span class="n">n_size</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">training_sizes</span><span class="p">)</span>
+    <span class="c1"># Sort training data set sizes</span>
+    <span class="n">training_sizes</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">training_sizes</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Loop over mean prediction metrics</span>
+    <span class="k">for</span> <span class="n">metric</span> <span class="ow">in</span> <span class="n">mean_prediction_metrics</span><span class="p">:</span>
+        <span class="c1"># Initialize mean prediction metric convergence data</span>
+        <span class="n">metric_convergence_data</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># Loop over training data set sizes</span>
+        <span class="k">for</span> <span class="n">training_size</span> <span class="ow">in</span> <span class="n">training_sizes</span><span class="p">:</span>
+            <span class="c1"># Get mean prediction metrics data</span>
+            <span class="n">mean_metrics_results</span> <span class="o">=</span> \
+                <span class="n">processes_results</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;n</span><span class="si">{</span><span class="n">training_size</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">][</span><span class="s1">&#39;mean_metrics_results&#39;</span><span class="p">]</span>
+            <span class="c1"># Get metric data</span>
+            <span class="n">metric_data</span> <span class="o">=</span> <span class="n">mean_metrics_results</span><span class="p">[</span><span class="n">metric</span><span class="p">]</span>
+            <span class="c1"># Store metric data</span>
+            <span class="n">metric_convergence_data</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">metric_data</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Build convergence metric tensor</span>
+        <span class="n">metric_convergence</span>  <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span><span class="n">metric_convergence_data</span><span class="p">)</span><span class="o">.</span><span class="n">numpy</span><span class="p">()</span>
+        <span class="c1"># Get metric number of dimensions</span>
+        <span class="n">n_metric_dim</span> <span class="o">=</span> <span class="n">metric_convergence</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize data array</span>
+        <span class="n">data_xy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_size</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">n_metric_dim</span><span class="p">))</span>
+        <span class="c1"># Loop over metric dimensions</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_metric_dim</span><span class="p">):</span>
+            <span class="c1"># Assemble training data set size data</span>
+            <span class="n">data_xy</span><span class="p">[:,</span> <span class="mi">2</span><span class="o">*</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">training_sizes</span>
+            <span class="c1"># Assemble metric dimension data</span>
+            <span class="n">data_xy</span><span class="p">[:,</span> <span class="mi">2</span><span class="o">*</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">metric_convergence</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set data labels</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">metric_features_labels</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="n">metric</span> <span class="ow">in</span> <span class="n">metric_features_labels</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="c1"># Get metric features labels</span>
+            <span class="n">data_labels</span> <span class="o">=</span> <span class="n">metric_features_labels</span><span class="p">[</span><span class="n">metric</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Set default metric features labels</span>
+            <span class="k">if</span> <span class="n">n_metric_dim</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="n">data_labels</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;Feature </span><span class="si">{</span><span class="n">i</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_metric_dim</span><span class="p">)]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">data_labels</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set axes labels</span>
+        <span class="n">x_label</span> <span class="o">=</span> <span class="s1">&#39;Training data set size&#39;</span>
+        <span class="n">y_label</span> <span class="o">=</span> <span class="n">metric</span><span class="o">.</span><span class="n">upper</span><span class="p">()</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Plot data</span>
+        <span class="n">figure</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">plot_xy_data</span><span class="p">(</span>
+            <span class="n">data_xy</span><span class="p">,</span> <span class="n">data_labels</span><span class="o">=</span><span class="n">data_labels</span><span class="p">,</span> <span class="n">x_label</span><span class="o">=</span><span class="n">x_label</span><span class="p">,</span> <span class="n">y_label</span><span class="o">=</span><span class="n">y_label</span><span class="p">,</span>
+            <span class="n">x_scale</span><span class="o">=</span><span class="s1">&#39;log&#39;</span><span class="p">,</span> <span class="n">y_scale</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">3</span><span class="p">,</span>
+            <span class="n">is_latex</span><span class="o">=</span><span class="n">is_latex</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set filename</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;mean_</span><span class="si">{</span><span class="n">metric</span><span class="si">}</span><span class="s1">_convergence&#39;</span>
+        <span class="c1"># Save figure</span>
+        <span class="k">if</span> <span class="n">is_save_fig</span><span class="p">:</span>
+            <span class="n">save_figure</span><span class="p">(</span><span class="n">figure</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span><span class="p">,</span> <span class="n">save_dir</span><span class="o">=</span><span class="n">save_dir</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Save plot data</span>
+        <span class="k">if</span> <span class="n">is_save_plot_data</span><span class="p">:</span>
+            <span class="c1"># Set current working directory to save plot data</span>
+            <span class="k">if</span> <span class="n">save_dir</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">save_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">getcwd</span><span class="p">()</span>
+            <span class="c1"># Set plot data subdirectory</span>
+            <span class="n">plot_data_dir</span> <span class="o">=</span> \
+                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">save_dir</span><span class="p">),</span> <span class="s1">&#39;plot_data&#39;</span><span class="p">)</span>
+            <span class="c1"># Create plot data directory</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">plot_data_dir</span><span class="p">):</span>
+                <span class="n">make_directory</span><span class="p">(</span><span class="n">plot_data_dir</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Build plot data</span>
+            <span class="n">plot_data</span> <span class="o">=</span> <span class="p">{}</span>
+            <span class="n">plot_data</span><span class="p">[</span><span class="s1">&#39;data_xy&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">data_xy</span>
+            <span class="n">plot_data</span><span class="p">[</span><span class="s1">&#39;x_label&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">x_label</span>
+            <span class="n">plot_data</span><span class="p">[</span><span class="s1">&#39;y_label&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">y_label</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Set plot data file path</span>
+            <span class="n">plot_data_file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                <span class="n">plot_data_dir</span><span class="p">,</span> <span class="n">filename</span> <span class="o">+</span> <span class="s1">&#39;_data&#39;</span> <span class="o">+</span> <span class="s1">&#39;.pkl&#39;</span><span class="p">)</span>
+            <span class="c1"># Save model samples best parameters data</span>
+            <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">plot_data_file_path</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">data_file</span><span class="p">:</span>
+                <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">plot_data</span><span class="p">,</span> <span class="n">data_file</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Display figure</span>
+        <span class="k">if</span> <span class="n">is_stdout_display</span><span class="p">:</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Close plot</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="s1">&#39;all&#39;</span><span class="p">)</span>
+<span class="c1"># =============================================================================</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="c1"># Set computation processes</span>
+    <span class="n">is_multiple_processes</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="c1"># Set uncertainty quantification and model realization</span>
+    <span class="n">is_uncertainty_quantification</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="n">uq_model</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="c1"># Set mean predictions metrics to be plotted</span>
+    <span class="n">mean_prediction_metrics</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;rmse&#39;</span><span class="p">,</span> <span class="s1">&#39;nrmse&#39;</span><span class="p">,]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">if</span> <span class="n">is_multiple_processes</span><span class="p">:</span>
+        <span class="c1"># Set testing type</span>
+        <span class="n">testing_type</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;in_distribution&#39;</span><span class="p">,</span> <span class="s1">&#39;out_distribution&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># Set training data set sizes</span>
+        <span class="n">training_sizes</span> <span class="o">=</span> <span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">40</span><span class="p">,</span> <span class="mi">80</span><span class="p">,</span> <span class="mi">160</span><span class="p">,</span> <span class="mi">320</span><span class="p">,</span> <span class="mi">640</span><span class="p">,</span> <span class="mi">1280</span><span class="p">,</span> <span class="mi">2560</span><span class="p">)</span>
+        <span class="c1"># Set convergence analysis base directory</span>
+        <span class="n">base_dir</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;/home/username/Documents/brown/projects/&#39;</span>
+                    <span class="s1">&#39;test_output_metric/strain_to_stress&#39;</span><span class="p">)</span>
+        <span class="c1"># Set saving directory</span>
+        <span class="n">save_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">base_dir</span><span class="p">),</span>
+                                <span class="s1">&#39;prediction_metrics&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize prediction processes directories</span>
+        <span class="n">predictions_dirs</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># Loop over training data set sizes</span>
+        <span class="k">for</span> <span class="n">training_size</span> <span class="ow">in</span> <span class="n">training_sizes</span><span class="p">:</span>
+            <span class="c1"># Set model base directory</span>
+            <span class="n">model_base_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">base_dir</span><span class="p">),</span>
+                                          <span class="sa">f</span><span class="s1">&#39;n</span><span class="si">{</span><span class="n">training_size</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Set prediction data set directory</span>
+            <span class="k">if</span> <span class="n">is_uncertainty_quantification</span><span class="p">:</span>
+                <span class="n">prediction_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">model_base_dir</span><span class="p">),</span>
+                    <span class="sa">f</span><span class="s1">&#39;uncertainty_quantification/model_</span><span class="si">{</span><span class="n">uq_model</span><span class="si">}</span><span class="s1">/&#39;</span>
+                    <span class="sa">f</span><span class="s1">&#39;7_prediction/</span><span class="si">{</span><span class="n">testing_type</span><span class="si">}</span><span class="s1">/&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">prediction_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">model_base_dir</span><span class="p">),</span>
+                    <span class="sa">f</span><span class="s1">&#39;7_prediction/</span><span class="si">{</span><span class="n">testing_type</span><span class="si">}</span><span class="s1">/&#39;</span>
+                    <span class="sa">f</span><span class="s1">&#39;prediction_set_0&#39;</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Store prediction directory</span>
+            <span class="k">if</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">prediction_dir</span><span class="p">):</span>
+                <span class="n">predictions_dirs</span><span class="p">[</span><span class="sa">f</span><span class="s1">&#39;n</span><span class="si">{</span><span class="n">training_size</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">prediction_dir</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The prediction directory has not been &#39;</span>
+                                   <span class="s1">&#39;found:</span><span class="se">\n\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">prediction_dir</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Create saving directory (overwrite existing directory)</span>
+        <span class="n">make_directory</span><span class="p">(</span><span class="n">save_dir</span><span class="p">,</span> <span class="n">is_overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Compute mean prediction metrics for multiple prediction processes</span>
+        <span class="n">processes_results</span> <span class="o">=</span> <span class="n">compute_processes_prediction_metrics</span><span class="p">(</span>
+            <span class="n">predictions_dirs</span><span class="p">,</span> <span class="n">mean_prediction_metrics</span><span class="p">,</span> <span class="n">save_dir</span><span class="o">=</span><span class="n">save_dir</span><span class="p">,</span>
+            <span class="n">is_save_file</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_display_results</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set mean prediction metrics features labels</span>
+        <span class="n">metric_features_labels</span> <span class="o">=</span> <span class="p">{</span>
+            <span class="n">metric</span><span class="p">:</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;Stress </span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s1">&#39;</span>
+                     <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;11&#39;</span><span class="p">,</span> <span class="s1">&#39;22&#39;</span><span class="p">,</span> <span class="s1">&#39;33&#39;</span><span class="p">,</span> <span class="s1">&#39;12&#39;</span><span class="p">,</span> <span class="s1">&#39;23&#39;</span><span class="p">,</span> <span class="s1">&#39;13&#39;</span><span class="p">)]</span>
+            <span class="k">for</span> <span class="n">metric</span> <span class="ow">in</span> <span class="n">mean_prediction_metrics</span><span class="p">}</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Plot mean prediction metrics convergence analysis</span>
+        <span class="n">plot_prediction_metrics_convergence</span><span class="p">(</span>
+            <span class="n">processes_results</span><span class="p">,</span> <span class="n">mean_prediction_metrics</span><span class="p">,</span>
+            <span class="n">metric_features_labels</span><span class="o">=</span><span class="n">metric_features_labels</span><span class="p">,</span> <span class="n">save_dir</span><span class="o">=</span><span class="n">save_dir</span><span class="p">,</span>
+            <span class="n">is_save_fig</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_save_plot_data</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_stdout_display</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">is_latex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Set predictions directory</span>
+        <span class="n">predictions_dir</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;/home/username/Documents/brown/projects/&#39;</span>
+                           <span class="s1">&#39;test_output_metric/prediction_set_0&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Compute mean prediction metrics for given prediction directory</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">compute_directory_prediction_metrics</span><span class="p">(</span>
+            <span class="n">predictions_dir</span><span class="p">,</span> <span class="n">mean_prediction_metrics</span><span class="p">,</span> <span class="n">is_save_file</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+            <span class="n">is_display_results</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+<span class="c1"># =============================================================================      </span>
+<span class="sd">&quot;&quot;&quot;Plot miscellaneous options:</span>
+
+<span class="sd">1. Add GRU reference to mean prediction metrics plots (paste in plot_xy_data())</span>
+
+<span class="sd">    Change the number of colors to number of labels!</span>
+
+<span class="sd">    # Set reference data file path</span>
+<span class="sd">    data_file_path = (&#39;/home/username/Documents/brown/projects/&#39;</span>
+<span class="sd">                      &#39;darpa_paper_examples/local/hybrid_models/dp_plus_gru/&#39;</span>
+<span class="sd">                      &#39;dp_2d50_plus_gru/prediction_metrics_gru_reference_data/&#39;</span>
+<span class="sd">                      &#39;plot_data/mean_rmse_convergence_data.pkl&#39;)</span>
+<span class="sd">    # Load reference model data</span>
+<span class="sd">    with open(data_file_path, &#39;rb&#39;) as dataset_file:</span>
+<span class="sd">        model_data = pickle.load(dataset_file)</span>
+<span class="sd">    # ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+<span class="sd">    # Get reference model loss convergence data</span>
+<span class="sd">    data_xy_ref = model_data[&#39;data_xy&#39;]</span>
+<span class="sd">    # Loop over data sets</span>
+<span class="sd">    for i in range(n_datasets):</span>
+<span class="sd">        # Plot reference data set</span>
+<span class="sd">        axes.plot(data_xy_ref[:, 2*i], data_xy_ref[:, 2*i + 1],</span>
+<span class="sd">                  label=None, linestyle=&#39;--&#39;,</span>
+<span class="sd">                  marker=None, markersize=markersize,</span>
+<span class="sd">                  markeredgecolor=markeredgecolor,</span>
+<span class="sd">                  markeredgewidth=markeredgewidth,</span>
+<span class="sd">                  alpha=0.8, zorder=1)</span>
+
+<span class="sd">&quot;&quot;&quot;</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

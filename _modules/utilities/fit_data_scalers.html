@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>utilities.fit_data_scalers &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../_autosummary/hookeai.html">Code</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">utilities.fit_data_scalers</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for utilities.fit_data_scalers</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Fitting of data scalers.</span>
+
+<span class="sd">Functions</span>
+<span class="sd">---------</span>
+<span class="sd">fit_data_scaler_from_dataset</span>
+<span class="sd">    Get fitted data scaler for given data set features type.</span>
+<span class="sd">mean_std_batch_fit</span>
+<span class="sd">    Perform batch fitting of standardization data scaler.</span>
+<span class="sd">min_max_batch_fit</span>
+<span class="sd">    Perform batch fitting of min-max data scaler.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#                                                                       Modules</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Third-party</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tqdm</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sklearn.preprocessing</span>
+<span class="c1"># Local</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">time_series_data.time_dataset</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_time_series_data_loader</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utilities.data_scalers</span><span class="w"> </span><span class="kn">import</span> <span class="n">TorchStandardScaler</span><span class="p">,</span> <span class="n">TorchMinMaxScaler</span>
+<span class="c1">#</span>
+<span class="c1">#                                                          Authorship &amp; Credits</span>
+<span class="c1"># =============================================================================</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Bernardo Ferreira (bernardo_ferreira@brown.edu)&#39;</span>
+<span class="n">__credits__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Bernardo Ferreira&#39;</span><span class="p">,</span> <span class="p">]</span>
+<span class="n">__status__</span> <span class="o">=</span> <span class="s1">&#39;Stable&#39;</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="fit_data_scaler_from_dataset"><a class="viewcode-back" href="../../_autosummary/hookeai.model_architectures.procedures.model_data_scaling.fit_data_scaler_from_dataset.html#hookeai.model_architectures.procedures.model_data_scaling.fit_data_scaler_from_dataset">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">fit_data_scaler_from_dataset</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">features_type</span><span class="p">,</span> <span class="n">n_features</span><span class="p">,</span>
+                                 <span class="n">scaling_type</span><span class="o">=</span><span class="s1">&#39;mean-std&#39;</span><span class="p">,</span>
+                                 <span class="n">scaling_parameters</span><span class="o">=</span><span class="p">{}):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Fit features type data scaler from given data set.</span>
+<span class="sd">    </span>
+<span class="sd">    Data scaler normalization tensors are fitted from given data set,</span>
+<span class="sd">    overriding provided data scaling parameters.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dataset : torch.utils.data.Dataset</span>
+<span class="sd">        Time series data set. Each sample is stored as a dictionary where each</span>
+<span class="sd">        feature (key, str) data is a torch.Tensor(2d) of shape</span>
+<span class="sd">        (sequence_length, n_features).</span>
+<span class="sd">    features_type : str</span>
+<span class="sd">        Features for which data scaler is fitted (e.g., &#39;features_in&#39;,</span>
+<span class="sd">        &#39;features_out&#39;). Must be directly available from data set samples.</span>
+<span class="sd">    n_features : int</span>
+<span class="sd">        Number of features (dimensionality).</span>
+<span class="sd">    scaling_type : {&#39;min-max&#39;, &#39;mean-std&#39;}, default=&#39;mean-std&#39;</span>
+<span class="sd">        Type of data scaling. Min-Max scaling (&#39;min-max&#39;) or standardization</span>
+<span class="sd">        (&#39;mean-std&#39;).</span>
+<span class="sd">    scaling_parameters : dict, default={}</span>
+<span class="sd">        Data scaling parameters (item, dict) for each features type</span>
+<span class="sd">        (key, str). For &#39;min-max&#39; data scaling, the parameters are the</span>
+<span class="sd">        &#39;minimum&#39; and &#39;maximum&#39; features normalization tensors, as well as</span>
+<span class="sd">        the &#39;norm_minimum&#39; and &#39;norm_maximum&#39; normalization bounds. For</span>
+<span class="sd">        &#39;mean-std&#39; data scaling, the parameters are the &#39;mean&#39; and &#39;std&#39;</span>
+<span class="sd">        features normalization tensors.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    data_scaler : {TorchStandardScaler, TorchMinMaxScaler}</span>
+<span class="sd">        Data scaler.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Set available data scaling types</span>
+    <span class="n">available_scaling_types</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;mean-std&#39;</span><span class="p">,</span> <span class="s1">&#39;min-max&#39;</span><span class="p">)</span>
+    <span class="c1"># Check data scaling type</span>
+    <span class="k">if</span> <span class="n">scaling_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">available_scaling_types</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Unknown data scaling type </span><span class="se">\&#39;</span><span class="si">{</span><span class="n">scaling_type</span><span class="si">}</span><span class="se">\&#39;</span><span class="s1">.&#39;</span>
+                           <span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">Available data scaling types: &#39;</span>
+                           <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">available_scaling_types</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get scaling parameters</span>
+    <span class="k">if</span> <span class="n">features_type</span> <span class="ow">in</span> <span class="n">scaling_parameters</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="n">scaling_parameters_type</span> <span class="o">=</span> <span class="n">scaling_parameters</span><span class="p">[</span><span class="n">features_type</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">scaling_parameters_type</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Fit data scaler</span>
+    <span class="k">if</span> <span class="n">scaling_type</span> <span class="o">==</span> <span class="s1">&#39;mean-std&#39;</span><span class="p">:</span>
+        <span class="c1"># Initialize data scaler</span>
+        <span class="n">data_scaler</span> <span class="o">=</span> \
+            <span class="n">TorchStandardScaler</span><span class="p">(</span><span class="n">n_features</span><span class="p">,</span> <span class="o">**</span><span class="n">scaling_parameters_type</span><span class="p">)</span>
+        <span class="c1"># Perform batch fitting of data scaler parameters</span>
+        <span class="n">mean</span><span class="p">,</span> <span class="n">std</span> <span class="o">=</span> <span class="n">mean_std_batch_fit</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">features_type</span><span class="p">,</span> <span class="n">n_features</span><span class="p">)</span>
+        <span class="c1"># Set fitted data scaler</span>
+        <span class="n">data_scaler</span><span class="o">.</span><span class="n">set_mean_and_std</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">std</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">scaling_type</span> <span class="o">==</span> <span class="s1">&#39;min-max&#39;</span><span class="p">:</span>
+        <span class="c1"># Initialize data scaler</span>
+        <span class="n">data_scaler</span> <span class="o">=</span> <span class="n">TorchMinMaxScaler</span><span class="p">(</span><span class="n">n_features</span><span class="p">,</span> <span class="o">**</span><span class="n">scaling_parameters_type</span><span class="p">)</span>
+        <span class="c1"># Perform batch fitting of data scaler parameters</span>
+        <span class="n">minimum</span><span class="p">,</span> <span class="n">maximum</span> <span class="o">=</span> \
+            <span class="n">min_max_batch_fit</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">features_type</span><span class="p">,</span> <span class="n">n_features</span><span class="p">)</span>
+        <span class="c1"># Set fitted data scaler</span>
+        <span class="n">data_scaler</span><span class="o">.</span><span class="n">set_minimum_and_maximum</span><span class="p">(</span><span class="n">minimum</span><span class="p">,</span> <span class="n">maximum</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">data_scaler</span></div>
+<span class="c1"># =============================================================================</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">mean_std_batch_fit</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">features_type</span><span class="p">,</span> <span class="n">n_features</span><span class="p">,</span> <span class="n">is_verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Perform batch fitting of standardization data scaler.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dataset : torch.utils.data.Dataset</span>
+<span class="sd">        Time series data set. Each sample is stored as a dictionary where each</span>
+<span class="sd">        feature (key, str) data is a torch.Tensor(2d) of shape</span>
+<span class="sd">        (sequence_length, n_features).</span>
+<span class="sd">    features_type : str</span>
+<span class="sd">        Features for which data scaler is fitted (e.g., &#39;features_in&#39;,</span>
+<span class="sd">        &#39;features_out&#39;). Must be directly available from data set samples.</span>
+<span class="sd">    n_features : int</span>
+<span class="sd">        Number of features (dimensionality).</span>
+<span class="sd">    is_verbose : bool, default=False</span>
+<span class="sd">        If True, enable verbose output.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    mean : torch.Tensor</span>
+<span class="sd">        Features standardization mean tensor stored as a torch.Tensor with</span>
+<span class="sd">        shape (n_features,).</span>
+<span class="sd">    std : torch.Tensor</span>
+<span class="sd">        Features standardization standard deviation tensor stored as a</span>
+<span class="sd">        torch.Tensor with shape (n_features,).</span>
+<span class="sd">        </span>
+<span class="sd">    Notes</span>
+<span class="sd">    -----</span>
+<span class="sd">    A biased estimator is used to compute the standard deviation according with</span>
+<span class="sd">    scikit-learn 1.3.2 documentation (sklearn.preprocessing.StandardScaler).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Instantiate data scaler</span>
+    <span class="n">data_scaler</span> <span class="o">=</span> <span class="n">sklearn</span><span class="o">.</span><span class="n">preprocessing</span><span class="o">.</span><span class="n">StandardScaler</span><span class="p">()</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set data loader</span>
+    <span class="n">data_loader</span> <span class="o">=</span> <span class="n">get_time_series_data_loader</span><span class="p">(</span><span class="n">dataset</span><span class="o">=</span><span class="n">dataset</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Loop over samples</span>
+    <span class="k">for</span> <span class="n">sample</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="o">.</span><span class="n">tqdm</span><span class="p">(</span><span class="n">data_loader</span><span class="p">,</span>
+                            <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;&gt; Processing data samples: &#39;</span><span class="p">,</span>
+                            <span class="n">disable</span><span class="o">=</span><span class="ow">not</span> <span class="n">is_verbose</span><span class="p">):</span>        
+        <span class="c1"># Check sample</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Time series sample must be dictionary where &#39;</span>
+                               <span class="s1">&#39;each feature (key, str) data is a &#39;</span>
+                               <span class="s1">&#39;torch.Tensor(2d) of shape &#39;</span>
+                               <span class="s1">&#39;(sequence_length, n_featues).&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Check sample features tensor</span>
+        <span class="k">if</span> <span class="n">features_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sample</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Unavailable feature from sample.&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">features_tensor</span> <span class="o">=</span> <span class="n">sample</span><span class="p">[</span><span class="n">features_type</span><span class="p">]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Process sample to fit data scaler</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">features_tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+            <span class="c1"># Check number of features</span>
+            <span class="k">if</span> <span class="n">features_tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">n_features</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Mismatch between features tensor &#39;</span>
+                                   <span class="sa">f</span><span class="s1">&#39;(</span><span class="si">{</span><span class="n">features_tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s1">) and &#39;</span>
+                                   <span class="sa">f</span><span class="s1">&#39;number of expected features &#39;</span>
+                                   <span class="sa">f</span><span class="s1">&#39;(</span><span class="si">{</span><span class="n">n_features</span><span class="si">}</span><span class="s1">) for features type: &#39;</span>
+                                   <span class="sa">f</span><span class="s1">&#39;</span><span class="se">\&#39;</span><span class="si">{</span><span class="n">features_type</span><span class="si">}</span><span class="se">\&#39;</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="c1"># Process sample</span>
+            <span class="n">data_scaler</span><span class="o">.</span><span class="n">partial_fit</span><span class="p">(</span><span class="n">features_tensor</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">clone</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Sample features tensor is not torch.Tensor.&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get fitted mean and standard deviation tensors</span>
+    <span class="n">mean</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">data_scaler</span><span class="o">.</span><span class="n">mean_</span><span class="p">)</span>
+    <span class="n">std</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">data_scaler</span><span class="o">.</span><span class="n">var_</span><span class="p">))</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Check features standardization mean tensor</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Features standardization mean tensor is not a &#39;</span>
+                           <span class="s1">&#39;torch.Tensor.&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">mean</span><span class="p">)</span> <span class="o">!=</span> <span class="n">features_tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Features standardization mean tensor is not a &#39;</span>
+                           <span class="s1">&#39;torch.Tensor(1d) with shape (n_features,).&#39;</span><span class="p">)</span>
+    <span class="c1"># Check features standardization standard deviation tensor</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">std</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Features standardization standard deviation &#39;</span>
+                           <span class="s1">&#39;tensor is not a torch.Tensor.&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">std</span><span class="p">)</span> <span class="o">!=</span> <span class="n">features_tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Features standardization standard deviation &#39;</span>
+                           <span class="s1">&#39;tensor is not a torch.Tensor(1d) with shape &#39;</span>
+                           <span class="s1">&#39;(n_features,).&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">mean</span><span class="p">,</span> <span class="n">std</span>
+<span class="c1"># =============================================================================</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">min_max_batch_fit</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">features_type</span><span class="p">,</span> <span class="n">n_features</span><span class="p">,</span> <span class="n">is_verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Perform batch fitting of min-max data scaler.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dataset : torch.utils.data.Dataset</span>
+<span class="sd">        Time series data set. Each sample is stored as a dictionary where each</span>
+<span class="sd">        feature (key, str) data is a torch.Tensor(2d) of shape</span>
+<span class="sd">        (sequence_length, n_features).</span>
+<span class="sd">    features_type : str</span>
+<span class="sd">        Features for which data scaler is fitted (e.g., &#39;features_in&#39;,</span>
+<span class="sd">        &#39;features_out&#39;). Must be directly available from data set samples.</span>
+<span class="sd">    n_features : int</span>
+<span class="sd">        Number of features (dimensionality).</span>
+<span class="sd">    is_verbose : bool, default=False</span>
+<span class="sd">        If True, enable verbose output.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    minimum : torch.Tensor</span>
+<span class="sd">        Features normalization minimum tensor stored as a torch.Tensor with</span>
+<span class="sd">        shape (n_features,).</span>
+<span class="sd">    maximum : torch.Tensor</span>
+<span class="sd">        Features normalization maximum tensor stored as a torch.Tensor with</span>
+<span class="sd">        shape (n_features,).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Instantiate data scaler</span>
+    <span class="n">data_scaler</span> <span class="o">=</span> <span class="n">sklearn</span><span class="o">.</span><span class="n">preprocessing</span><span class="o">.</span><span class="n">MinMaxScaler</span><span class="p">()</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set data loader</span>
+    <span class="n">data_loader</span> <span class="o">=</span> <span class="n">get_time_series_data_loader</span><span class="p">(</span><span class="n">dataset</span><span class="o">=</span><span class="n">dataset</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Loop over samples</span>
+    <span class="k">for</span> <span class="n">sample</span> <span class="ow">in</span> <span class="n">tqdm</span><span class="o">.</span><span class="n">tqdm</span><span class="p">(</span><span class="n">data_loader</span><span class="p">,</span>
+                            <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;&gt; Processing data samples: &#39;</span><span class="p">,</span>
+                            <span class="n">disable</span><span class="o">=</span><span class="ow">not</span> <span class="n">is_verbose</span><span class="p">):</span>        
+        <span class="c1"># Check sample</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sample</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Time series sample must be dictionary where &#39;</span>
+                               <span class="s1">&#39;each feature (key, str) data is a &#39;</span>
+                               <span class="s1">&#39;torch.Tensor(2d) of shape &#39;</span>
+                               <span class="s1">&#39;(sequence_length, n_featues).&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Check sample features tensor</span>
+        <span class="k">if</span> <span class="n">features_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sample</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Unavailable feature from sample.&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">features_tensor</span> <span class="o">=</span> <span class="n">sample</span><span class="p">[</span><span class="n">features_type</span><span class="p">]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Process sample to fit data scaler</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">features_tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+            <span class="c1"># Check number of features</span>
+            <span class="k">if</span> <span class="n">features_tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="n">n_features</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Mismatch between features tensor &#39;</span>
+                                   <span class="sa">f</span><span class="s1">&#39;(</span><span class="si">{</span><span class="n">features_tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s1">) and &#39;</span>
+                                   <span class="sa">f</span><span class="s1">&#39;number of expected features &#39;</span>
+                                   <span class="sa">f</span><span class="s1">&#39;(</span><span class="si">{</span><span class="n">n_features</span><span class="si">}</span><span class="s1">) for features type: &#39;</span>
+                                   <span class="sa">f</span><span class="s1">&#39;</span><span class="se">\&#39;</span><span class="si">{</span><span class="n">features_type</span><span class="si">}</span><span class="se">\&#39;</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="c1"># Process sample</span>
+            <span class="n">data_scaler</span><span class="o">.</span><span class="n">partial_fit</span><span class="p">(</span><span class="n">features_tensor</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">clone</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Sample features tensor is not torch.Tensor.&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get fitted minimum and maximum tensors</span>
+    <span class="n">minimum</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">data_scaler</span><span class="o">.</span><span class="n">data_min_</span><span class="p">)</span>
+    <span class="n">maximum</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">data_scaler</span><span class="o">.</span><span class="n">data_max_</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Check features minimum tensor</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">minimum</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Features minimum tensor is not a torch.Tensor.&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">minimum</span><span class="p">)</span> <span class="o">!=</span> <span class="n">features_tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Features minimum tensor is not a torch.Tensor(1d) &#39;</span>
+                           <span class="s1">&#39;with shape (n_features,).&#39;</span><span class="p">)</span>
+    <span class="c1"># Check features maximum tensor</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">maximum</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Features maximum tensor is not a torch.Tensor.&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">maximum</span><span class="p">)</span> <span class="o">!=</span> <span class="n">features_tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Features maximum tensor is not a torch.Tensor(1d) &#39;</span>
+                           <span class="s1">&#39;with shape (n_features,).&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">minimum</span><span class="p">,</span> <span class="n">maximum</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

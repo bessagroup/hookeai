@@ -1,0 +1,524 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>hookeai.simulators.fetorch.element.derivatives.gradients &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../../../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../../../" id="documentation_options" src="../../../../../../_static/documentation_options.js"></script>
+        <script src="../../../../../../_static/doctools.js"></script>
+        <script src="../../../../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../../../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../_autosummary/hookeai.html">Code</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../../../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">hookeai.simulators.fetorch.element.derivatives.gradients</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for hookeai.simulators.fetorch.element.derivatives.gradients</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;FETorch: Finite Element discrete gradient operators.</span>
+
+<span class="sd">Functions</span>
+<span class="sd">---------</span>
+<span class="sd">eval_shapefun_deriv</span>
+<span class="sd">    Evaluate shape functions derivates at given coordinates.</span>
+<span class="sd">build_discrete_sym_gradient</span>
+<span class="sd">    Build discrete symmetric gradient operator.</span>
+<span class="sd">vbuild_discrete_sym_gradient</span>
+<span class="sd">    Build discrete symmetric gradient operator.</span>
+<span class="sd">build_discrete_gradient</span>
+<span class="sd">    Build discrete gradient operator.</span>
+<span class="sd">vbuild_discrete_gradient</span>
+<span class="sd">    Build discrete gradient operator.</span>
+<span class="sd">vexpand_grad_operator_sym_2d_to_3d</span>
+<span class="sd">    Expand 2D discrete symmetric gradient operator to 3D.</span>
+<span class="sd">vreduce_grad_operator_sym_3d_to_2d</span>
+<span class="sd">    Reduce 3D discrete symmetric gradient operator to 2D.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#                                                                       Modules</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Third-party</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="c1"># Local</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">simulators.fetorch.element.derivatives.jacobian</span><span class="w"> </span><span class="kn">import</span> <span class="n">eval_jacobian</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">simulators.fetorch.math.matrixops</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_problem_type_parameters</span>
+<span class="c1">#</span>
+<span class="c1">#                                                          Authorship &amp; Credits</span>
+<span class="c1"># =============================================================================</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Bernardo Ferreira (bernardo_ferreira@brown.edu)&#39;</span>
+<span class="n">__credits__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Bernardo Ferreira&#39;</span><span class="p">,</span> <span class="p">]</span>
+<span class="n">__status__</span> <span class="o">=</span> <span class="s1">&#39;Stable&#39;</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="eval_shapefun_deriv"><a class="viewcode-back" href="../../../../../../_autosummary/hookeai.simulators.fetorch.element.derivatives.gradients.eval_shapefun_deriv.html#hookeai.simulators.fetorch.element.derivatives.gradients.eval_shapefun_deriv">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">eval_shapefun_deriv</span><span class="p">(</span><span class="n">element_type</span><span class="p">,</span> <span class="n">nodes_coords</span><span class="p">,</span> <span class="n">local_coords</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Evaluate shape functions derivates at given coordinates.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    element_type : Element</span>
+<span class="sd">        FETorch finite element.</span>
+<span class="sd">    nodes_coords : torch.Tensor(2d)</span>
+<span class="sd">        Nodes coordinates stored as torch.Tensor(2d) of shape</span>
+<span class="sd">        (n_node, n_dof_node).</span>
+<span class="sd">    local_coords : torch.Tensor(1d)</span>
+<span class="sd">        Local coordinates of point where Jacobian is evaluated.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    shape_fun_deriv : torch.Tensor(2d)</span>
+<span class="sd">        Shape functions derivatives evaluated at given local coordinates,</span>
+<span class="sd">        sorted according with element nodes. Derivative of the i-th shape</span>
+<span class="sd">        function with respect to the j-th local coordinate is stored in</span>
+<span class="sd">        shape_fun_deriv[i, j].</span>
+<span class="sd">    jacobian : torch.Tensor(2d)</span>
+<span class="sd">        Element Jacobian.</span>
+<span class="sd">    jacobian_det : float</span>
+<span class="sd">        Determinant of element jacobian.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Evaluate element shape functions local derivatives and Jacobian</span>
+    <span class="n">jacobian</span><span class="p">,</span> <span class="n">jacobian_det</span><span class="p">,</span> <span class="n">shape_fun_local_deriv</span> <span class="o">=</span> \
+        <span class="n">eval_jacobian</span><span class="p">(</span><span class="n">element_type</span><span class="p">,</span> <span class="n">nodes_coords</span><span class="p">,</span> <span class="n">local_coords</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~    </span>
+    <span class="c1"># Compute Jacobian inverse</span>
+    <span class="n">jacobian_inv</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">inverse</span><span class="p">(</span><span class="n">jacobian</span><span class="p">)</span>
+    <span class="c1"># Compute element shape functions derivatives</span>
+    <span class="n">shape_fun_deriv</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">jacobian_inv</span><span class="p">,</span> <span class="n">shape_fun_local_deriv</span><span class="o">.</span><span class="n">t</span><span class="p">())</span><span class="o">.</span><span class="n">t</span><span class="p">()</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">shape_fun_deriv</span><span class="p">,</span> <span class="n">jacobian</span><span class="p">,</span> <span class="n">jacobian_det</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="build_discrete_sym_gradient"><a class="viewcode-back" href="../../../../../../_autosummary/hookeai.simulators.fetorch.element.derivatives.gradients.build_discrete_sym_gradient.html#hookeai.simulators.fetorch.element.derivatives.gradients.build_discrete_sym_gradient">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">build_discrete_sym_gradient</span><span class="p">(</span><span class="n">shape_fun_deriv</span><span class="p">,</span> <span class="n">comp_order_sym</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build discrete symmetric gradient operator.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    shape_fun_deriv : torch.Tensor(2d)</span>
+<span class="sd">        Shape functions derivatives evaluated at given local coordinates,</span>
+<span class="sd">        sorted according with element nodes. Derivative of the i-th shape</span>
+<span class="sd">        function with respect to the j-th local coordinate is stored in</span>
+<span class="sd">        shape_fun_deriv[i, j].</span>
+<span class="sd">    comp_order_sym : tuple</span>
+<span class="sd">        Strain/Stress components symmetric order.</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    grad_operator_sym : torch.Tensor(2d)</span>
+<span class="sd">        Discrete symmetric gradient operator evaluated at given local</span>
+<span class="sd">        coordinates.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Infere element number of nodes and degrees of freedom from shape</span>
+    <span class="c1"># functions derivatives</span>
+    <span class="n">n_node</span><span class="p">,</span> <span class="n">n_dof_node</span> <span class="o">=</span> <span class="n">shape_fun_deriv</span><span class="o">.</span><span class="n">shape</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get number of strain/stress components</span>
+    <span class="n">n_comps</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">comp_order_sym</span><span class="p">)</span>
+    <span class="c1"># Check number of strain/stress components</span>
+    <span class="k">if</span> <span class="n">n_comps</span> <span class="o">!=</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">n_dof_node</span><span class="o">*</span><span class="p">(</span><span class="n">n_dof_node</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Invalid number of strain/stress components.&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize discrete symmetric gradient operator</span>
+    <span class="n">grad_operator_sym</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_comps</span><span class="p">,</span> <span class="n">n_node</span><span class="o">*</span><span class="n">n_dof_node</span><span class="p">),</span>
+                                    <span class="n">device</span><span class="o">=</span><span class="n">shape_fun_deriv</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Loop over nodes</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_node</span><span class="p">):</span>
+        <span class="c1"># Get node initial assembly column</span>
+        <span class="n">node_index</span> <span class="o">=</span> <span class="n">j</span><span class="o">*</span><span class="n">n_dof_node</span>
+        <span class="c1"># Loop over components</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">comp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">comp_order_sym</span><span class="p">):</span>
+            <span class="c1"># Get component index</span>
+            <span class="n">comp_index_1</span><span class="p">,</span> <span class="n">comp_index_2</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">comp</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">)]</span>
+            <span class="c1"># Assemble shape functions derivatives</span>
+            <span class="k">if</span> <span class="n">comp_index_1</span> <span class="o">==</span> <span class="n">comp_index_2</span><span class="p">:</span>
+                <span class="c1"># Diagonal component</span>
+                <span class="n">grad_operator_sym</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">node_index</span> <span class="o">+</span> <span class="n">comp_index_1</span><span class="p">]</span> <span class="o">=</span> \
+                    <span class="n">shape_fun_deriv</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">comp_index_1</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Off-diagonal component</span>
+                <span class="n">grad_operator_sym</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">node_index</span> <span class="o">+</span> <span class="n">comp_index_2</span><span class="p">]</span> <span class="o">=</span> \
+                    <span class="n">shape_fun_deriv</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">comp_index_1</span><span class="p">]</span>
+                <span class="n">grad_operator_sym</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">node_index</span> <span class="o">+</span> <span class="n">comp_index_1</span><span class="p">]</span> <span class="o">=</span> \
+                    <span class="n">shape_fun_deriv</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">comp_index_2</span><span class="p">]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">grad_operator_sym</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="vbuild_discrete_sym_gradient"><a class="viewcode-back" href="../../../../../../_autosummary/hookeai.simulators.fetorch.element.derivatives.gradients.vbuild_discrete_sym_gradient.html#hookeai.simulators.fetorch.element.derivatives.gradients.vbuild_discrete_sym_gradient">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">vbuild_discrete_sym_gradient</span><span class="p">(</span><span class="n">shape_fun_deriv</span><span class="p">,</span> <span class="n">comp_order_sym</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build discrete symmetric gradient operator.</span>
+<span class="sd">    </span>
+<span class="sd">    Compatible with vectorized mapping.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    shape_fun_deriv : torch.Tensor(2d)</span>
+<span class="sd">        Shape functions derivatives evaluated at given local coordinates,</span>
+<span class="sd">        sorted according with element nodes. Derivative of the i-th shape</span>
+<span class="sd">        function with respect to the j-th local coordinate is stored in</span>
+<span class="sd">        shape_fun_deriv[i, j].</span>
+<span class="sd">    comp_order_sym : tuple</span>
+<span class="sd">        Strain/Stress components symmetric order.</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    grad_operator_sym : torch.Tensor(2d)</span>
+<span class="sd">        Discrete symmetric gradient operator evaluated at given local</span>
+<span class="sd">        coordinates.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Infere element number of nodes and degrees of freedom from shape</span>
+    <span class="c1"># functions derivatives</span>
+    <span class="n">n_node</span><span class="p">,</span> <span class="n">n_dof_node</span> <span class="o">=</span> <span class="n">shape_fun_deriv</span><span class="o">.</span><span class="n">shape</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get number of strain/stress components</span>
+    <span class="n">n_comps</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">comp_order_sym</span><span class="p">)</span>
+    <span class="c1"># Check number of strain/stress components</span>
+    <span class="k">if</span> <span class="n">n_comps</span> <span class="o">!=</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">n_dof_node</span><span class="o">*</span><span class="p">(</span><span class="n">n_dof_node</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Invalid number of strain/stress components.&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize mapping index        </span>
+    <span class="n">index_mapping</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># Loop over dimensions</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_dof_node</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="c1"># Loop over components</span>
+        <span class="k">for</span> <span class="n">comp</span> <span class="ow">in</span> <span class="n">comp_order_sym</span><span class="p">:</span>
+            <span class="c1"># Get component index</span>
+            <span class="n">cindex</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">comp</span><span class="p">]</span>
+            <span class="c1"># Set mapping index</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">cindex</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">cindex</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">cindex</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+                    <span class="n">index</span> <span class="o">=</span> <span class="n">i</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">index</span> <span class="o">=</span> <span class="nb">int</span><span class="p">([</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">cindex</span> <span class="k">if</span> <span class="n">x</span> <span class="o">!=</span> <span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">index</span> <span class="o">=</span> <span class="mi">0</span>                
+            <span class="c1"># Assemble index</span>
+            <span class="n">index_mapping</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Add zero element to shape functions derivatives</span>
+    <span class="n">mapping_values</span> <span class="o">=</span> \
+        <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_node</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="n">shape_fun_deriv</span><span class="o">.</span><span class="n">device</span><span class="p">),</span>
+                   <span class="n">shape_fun_deriv</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="c1"># Build discrete symmetric gradient operator</span>
+    <span class="n">grad_operator_sym</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">mapping_values</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:][</span><span class="n">index_mapping</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_comps</span><span class="p">)</span><span class="o">.</span><span class="n">t</span><span class="p">()</span>
+         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_node</span><span class="p">)],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">grad_operator_sym</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="build_discrete_gradient"><a class="viewcode-back" href="../../../../../../_autosummary/hookeai.simulators.fetorch.element.derivatives.gradients.build_discrete_gradient.html#hookeai.simulators.fetorch.element.derivatives.gradients.build_discrete_gradient">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">build_discrete_gradient</span><span class="p">(</span><span class="n">shape_fun_deriv</span><span class="p">,</span> <span class="n">comp_order_nsym</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build discrete gradient operator.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    shape_fun_deriv : torch.Tensor(2d)</span>
+<span class="sd">        Shape functions derivatives evaluated at given local coordinates,</span>
+<span class="sd">        sorted according with element nodes. Derivative of the i-th shape</span>
+<span class="sd">        function with respect to the j-th local coordinate is stored in</span>
+<span class="sd">        shape_fun_deriv[i, j].</span>
+<span class="sd">    comp_order_nsym : tuple</span>
+<span class="sd">        Strain/Stress components nonsymmetric order.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    grad_operator : torch.Tensor(2d)</span>
+<span class="sd">        Discrete gradient operator evaluated at given local coordinates.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Infere element number of nodes and degrees of freedom from shape</span>
+    <span class="c1"># functions derivatives</span>
+    <span class="n">n_node</span><span class="p">,</span> <span class="n">n_dof_node</span> <span class="o">=</span> <span class="n">shape_fun_deriv</span><span class="o">.</span><span class="n">shape</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set strain/stress components order</span>
+    <span class="k">if</span> <span class="n">comp_order_nsym</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">n_dof_node</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">comp_order_nsym</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;11&#39;</span><span class="p">,</span> <span class="s1">&#39;21&#39;</span><span class="p">,</span> <span class="s1">&#39;12&#39;</span><span class="p">,</span> <span class="s1">&#39;22&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">comp_order_nsym</span> <span class="o">=</span> \
+                <span class="p">(</span><span class="s1">&#39;11&#39;</span><span class="p">,</span> <span class="s1">&#39;21&#39;</span><span class="p">,</span> <span class="s1">&#39;31&#39;</span><span class="p">,</span> <span class="s1">&#39;12&#39;</span><span class="p">,</span> <span class="s1">&#39;22&#39;</span><span class="p">,</span> <span class="s1">&#39;32&#39;</span><span class="p">,</span> <span class="s1">&#39;13&#39;</span><span class="p">,</span> <span class="s1">&#39;23&#39;</span><span class="p">,</span> <span class="s1">&#39;33&#39;</span><span class="p">)</span>
+    <span class="c1"># Get number of strain/stress components</span>
+    <span class="n">n_comps</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">comp_order_nsym</span><span class="p">)</span>
+    <span class="c1"># Check number of strain/stress components</span>
+    <span class="k">if</span> <span class="n">n_comps</span> <span class="o">!=</span> <span class="n">n_dof_node</span><span class="o">**</span><span class="mi">2</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Invalid number of strain/stress components.&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize discrete gradient operator</span>
+    <span class="n">grad_operator</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_comps</span><span class="p">,</span> <span class="n">n_node</span><span class="o">*</span><span class="n">n_dof_node</span><span class="p">),</span>
+                                <span class="n">device</span><span class="o">=</span><span class="n">shape_fun_deriv</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Loop over nodes</span>
+    <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_node</span><span class="p">):</span>
+        <span class="c1"># Get node initial assembly column</span>
+        <span class="n">node_index</span> <span class="o">=</span> <span class="n">j</span><span class="o">*</span><span class="n">n_dof_node</span>
+        <span class="c1"># Loop over components</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">comp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">comp_order_nsym</span><span class="p">):</span>
+            <span class="c1"># Get component index</span>
+            <span class="n">comp_index_1</span><span class="p">,</span> <span class="n">comp_index_2</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">comp</span><span class="p">[</span><span class="n">k</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">)]</span>
+            <span class="c1"># Assemble shape functions derivatives</span>
+            <span class="n">grad_operator</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">node_index</span> <span class="o">+</span> <span class="n">comp_index_1</span><span class="p">]</span> <span class="o">=</span> \
+                <span class="n">shape_fun_deriv</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">comp_index_2</span><span class="p">]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">grad_operator</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="vbuild_discrete_gradient"><a class="viewcode-back" href="../../../../../../_autosummary/hookeai.simulators.fetorch.element.derivatives.gradients.vbuild_discrete_gradient.html#hookeai.simulators.fetorch.element.derivatives.gradients.vbuild_discrete_gradient">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">vbuild_discrete_gradient</span><span class="p">(</span><span class="n">shape_fun_deriv</span><span class="p">,</span> <span class="n">comp_order_nsym</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build discrete gradient operator.</span>
+<span class="sd">    </span>
+<span class="sd">    Compatible with vectorized mapping.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    shape_fun_deriv : torch.Tensor(2d)</span>
+<span class="sd">        Shape functions derivatives evaluated at given local coordinates,</span>
+<span class="sd">        sorted according with element nodes. Derivative of the i-th shape</span>
+<span class="sd">        function with respect to the j-th local coordinate is stored in</span>
+<span class="sd">        shape_fun_deriv[i, j].</span>
+<span class="sd">    comp_order_nsym : tuple</span>
+<span class="sd">        Strain/Stress components nonsymmetric order.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    grad_operator : torch.Tensor(2d)</span>
+<span class="sd">        Discrete gradient operator evaluated at given local coordinates.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Infere element number of nodes and degrees of freedom from shape</span>
+    <span class="c1"># functions derivatives</span>
+    <span class="n">n_node</span><span class="p">,</span> <span class="n">n_dof_node</span> <span class="o">=</span> <span class="n">shape_fun_deriv</span><span class="o">.</span><span class="n">shape</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set strain/stress components order</span>
+    <span class="k">if</span> <span class="n">comp_order_nsym</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">n_dof_node</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="n">comp_order_nsym</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;11&#39;</span><span class="p">,</span> <span class="s1">&#39;21&#39;</span><span class="p">,</span> <span class="s1">&#39;12&#39;</span><span class="p">,</span> <span class="s1">&#39;22&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">comp_order_nsym</span> <span class="o">=</span> \
+                <span class="p">(</span><span class="s1">&#39;11&#39;</span><span class="p">,</span> <span class="s1">&#39;21&#39;</span><span class="p">,</span> <span class="s1">&#39;31&#39;</span><span class="p">,</span> <span class="s1">&#39;12&#39;</span><span class="p">,</span> <span class="s1">&#39;22&#39;</span><span class="p">,</span> <span class="s1">&#39;32&#39;</span><span class="p">,</span> <span class="s1">&#39;13&#39;</span><span class="p">,</span> <span class="s1">&#39;23&#39;</span><span class="p">,</span> <span class="s1">&#39;33&#39;</span><span class="p">)</span>
+    <span class="c1"># Get number of strain/stress components</span>
+    <span class="n">n_comps</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">comp_order_nsym</span><span class="p">)</span>
+    <span class="c1"># Check number of strain/stress components</span>
+    <span class="k">if</span> <span class="n">n_comps</span> <span class="o">!=</span> <span class="n">n_dof_node</span><span class="o">**</span><span class="mi">2</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Invalid number of strain/stress components.&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize mapping index        </span>
+    <span class="n">index_mapping</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># Loop over dimensions</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_dof_node</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+        <span class="c1"># Loop over components</span>
+        <span class="k">for</span> <span class="n">comp</span> <span class="ow">in</span> <span class="n">comp_order_nsym</span><span class="p">:</span>
+            <span class="c1"># Get component index</span>
+            <span class="n">cindex</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">comp</span><span class="p">]</span>
+            <span class="c1"># Set mapping index</span>
+            <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="n">cindex</span><span class="p">[</span><span class="mi">0</span><span class="p">]:</span>
+                <span class="n">index</span> <span class="o">=</span> <span class="n">cindex</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">index</span> <span class="o">=</span> <span class="mi">0</span>
+            <span class="c1"># Assemble index</span>
+            <span class="n">index_mapping</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">index</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Add zero element to shape functions derivatives</span>
+    <span class="n">mapping_values</span> <span class="o">=</span> \
+        <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_node</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="n">shape_fun_deriv</span><span class="o">.</span><span class="n">device</span><span class="p">),</span>
+                   <span class="n">shape_fun_deriv</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="c1"># Build discrete symmetric gradient operator</span>
+    <span class="n">grad_operator</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">mapping_values</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:][</span><span class="n">index_mapping</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_comps</span><span class="p">)</span><span class="o">.</span><span class="n">t</span><span class="p">()</span>
+         <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_node</span><span class="p">)],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">grad_operator</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="vexpand_grad_operator_sym_2d_to_3d"><a class="viewcode-back" href="../../../../../../_autosummary/hookeai.simulators.fetorch.element.derivatives.gradients.vexpand_grad_operator_sym_2d_to_3d.html#hookeai.simulators.fetorch.element.derivatives.gradients.vexpand_grad_operator_sym_2d_to_3d">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">vexpand_grad_operator_sym_2d_to_3d</span><span class="p">(</span><span class="n">grad_operator_sym_2d</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Expand 2D discrete symmetric gradient operator to 3D.</span>
+<span class="sd">    </span>
+<span class="sd">    Compatible with vectorized mapping.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    grad_operator_sym_2d : torch.Tensor(2d)</span>
+<span class="sd">        Discrete symmetric gradient operator (2D).</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    grad_operator_sym_3d : torch.Tensor(2d)</span>
+<span class="sd">        Discrete symmetric gradient operator (3D).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get device</span>
+    <span class="n">device</span> <span class="o">=</span> <span class="n">grad_operator_sym_2d</span><span class="o">.</span><span class="n">device</span>
+    <span class="c1"># Get float type</span>
+    <span class="n">dtype</span> <span class="o">=</span> <span class="n">grad_operator_sym_2d</span><span class="o">.</span><span class="n">dtype</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get 2D strain/stress components order</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">comp_order_sym_2d</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">get_problem_type_parameters</span><span class="p">(</span><span class="n">problem_type</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="c1"># Get 3D strain/stress components order</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">comp_order_sym_3d</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">get_problem_type_parameters</span><span class="p">(</span><span class="n">problem_type</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get number of nodes</span>
+    <span class="n">n_node</span> <span class="o">=</span> <span class="n">grad_operator_sym_2d</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">//</span><span class="mi">2</span>
+    <span class="c1"># Get number of components</span>
+    <span class="n">n_comp_2d</span> <span class="o">=</span> <span class="n">grad_operator_sym_2d</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Reshape 2D gradient operator to split nodes and degrees of freedom</span>
+    <span class="n">grad_operator_reshape</span> <span class="o">=</span> <span class="n">grad_operator_sym_2d</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">n_comp_2d</span><span class="p">,</span> <span class="n">n_node</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+    <span class="c1"># Initialize out-of-plane zero tensor</span>
+    <span class="n">oop_zeros</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_comp_2d</span><span class="p">,</span> <span class="n">n_node</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+    <span class="c1"># Expand 2D gradient operator to include out-of-plane degree of freedom</span>
+    <span class="n">grad_operator_reshape</span> <span class="o">=</span> \
+        <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">grad_operator_reshape</span><span class="p">,</span> <span class="n">oop_zeros</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">2</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
+            <span class="n">n_comp_2d</span><span class="p">,</span> <span class="mi">3</span><span class="o">*</span><span class="n">n_node</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Collect 3D gradient operator components</span>
+    <span class="n">grad_comps</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">grad_operator_reshape</span><span class="p">[</span><span class="n">comp_order_sym_2d</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">comp</span><span class="p">),</span> <span class="p">:]</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">comp</span> <span class="ow">in</span> <span class="n">comp_order_sym_2d</span>
+        <span class="k">else</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">3</span><span class="o">*</span><span class="n">n_node</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">comp</span> <span class="ow">in</span> <span class="n">comp_order_sym_3d</span><span class="p">]</span>
+    <span class="c1"># Assemble 3D gradient operator</span>
+    <span class="n">grad_operator_sym_3d</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">grad_comps</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">grad_operator_sym_3d</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="vreduce_grad_operator_sym_3d_to_2d"><a class="viewcode-back" href="../../../../../../_autosummary/hookeai.simulators.fetorch.element.derivatives.gradients.vreduce_grad_operator_sym_3d_to_2d.html#hookeai.simulators.fetorch.element.derivatives.gradients.vreduce_grad_operator_sym_3d_to_2d">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">vreduce_grad_operator_sym_3d_to_2d</span><span class="p">(</span><span class="n">grad_operator_sym_3d</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Reduce 3D discrete symmetric gradient operator to 2D.</span>
+<span class="sd">    </span>
+<span class="sd">    Compatible with vectorized mapping.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    grad_operator_sym_3d : torch.Tensor(2d)</span>
+<span class="sd">        Discrete symmetric gradient operator (3D).</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    grad_operator_sym_2d : torch.Tensor(2d)</span>
+<span class="sd">        Discrete symmetric gradient operator (2D).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get device</span>
+    <span class="n">device</span> <span class="o">=</span> <span class="n">grad_operator_sym_3d</span><span class="o">.</span><span class="n">device</span>
+    <span class="c1"># Get float type</span>
+    <span class="n">dtype</span> <span class="o">=</span> <span class="n">grad_operator_sym_3d</span><span class="o">.</span><span class="n">dtype</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get 2D strain/stress components order</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">comp_order_sym_2d</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">get_problem_type_parameters</span><span class="p">(</span><span class="n">problem_type</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="c1"># Get 3D strain/stress components order</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">comp_order_sym_3d</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">get_problem_type_parameters</span><span class="p">(</span><span class="n">problem_type</span><span class="o">=</span><span class="mi">4</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get number of nodes</span>
+    <span class="n">n_node</span> <span class="o">=</span> <span class="n">grad_operator_sym_3d</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="o">//</span><span class="mi">3</span>
+    <span class="c1"># Get number of components</span>
+    <span class="n">n_comp_3d</span> <span class="o">=</span> <span class="n">grad_operator_sym_3d</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Reshape 3D gradient operator to split nodes and degrees of freedom</span>
+    <span class="n">grad_operator_reshape</span> <span class="o">=</span> <span class="n">grad_operator_sym_3d</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">n_comp_3d</span><span class="p">,</span> <span class="n">n_node</span><span class="p">,</span> <span class="mi">3</span><span class="p">)</span>
+    <span class="c1"># Reduce 3D gradient operator to remove out-of-plane degree of freedom</span>
+    <span class="n">grad_operator_reshape</span> <span class="o">=</span> <span class="n">grad_operator_reshape</span><span class="p">[:,</span> <span class="p">:,</span> <span class="p">:</span><span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span>
+        <span class="n">n_comp_3d</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">n_node</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Collect 2D gradient operator components</span>
+    <span class="n">grad_comps</span> <span class="o">=</span> <span class="p">[</span>
+        <span class="n">grad_operator_reshape</span><span class="p">[</span><span class="n">comp_order_sym_3d</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">comp</span><span class="p">),</span> <span class="p">:]</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">if</span> <span class="n">comp</span> <span class="ow">in</span> <span class="n">comp_order_sym_2d</span>
+        <span class="k">else</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">n_node</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">dtype</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">comp</span> <span class="ow">in</span> <span class="n">comp_order_sym_2d</span><span class="p">]</span>
+    <span class="c1"># Assemble 2D gradient operator</span>
+    <span class="n">grad_operator_sym_2d</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">(</span><span class="n">grad_comps</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">grad_operator_sym_2d</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

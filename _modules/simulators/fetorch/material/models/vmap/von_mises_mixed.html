@@ -1,0 +1,878 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>simulators.fetorch.material.models.vmap.von_mises_mixed &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../../../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../../../" id="documentation_options" src="../../../../../../_static/documentation_options.js"></script>
+        <script src="../../../../../../_static/doctools.js"></script>
+        <script src="../../../../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../../../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../_autosummary/hookeai.html">Code</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../../../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">simulators.fetorch.material.models.vmap.von_mises_mixed</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for simulators.fetorch.material.models.vmap.von_mises_mixed</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Von Mises elasto-plastic constitutive model with mixed hardening.</span>
+
+<span class="sd">This module includes the implementation of the von Mises constitutive model</span>
+<span class="sd">with isotropic and kinematic strain hardening.</span>
+
+<span class="sd">This implementation is made compatible with the use of PyTorch vectorizing</span>
+<span class="sd">maps that, at the current moment, do not support auto differentiable</span>
+<span class="sd">data-dependent control flows based on if statements or similar constructs</span>
+<span class="sd">(e.g., torch.cond()). Workarounds based on torch.where() were successfully</span>
+<span class="sd">implemented, but these lead to complex or inefficient coding, mainly because</span>
+<span class="sd">they are constrained by elementwise operations (require pre-computations of</span>
+<span class="sd">true and false paths or repeated true/false function calls for each element).</span>
+
+<span class="sd">When torch.cond() is available, the state_update() method can be simplified as</span>
+<span class="sd">follows:</span>
+
+<span class="sd">1. The condition in torch.cond() does not need to be a Tensor with the same</span>
+<span class="sd">   shape as the true/false output tensors</span>
+<span class="sd">   </span>
+<span class="sd">2. Avoid flow vector pre-computations - only perform the needed step</span>
+<span class="sd">   computation based on torch.cond()</span>
+
+<span class="sd">3. Avoid elastic and plastic steps pre-computations - only perform the needed</span>
+<span class="sd">   step computation based on torch.cond() condition</span>
+
+<span class="sd">4. The is_elastic_step flag is no longer required in _plastic_step()</span>
+
+<span class="sd">5. Avoid elastic and plastic consistent tangent moduli pre-computations - only</span>
+<span class="sd">   compute the required tangent based on torch.cond() condition</span>
+
+
+<span class="sd">Classes</span>
+<span class="sd">-------</span>
+<span class="sd">VonMisesMixedVMAP</span>
+<span class="sd">    Von Mises constitutive model with isotropic and kinematic hardening.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#                                                                       Modules</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Standard</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">math</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="c1"># Local</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">simulators.fetorch.material.models.interface</span><span class="w"> </span><span class="kn">import</span> <span class="n">ConstitutiveModel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">simulators.fetorch.material.models.standard.elastic</span><span class="w"> </span><span class="kn">import</span> <span class="n">Elastic</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">simulators.fetorch.math.matrixops</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_problem_type_parameters</span><span class="p">,</span> \
+    <span class="n">vget_tensor_mf</span><span class="p">,</span> <span class="n">vget_tensor_from_mf</span><span class="p">,</span> <span class="n">vget_state_3Dmf_from_2Dmf</span><span class="p">,</span> \
+    <span class="n">vget_state_2Dmf_from_3Dmf</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">simulators.fetorch.math.tensorops</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_id_operators</span><span class="p">,</span> <span class="n">dyad22_1</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utilities.type_conversion</span><span class="w"> </span><span class="kn">import</span> <span class="n">convert_dict_to_tensor</span><span class="p">,</span> \
+    <span class="n">convert_tensor_to_float64</span><span class="p">,</span> <span class="n">convert_dict_to_float64</span><span class="p">,</span> \
+    <span class="n">convert_dict_to_float32</span><span class="p">,</span> <span class="n">convert_tensor_to_float32</span>
+<span class="c1">#</span>
+<span class="c1">#                                                          Authorship &amp; Credits</span>
+<span class="c1"># =============================================================================</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Bernardo Ferreira (bernardo_ferreira@brown.edu)&#39;</span>
+<span class="n">__credits__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Bernardo Ferreira&#39;</span><span class="p">,</span> <span class="p">]</span>
+<span class="n">__status__</span> <span class="o">=</span> <span class="s1">&#39;Stable&#39;</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="VonMisesMixedVMAP"><a class="viewcode-back" href="../../../../../../_autosummary/hookeai.model_architectures.rc_base_model.model.recurrent_model.VonMisesMixedVMAP.html#hookeai.model_architectures.rc_base_model.model.recurrent_model.VonMisesMixedVMAP">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">VonMisesMixedVMAP</span><span class="p">(</span><span class="n">ConstitutiveModel</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Von Mises constitutive model with isotropic and kinematic hardening.</span>
+
+<span class="sd">    Compatible with vectorized mapping.</span>
+
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    _name : str</span>
+<span class="sd">        Constitutive model name.</span>
+<span class="sd">    _strain_type : {&#39;infinitesimal&#39;, &#39;finite&#39;, &#39;finite-kinext&#39;}</span>
+<span class="sd">        Material constitutive model strain formulation: infinitesimal strain</span>
+<span class="sd">        formulation (&#39;infinitesimal&#39;), finite strain formulation (&#39;finite&#39;) or</span>
+<span class="sd">        finite strain formulation through kinematic extension</span>
+<span class="sd">        (&#39;finite-kinext&#39;).</span>
+<span class="sd">    _model_parameters : dict</span>
+<span class="sd">        Material constitutive model parameters.</span>
+<span class="sd">    _n_dim : int</span>
+<span class="sd">        Problem number of spatial dimensions.</span>
+<span class="sd">    _comp_order_sym : list</span>
+<span class="sd">        Strain/Stress components symmetric order.</span>
+<span class="sd">    _comp_order_nsym : list</span>
+<span class="sd">        Strain/Stress components nonsymmetric order.</span>
+<span class="sd">    _is_su_float64 : bool</span>
+<span class="sd">        If True, then state update is locally computed in floating-point</span>
+<span class="sd">        double precision. If False, then default floating-point precision</span>
+<span class="sd">        is assumed.</span>
+<span class="sd">    _device_type : {&#39;cpu&#39;, &#39;cuda&#39;}</span>
+<span class="sd">        Type of device on which torch.Tensor is allocated.</span>
+<span class="sd">    _device : torch.device</span>
+<span class="sd">        Device on which torch.Tensor is allocated.</span>
+
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    get_required_model_parameters()</span>
+<span class="sd">        Get required material constitutive model parameters.</span>
+<span class="sd">    state_init(self)</span>
+<span class="sd">        Get initialized material constitutive model state variables.</span>
+<span class="sd">    state_update(self, inc_strain, state_variables_old)</span>
+<span class="sd">        Perform material constitutive model state update.</span>
+<span class="sd">    _elastic_step(cls, e_trial_strain_mf, trial_stress_mf, acc_p_strain_old, \</span>
+<span class="sd">                  back_stress_old_mf)</span>
+<span class="sd">        Perform elastic step.</span>
+<span class="sd">    _plastic_step(cls, is_elastic_step, e_trial_strain_mf, \</span>
+<span class="sd">                  relative_eq_trial_stress, e_consistent_tangent_mf, \</span>
+<span class="sd">                  flow_vector_mf, acc_p_strain_old, back_stress_old_mf, \</span>
+<span class="sd">                  G, hardening_law, hardening_parameters, \</span>
+<span class="sd">                  kinematic_hardening_law, kinematic_hardening_parameters, \</span>
+<span class="sd">                  su_conv_tol, su_max_n_iterations):</span>
+<span class="sd">        Perform plastic step.</span>
+<span class="sd">    _nr_iteration(cls, inc_p_mult, residual, G, H, kin_hard_slope)</span>
+<span class="sd">        Newton-Raphson iteration (return-mapping).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="VonMisesMixedVMAP.__init__"><a class="viewcode-back" href="../../../../../../_autosummary/hookeai.model_architectures.rc_base_model.model.recurrent_model.VonMisesMixedVMAP.html#hookeai.model_architectures.rc_base_model.model.recurrent_model.VonMisesMixedVMAP.__init__">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">strain_formulation</span><span class="p">,</span> <span class="n">problem_type</span><span class="p">,</span> <span class="n">model_parameters</span><span class="p">,</span>
+                 <span class="n">is_su_float64</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">device_type</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Constitutive model constructor.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        strain_formulation: {&#39;infinitesimal&#39;, &#39;finite&#39;}</span>
+<span class="sd">            Problem strain formulation.</span>
+<span class="sd">        problem_type : int</span>
+<span class="sd">            Problem type: 2D plane strain (1), 2D plane stress (2),</span>
+<span class="sd">            2D axisymmetric (3) and 3D (4).</span>
+<span class="sd">        model_parameters : dict</span>
+<span class="sd">            Material constitutive model parameters.</span>
+<span class="sd">        is_su_float64 : bool, default=True</span>
+<span class="sd">            If True, then state update is locally computed in floating-point</span>
+<span class="sd">            double precision. If False, then default floating-point precision</span>
+<span class="sd">            is assumed.</span>
+<span class="sd">        device_type : {&#39;cpu&#39;, &#39;cuda&#39;}, default=&#39;cpu&#39;</span>
+<span class="sd">            Type of device on which torch.Tensor is allocated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Set material constitutive model name</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_name</span> <span class="o">=</span> <span class="s1">&#39;von_mises_mixed&#39;</span>
+        <span class="c1"># Set constitutive model strain formulation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_strain_type</span> <span class="o">=</span> <span class="s1">&#39;infinitesimal&#39;</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set initialization parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_strain_formulation</span> <span class="o">=</span> <span class="n">strain_formulation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_problem_type</span> <span class="o">=</span> <span class="n">problem_type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_model_parameters</span> <span class="o">=</span> <span class="n">convert_dict_to_tensor</span><span class="p">(</span><span class="n">model_parameters</span><span class="p">,</span>
+                                                        <span class="n">is_inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set state update floating-point precision</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_is_su_float64</span> <span class="o">=</span> <span class="n">is_su_float64</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set device</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_device</span><span class="p">(</span><span class="n">device_type</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get problem type parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_n_dim</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_comp_order_sym</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_comp_order_nsym</span> <span class="o">=</span> \
+            <span class="n">get_problem_type_parameters</span><span class="p">(</span><span class="n">problem_type</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get elastic symmetry</span>
+        <span class="n">elastic_symmetry</span> <span class="o">=</span> <span class="n">model_parameters</span><span class="p">[</span><span class="s1">&#39;elastic_symmetry&#39;</span><span class="p">]</span>
+        <span class="c1"># Compute technical constants of elasticity</span>
+        <span class="k">if</span> <span class="n">elastic_symmetry</span> <span class="o">==</span> <span class="s1">&#39;isotropic&#39;</span><span class="p">:</span>
+            <span class="c1"># Compute technical constants of elasticity</span>
+            <span class="n">technical_constants</span> <span class="o">=</span> <span class="n">Elastic</span><span class="o">.</span><span class="n">get_technical_from_elastic_moduli</span><span class="p">(</span>
+                <span class="n">elastic_symmetry</span><span class="p">,</span> <span class="n">model_parameters</span><span class="p">)</span>
+            <span class="c1"># Assemble technical constants of elasticity</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_model_parameters</span><span class="o">.</span><span class="n">update</span><span class="p">(</span><span class="n">technical_constants</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The von Mises constitutive model is currently &#39;</span>
+                               <span class="s1">&#39;only available for the elastic isotropic &#39;</span>
+                               <span class="s1">&#39;case.&#39;</span><span class="p">)</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="VonMisesMixedVMAP.get_required_model_parameters"><a class="viewcode-back" href="../../../../../../_autosummary/hookeai.model_architectures.rc_base_model.model.recurrent_model.VonMisesMixedVMAP.html#hookeai.model_architectures.rc_base_model.model.recurrent_model.VonMisesMixedVMAP.get_required_model_parameters">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_required_model_parameters</span><span class="p">():</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get required material constitutive model parameters.</span>
+<span class="sd">        </span>
+<span class="sd">        Model parameters:</span>
+<span class="sd">        </span>
+<span class="sd">        - &#39;elastic_symmetry&#39; : Elastic symmetry (str, {&#39;isotropic&#39;,</span>
+<span class="sd">          &#39;transverse_isotropic&#39;, &#39;orthotropic&#39;, &#39;monoclinic&#39;, &#39;triclinic&#39;});</span>
+<span class="sd">        - &#39;elastic_moduli&#39; : Elastic moduli (dict, {&#39;Eijkl&#39;: float});</span>
+<span class="sd">        - &#39;euler_angles&#39; : Euler angles (degrees) sorted according with Bunge</span>
+<span class="sd">           convention (tuple[float]).</span>
+<span class="sd">        - &#39;hardening_law&#39; : Isotropic hardening law (function)</span>
+<span class="sd">        - &#39;hardening_parameters&#39; : Isotropic hardening law parameters (dict)</span>
+<span class="sd">        - &#39;kinematic_hardening_law&#39; : Kinematic hardening law (function)</span>
+<span class="sd">        - &#39;kinematic_hardening_parameters&#39; : Kinematic hardening law</span>
+<span class="sd">                                             parameters (dict)</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        model_parameters_names : tuple[str]</span>
+<span class="sd">            Material constitutive model parameters names (str).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Set material properties names</span>
+        <span class="n">model_parameters_names</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;elastic_symmetry&#39;</span><span class="p">,</span> <span class="s1">&#39;elastic_moduli&#39;</span><span class="p">,</span>
+                                  <span class="s1">&#39;euler_angles&#39;</span><span class="p">,</span> <span class="s1">&#39;hardening_law&#39;</span><span class="p">,</span>
+                                  <span class="s1">&#39;hardening_parameters&#39;</span><span class="p">,</span>
+                                  <span class="s1">&#39;kinematic_hardening_law&#39;</span><span class="p">,</span>
+                                  <span class="s1">&#39;kinematic_hardening_parameters&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">model_parameters_names</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="VonMisesMixedVMAP.state_init"><a class="viewcode-back" href="../../../../../../_autosummary/hookeai.model_architectures.rc_base_model.model.recurrent_model.VonMisesMixedVMAP.html#hookeai.model_architectures.rc_base_model.model.recurrent_model.VonMisesMixedVMAP.state_init">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">state_init</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get initialized material constitutive model state variables.</span>
+
+<span class="sd">        Constitutive model state variables:</span>
+
+<span class="sd">        * ``e_strain_mf``</span>
+
+<span class="sd">            * *Infinitesimal strains*: Elastic infinitesimal strain tensor</span>
+<span class="sd">              (matricial form).</span>
+
+<span class="sd">            * *Symbol*: :math:`\\boldsymbol{\\varepsilon^{e}}`</span>
+
+<span class="sd">        * ``acc_p_strain``</span>
+
+<span class="sd">            * Accumulated plastic strain.</span>
+
+<span class="sd">            * *Symbol*: :math:`\\bar{\\varepsilon}^{p}`</span>
+
+<span class="sd">        * ``strain_mf``</span>
+
+<span class="sd">            * *Infinitesimal strains*: Infinitesimal strain tensor</span>
+<span class="sd">              (matricial form).</span>
+
+<span class="sd">            * *Symbol*: :math:`\\boldsymbol{\\varepsilon}`</span>
+
+<span class="sd">        * ``stress_mf``</span>
+
+<span class="sd">            * *Infinitesimal strains*: Cauchy stress tensor (matricial form).</span>
+
+<span class="sd">            * *Symbol*: :math:`\\boldsymbol{\\sigma}`</span>
+
+<span class="sd">        * ``back_stress_mf``</span>
+
+<span class="sd">            * *Infinitesimal strains*: Back-stress tensor (matricial form).</span>
+
+<span class="sd">            * *Symbol*: :math:`\\boldsymbol{\\beta}`</span>
+
+<span class="sd">        * ``is_plastic``</span>
+
+<span class="sd">            * Plastic step flag.</span>
+
+<span class="sd">        * ``is_su_fail``</span>
+
+<span class="sd">            * State update failure flag.</span>
+
+<span class="sd">        ----</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        state_variables_init : dict</span>
+<span class="sd">            Initialized material constitutive model state variables.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Initialize constitutive model state variables</span>
+        <span class="n">state_variables_init</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">()</span>
+        <span class="c1"># Initialize strain tensors</span>
+        <span class="n">state_variables_init</span><span class="p">[</span><span class="s1">&#39;e_strain_mf&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">vget_tensor_mf</span><span class="p">(</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_dim</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_dim</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">),</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_n_dim</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_comp_order_sym</span><span class="p">)</span>
+        <span class="n">state_variables_init</span><span class="p">[</span><span class="s1">&#39;strain_mf&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="n">state_variables_init</span><span class="p">[</span><span class="s1">&#39;e_strain_mf&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+        <span class="c1"># Initialize Cauchy stress tensor</span>
+        <span class="n">state_variables_init</span><span class="p">[</span><span class="s1">&#39;stress_mf&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">vget_tensor_mf</span><span class="p">(</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_dim</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_dim</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">),</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_n_dim</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_comp_order_sym</span><span class="p">)</span>
+        <span class="c1"># Initialize internal variables</span>
+        <span class="n">state_variables_init</span><span class="p">[</span><span class="s1">&#39;acc_p_strain&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">)</span>
+        <span class="n">state_variables_init</span><span class="p">[</span><span class="s1">&#39;back_stress_mf&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">vget_tensor_mf</span><span class="p">(</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_dim</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_dim</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">),</span>
+                        <span class="bp">self</span><span class="o">.</span><span class="n">_n_dim</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_comp_order_sym</span><span class="p">)</span>
+        <span class="c1"># Initialize state flags</span>
+        <span class="n">state_variables_init</span><span class="p">[</span><span class="s1">&#39;is_plast&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">)</span>
+        <span class="n">state_variables_init</span><span class="p">[</span><span class="s1">&#39;is_su_fail&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">)</span>
+        <span class="c1"># Set additional out-of-plane strain and stress components</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_problem_type</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">state_variables_init</span><span class="p">[</span><span class="s1">&#39;e_strain_33&#39;</span><span class="p">]</span> <span class="o">=</span> \
+                <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">)</span>
+            <span class="n">state_variables_init</span><span class="p">[</span><span class="s1">&#39;stress_33&#39;</span><span class="p">]</span> <span class="o">=</span> \
+                <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">)</span>
+            <span class="n">state_variables_init</span><span class="p">[</span><span class="s1">&#39;back_stress_33&#39;</span><span class="p">]</span> <span class="o">=</span> \
+                <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Return</span>
+        <span class="k">return</span> <span class="n">state_variables_init</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="VonMisesMixedVMAP.state_update"><a class="viewcode-back" href="../../../../../../_autosummary/hookeai.model_architectures.rc_base_model.model.recurrent_model.VonMisesMixedVMAP.html#hookeai.model_architectures.rc_base_model.model.recurrent_model.VonMisesMixedVMAP.state_update">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">state_update</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">inc_strain</span><span class="p">,</span> <span class="n">state_variables_old</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform material constitutive model state update.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        inc_strain : torch.Tensor(2d)</span>
+<span class="sd">            Incremental strain second-order tensor.</span>
+<span class="sd">        state_variables_old : dict</span>
+<span class="sd">            Last converged constitutive model material state variables.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        state_variables : dict</span>
+<span class="sd">            Material constitutive model state variables.</span>
+<span class="sd">        consistent_tangent_mf : torch.Tensor(2d)</span>
+<span class="sd">            Material constitutive model consistent tangent modulus stored in</span>
+<span class="sd">            matricial form.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get model parameters</span>
+        <span class="n">model_parameters</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_model_parameters</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize floating-point precision conversion flag</span>
+        <span class="n">is_precision_conversion</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="c1"># Handle state update floating-point precision</span>
+        <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">get_default_dtype</span><span class="p">()</span> <span class="o">==</span> <span class="n">torch</span><span class="o">.</span><span class="n">float32</span> <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_su_float64</span><span class="p">:</span>
+            <span class="c1"># Set floating-point precision conversion flag</span>
+            <span class="n">is_precision_conversion</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="c1"># Set default floating-point precision</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">set_default_dtype</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">float64</span><span class="p">)</span>
+            <span class="c1"># Perform floating-point precision conversion</span>
+            <span class="n">model_parameters</span> <span class="o">=</span> <span class="n">convert_dict_to_float64</span><span class="p">(</span><span class="n">model_parameters</span><span class="p">,</span>
+                                                       <span class="n">is_inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+            <span class="n">inc_strain</span> <span class="o">=</span> <span class="n">convert_tensor_to_float64</span><span class="p">(</span><span class="n">inc_strain</span><span class="p">)</span>
+            <span class="n">state_variables_old</span> <span class="o">=</span> <span class="n">convert_dict_to_float64</span><span class="p">(</span><span class="n">state_variables_old</span><span class="p">,</span>
+                                                          <span class="n">is_inplace</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set state update convergence tolerance</span>
+        <span class="n">su_conv_tol</span> <span class="o">=</span> <span class="mf">1e-6</span>
+        <span class="c1"># Set state update maximum number of iterations</span>
+        <span class="n">su_max_n_iterations</span> <span class="o">=</span> <span class="mi">20</span>
+        <span class="c1"># Set minimum threshold to handle values close or equal to zero</span>
+        <span class="n">small</span> <span class="o">=</span> <span class="mf">1e-8</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Build incremental strain tensor matricial form</span>
+        <span class="n">inc_strain_mf</span> <span class="o">=</span> <span class="n">vget_tensor_mf</span><span class="p">(</span><span class="n">inc_strain</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_dim</span><span class="p">,</span>
+                                       <span class="bp">self</span><span class="o">.</span><span class="n">_comp_order_sym</span><span class="p">,</span>
+                                       <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get material properties</span>
+        <span class="n">E</span> <span class="o">=</span> <span class="n">model_parameters</span><span class="p">[</span><span class="s1">&#39;E&#39;</span><span class="p">]</span>
+        <span class="n">v</span> <span class="o">=</span> <span class="n">model_parameters</span><span class="p">[</span><span class="s1">&#39;v&#39;</span><span class="p">]</span>
+        <span class="c1"># Get material isotropic strain hardening law</span>
+        <span class="n">hardening_law</span> <span class="o">=</span> <span class="n">model_parameters</span><span class="p">[</span><span class="s1">&#39;hardening_law&#39;</span><span class="p">]</span>
+        <span class="n">hardening_parameters</span> <span class="o">=</span> <span class="n">model_parameters</span><span class="p">[</span><span class="s1">&#39;hardening_parameters&#39;</span><span class="p">]</span>
+        <span class="c1"># Get material kinematic strain hardening law</span>
+        <span class="n">kinematic_hardening_law</span> <span class="o">=</span> \
+            <span class="n">model_parameters</span><span class="p">[</span><span class="s1">&#39;kinematic_hardening_law&#39;</span><span class="p">]</span>
+        <span class="n">kinematic_hardening_parameters</span> <span class="o">=</span> \
+            <span class="n">model_parameters</span><span class="p">[</span><span class="s1">&#39;kinematic_hardening_parameters&#39;</span><span class="p">]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Compute shear modulus</span>
+        <span class="n">G</span> <span class="o">=</span> <span class="n">E</span><span class="o">/</span><span class="p">(</span><span class="mf">2.0</span><span class="o">*</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">v</span><span class="p">))</span>
+        <span class="c1"># Compute Lamé parameters</span>
+        <span class="n">lam</span> <span class="o">=</span> <span class="p">(</span><span class="n">E</span><span class="o">*</span><span class="n">v</span><span class="p">)</span><span class="o">/</span><span class="p">((</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">v</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">-</span> <span class="mf">2.0</span><span class="o">*</span><span class="n">v</span><span class="p">))</span>
+        <span class="n">miu</span> <span class="o">=</span> <span class="n">E</span><span class="o">/</span><span class="p">(</span><span class="mf">2.0</span><span class="o">*</span><span class="p">(</span><span class="mf">1.0</span> <span class="o">+</span> <span class="n">v</span><span class="p">))</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get last increment converged state variables</span>
+        <span class="n">e_strain_old_mf</span> <span class="o">=</span> <span class="n">state_variables_old</span><span class="p">[</span><span class="s1">&#39;e_strain_mf&#39;</span><span class="p">]</span>
+        <span class="n">p_strain_old_mf</span> <span class="o">=</span> <span class="n">state_variables_old</span><span class="p">[</span><span class="s1">&#39;strain_mf&#39;</span><span class="p">]</span> <span class="o">-</span> <span class="n">e_strain_old_mf</span>
+        <span class="n">acc_p_strain_old</span> <span class="o">=</span> <span class="n">state_variables_old</span><span class="p">[</span><span class="s1">&#39;acc_p_strain&#39;</span><span class="p">]</span>
+        <span class="n">back_stress_old_mf</span> <span class="o">=</span> <span class="n">state_variables_old</span><span class="p">[</span><span class="s1">&#39;back_stress_mf&#39;</span><span class="p">]</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_problem_type</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">e_strain_33_old</span> <span class="o">=</span> <span class="n">state_variables_old</span><span class="p">[</span><span class="s1">&#39;e_strain_33&#39;</span><span class="p">]</span>
+            <span class="n">back_stress_33_old</span> <span class="o">=</span> <span class="n">state_variables_old</span><span class="p">[</span><span class="s1">&#39;back_stress_33&#39;</span><span class="p">]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize state update failure flag</span>
+        <span class="n">is_su_fail</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">)</span>
+        <span class="c1"># Initialize plastic step flag</span>
+        <span class="n">is_plast</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="kc">False</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">)</span>
+        <span class="c1">#</span>
+        <span class="c1">#                                                    2D &gt; 3D conversion</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># When the problem type corresponds to a 2D analysis, perform the state</span>
+        <span class="c1"># update and consistent tangent computation as in the 3D case,</span>
+        <span class="c1"># considering the appropriate out-of-plain strain and stress components</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_problem_type</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+            <span class="n">n_dim</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_dim</span>
+            <span class="n">comp_order_sym</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_comp_order_sym</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Set 3D problem parameters</span>
+            <span class="n">n_dim</span><span class="p">,</span> <span class="n">comp_order_sym</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">get_problem_type_parameters</span><span class="p">(</span><span class="mi">4</span><span class="p">)</span>
+            <span class="c1"># Build strain tensors (matricial form) by including the</span>
+            <span class="c1"># appropriate out-of-plain components</span>
+            <span class="n">inc_strain_mf</span> <span class="o">=</span> <span class="n">vget_state_3Dmf_from_2Dmf</span><span class="p">(</span>
+                <span class="n">inc_strain_mf</span><span class="p">,</span> <span class="n">comp_33</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">)</span>
+            <span class="n">e_strain_old_mf</span> <span class="o">=</span> <span class="n">vget_state_3Dmf_from_2Dmf</span><span class="p">(</span>
+                <span class="n">e_strain_old_mf</span><span class="p">,</span> <span class="n">e_strain_33_old</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">)</span>
+            <span class="c1"># Build back-stress tensor (matricial form) by including the</span>
+            <span class="c1"># appropriate out-of-plain component</span>
+            <span class="n">back_stress_old_mf</span> <span class="o">=</span> <span class="n">vget_state_3Dmf_from_2Dmf</span><span class="p">(</span>
+                <span class="n">back_stress_old_mf</span><span class="p">,</span> <span class="n">back_stress_33_old</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">)</span>
+        <span class="c1"># Get number of components</span>
+        <span class="n">n_comps</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">comp_order_sym</span><span class="p">)</span>
+        <span class="c1">#</span>
+        <span class="c1">#                                                          State update</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set required fourth-order tensors</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">fosym</span><span class="p">,</span> <span class="n">fodiagtrace</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">fodevprojsym</span> <span class="o">=</span> \
+            <span class="n">get_id_operators</span><span class="p">(</span><span class="n">n_dim</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">)</span>
+        <span class="n">fodevprojsym_mf</span> <span class="o">=</span> <span class="n">vget_tensor_mf</span><span class="p">(</span><span class="n">fodevprojsym</span><span class="p">,</span> <span class="n">n_dim</span><span class="p">,</span> <span class="n">comp_order_sym</span><span class="p">,</span>
+                                         <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Compute elastic trial strain</span>
+        <span class="n">e_trial_strain_mf</span> <span class="o">=</span> <span class="n">e_strain_old_mf</span> <span class="o">+</span> <span class="n">inc_strain_mf</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Compute elastic consistent tangent modulus according to problem type</span>
+        <span class="c1"># and store it in matricial form</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_problem_type</span> <span class="ow">in</span> <span class="p">[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">4</span><span class="p">]:</span>
+            <span class="n">e_consistent_tangent</span> <span class="o">=</span> <span class="n">lam</span><span class="o">*</span><span class="n">fodiagtrace</span> <span class="o">+</span> <span class="mf">2.0</span><span class="o">*</span><span class="n">miu</span><span class="o">*</span><span class="n">fosym</span>
+        <span class="n">e_consistent_tangent_mf</span> <span class="o">=</span> <span class="n">vget_tensor_mf</span><span class="p">(</span><span class="n">e_consistent_tangent</span><span class="p">,</span>
+                                                 <span class="n">n_dim</span><span class="p">,</span> <span class="n">comp_order_sym</span><span class="p">,</span>
+                                                 <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Compute trial stress</span>
+        <span class="n">trial_stress_mf</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">e_consistent_tangent_mf</span><span class="p">,</span>
+                                       <span class="n">e_trial_strain_mf</span><span class="p">)</span>
+        <span class="c1"># Compute deviatoric trial stress</span>
+        <span class="n">dev_trial_stress_mf</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">fodevprojsym_mf</span><span class="p">,</span> <span class="n">trial_stress_mf</span><span class="p">)</span>
+        <span class="c1"># Compute trial relative stress</span>
+        <span class="n">relative_stress_mf</span> <span class="o">=</span> <span class="n">dev_trial_stress_mf</span> <span class="o">-</span> <span class="n">back_stress_old_mf</span>
+        <span class="c1"># Compute relative equivalent trial stress</span>
+        <span class="n">relative_eq_trial_stress</span> <span class="o">=</span> \
+            <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">3.0</span><span class="o">/</span><span class="mf">2.0</span><span class="p">)</span><span class="o">*</span><span class="n">torch</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">relative_stress_mf</span><span class="p">)</span>
+        <span class="c1"># Compute trial accumulated plastic strain</span>
+        <span class="n">acc_p_trial_strain</span> <span class="o">=</span> <span class="n">acc_p_strain_old</span>
+        <span class="c1"># Compute trial yield stress</span>
+        <span class="n">yield_stress</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> \
+            <span class="n">hardening_law</span><span class="p">(</span><span class="n">hardening_parameters</span><span class="p">,</span> <span class="n">acc_p_trial_strain</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Compute trial relative stress norm divison factor</span>
+        <span class="n">norm_div_factor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">relative_stress_mf</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">small</span><span class="p">,</span>
+            <span class="mf">1.0</span><span class="o">/</span><span class="n">torch</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">relative_stress_mf</span> <span class="o">+</span> <span class="n">small</span><span class="p">),</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">))</span>
+        <span class="c1"># Compute flow vector</span>
+        <span class="n">flow_vector_mf</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">3.0</span><span class="o">/</span><span class="mf">2.0</span><span class="p">)</span><span class="o">*</span><span class="n">norm_div_factor</span><span class="o">*</span><span class="n">relative_stress_mf</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Check yield function</span>
+        <span class="n">yield_function</span> <span class="o">=</span> <span class="n">relative_eq_trial_stress</span> <span class="o">-</span> <span class="n">yield_stress</span>        
+        <span class="c1"># Set admissible yield function condition</span>
+        <span class="n">yield_function_cond</span> <span class="o">=</span> <span class="p">(</span><span class="n">yield_function</span><span class="o">/</span><span class="n">yield_stress</span><span class="p">)</span> \
+            <span class="o">*</span><span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="mi">3</span><span class="o">*</span><span class="n">n_comps</span> <span class="o">+</span> <span class="mi">4</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">)</span> \
+                <span class="o">&lt;=</span> <span class="n">su_conv_tol</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># If the trial stress state lies inside the von Mises yield function,</span>
+        <span class="c1"># then the state update is purely elastic and coincident with the</span>
+        <span class="c1"># elastic trial state. Otherwise, the state update is elastoplastic</span>
+        <span class="c1"># and the return-mapping system of nonlinear equations must be solved</span>
+        <span class="c1"># in order to update the state variables</span>
+        <span class="c1">#</span>
+        <span class="c1"># Perform elastic step</span>
+        <span class="n">elastic_step_output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_elastic_step</span><span class="p">(</span>
+            <span class="n">e_trial_strain_mf</span><span class="p">,</span> <span class="n">trial_stress_mf</span><span class="p">,</span> <span class="n">acc_p_strain_old</span><span class="p">,</span>
+            <span class="n">back_stress_old_mf</span><span class="p">)</span>
+        <span class="c1"># Perform plastic step</span>
+        <span class="n">is_elastic_step</span> <span class="o">=</span> <span class="p">(</span><span class="n">yield_function</span><span class="o">/</span><span class="n">yield_stress</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">su_conv_tol</span>
+        <span class="n">plastic_step_output</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_plastic_step</span><span class="p">(</span>
+            <span class="n">is_elastic_step</span><span class="p">,</span> <span class="n">e_trial_strain_mf</span><span class="p">,</span> <span class="n">relative_eq_trial_stress</span><span class="p">,</span>
+            <span class="n">e_consistent_tangent_mf</span><span class="p">,</span> <span class="n">flow_vector_mf</span><span class="p">,</span> <span class="n">acc_p_strain_old</span><span class="p">,</span>
+            <span class="n">back_stress_old_mf</span><span class="p">,</span> <span class="n">G</span><span class="p">,</span> <span class="n">hardening_law</span><span class="p">,</span> <span class="n">hardening_parameters</span><span class="p">,</span>
+            <span class="n">kinematic_hardening_law</span><span class="p">,</span> <span class="n">kinematic_hardening_parameters</span><span class="p">,</span>
+            <span class="n">su_conv_tol</span><span class="p">,</span> <span class="n">su_max_n_iterations</span><span class="p">)</span>
+        <span class="c1"># Pick elastic or plastic step according with yielding condition</span>
+        <span class="n">step_output</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">yield_function_cond</span><span class="p">,</span>
+                                  <span class="n">elastic_step_output</span><span class="p">,</span>
+                                  <span class="n">plastic_step_output</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Unpack state updated variables</span>
+        <span class="n">e_strain_mf</span> <span class="o">=</span> <span class="n">step_output</span><span class="p">[:</span><span class="n">n_comps</span><span class="p">]</span>
+        <span class="n">stress_mf</span> <span class="o">=</span> <span class="n">step_output</span><span class="p">[</span><span class="n">n_comps</span><span class="p">:</span><span class="mi">2</span><span class="o">*</span><span class="n">n_comps</span><span class="p">]</span>
+        <span class="n">acc_p_strain</span> <span class="o">=</span> <span class="n">step_output</span><span class="p">[</span><span class="mi">2</span><span class="o">*</span><span class="n">n_comps</span><span class="p">]</span>
+        <span class="n">back_stress_mf</span> <span class="o">=</span> <span class="n">step_output</span><span class="p">[</span><span class="mi">2</span><span class="o">*</span><span class="n">n_comps</span> <span class="o">+</span> <span class="mi">1</span><span class="p">:</span><span class="mi">3</span><span class="o">*</span><span class="n">n_comps</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">inc_p_mult</span> <span class="o">=</span> <span class="n">step_output</span><span class="p">[</span><span class="mi">3</span><span class="o">*</span><span class="n">n_comps</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">is_plast</span> <span class="o">=</span> <span class="n">step_output</span><span class="p">[</span><span class="mi">3</span><span class="o">*</span><span class="n">n_comps</span> <span class="o">+</span> <span class="mi">2</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">)</span>
+        <span class="n">is_su_fail</span> <span class="o">=</span> \
+            <span class="n">torch</span><span class="o">.</span><span class="n">logical_not</span><span class="p">(</span><span class="n">step_output</span><span class="p">[</span><span class="mi">3</span><span class="o">*</span><span class="n">n_comps</span> <span class="o">+</span> <span class="mi">3</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">))</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get the out-of-plane strain and stress components</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_problem_type</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">e_strain_33</span> <span class="o">=</span> <span class="n">e_strain_mf</span><span class="p">[</span><span class="n">comp_order_sym</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s1">&#39;33&#39;</span><span class="p">)]</span>
+            <span class="n">stress_33</span> <span class="o">=</span> <span class="n">stress_mf</span><span class="p">[</span><span class="n">comp_order_sym</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s1">&#39;33&#39;</span><span class="p">)]</span>
+            <span class="n">back_stress_33</span> <span class="o">=</span> <span class="n">back_stress_mf</span><span class="p">[</span><span class="n">comp_order_sym</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="s1">&#39;33&#39;</span><span class="p">)]</span>
+        <span class="c1">#</span>
+        <span class="c1">#                                                    3D &gt; 2D Conversion</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># When the problem type corresponds to a 2D analysis, build the 2D</span>
+        <span class="c1"># strain and stress tensors (matricial form) once the state update has</span>
+        <span class="c1"># been performed</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_problem_type</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="c1"># Builds 2D strain and stress tensors (matricial form) from the</span>
+            <span class="c1"># associated 3D counterparts</span>
+            <span class="n">e_trial_strain_mf</span> <span class="o">=</span> <span class="n">vget_state_2Dmf_from_3Dmf</span><span class="p">(</span>
+                <span class="n">e_trial_strain_mf</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">)</span>
+            <span class="n">e_strain_mf</span> <span class="o">=</span> <span class="n">vget_state_2Dmf_from_3Dmf</span><span class="p">(</span>
+                <span class="n">e_strain_mf</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">)</span>
+            <span class="n">stress_mf</span> <span class="o">=</span> <span class="n">vget_state_2Dmf_from_3Dmf</span><span class="p">(</span>
+                <span class="n">stress_mf</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">)</span>
+            <span class="n">back_stress_mf</span> <span class="o">=</span> <span class="n">vget_state_2Dmf_from_3Dmf</span><span class="p">(</span>
+                <span class="n">back_stress_mf</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">)</span>
+        <span class="c1">#</span>
+        <span class="c1">#                                                Update state variables</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize state variables dictionary</span>
+        <span class="n">state_variables</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">state_init</span><span class="p">()</span>
+        <span class="c1"># Store updated state variables</span>
+        <span class="n">state_variables</span><span class="p">[</span><span class="s1">&#39;e_strain_mf&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">e_strain_mf</span>
+        <span class="n">state_variables</span><span class="p">[</span><span class="s1">&#39;acc_p_strain&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">acc_p_strain</span>
+        <span class="n">state_variables</span><span class="p">[</span><span class="s1">&#39;strain_mf&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">e_trial_strain_mf</span> <span class="o">+</span> <span class="n">p_strain_old_mf</span>
+        <span class="n">state_variables</span><span class="p">[</span><span class="s1">&#39;stress_mf&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">stress_mf</span>
+        <span class="n">state_variables</span><span class="p">[</span><span class="s1">&#39;back_stress_mf&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">back_stress_mf</span>
+        <span class="n">state_variables</span><span class="p">[</span><span class="s1">&#39;is_su_fail&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">is_su_fail</span>
+        <span class="n">state_variables</span><span class="p">[</span><span class="s1">&#39;is_plast&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">is_plast</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_problem_type</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">state_variables</span><span class="p">[</span><span class="s1">&#39;e_strain_33&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">e_strain_33</span>
+            <span class="n">state_variables</span><span class="p">[</span><span class="s1">&#39;stress_33&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">stress_33</span>
+            <span class="n">state_variables</span><span class="p">[</span><span class="s1">&#39;back_stress_33&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">back_stress_33</span>
+        <span class="c1">#</span>
+        <span class="c1">#                                            Consistent tangent modulus</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set plastic step condition</span>
+        <span class="n">is_plast_cond</span> <span class="o">=</span> <span class="n">is_plast</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">e_consistent_tangent</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># If the state update was purely elastic, then the consistent tangent</span>
+        <span class="c1"># modulus is the elastic consistent tangent modulus. Otherwise, compute</span>
+        <span class="c1"># the elastoplastic consistent tangent modulus</span>
+        <span class="c1">#</span>
+        <span class="c1"># Compute plastic consistent tangent modulus</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">H</span> <span class="o">=</span> <span class="n">hardening_law</span><span class="p">(</span><span class="n">hardening_parameters</span><span class="p">,</span> <span class="n">acc_p_strain</span><span class="p">)</span>
+        <span class="n">factor_1</span> <span class="o">=</span> <span class="p">((</span><span class="n">inc_p_mult</span><span class="o">*</span><span class="mf">6.0</span><span class="o">*</span><span class="n">G</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">/</span><span class="n">relative_eq_trial_stress</span><span class="p">)</span>
+        <span class="n">factor_2</span> <span class="o">=</span> <span class="p">(</span><span class="mf">6.0</span><span class="o">*</span><span class="n">G</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span><span class="o">*</span><span class="p">((</span><span class="n">inc_p_mult</span><span class="o">/</span><span class="n">relative_eq_trial_stress</span><span class="p">)</span>
+                                <span class="o">-</span> <span class="p">(</span><span class="mf">1.0</span><span class="o">/</span><span class="p">(</span><span class="mf">3.0</span><span class="o">*</span><span class="n">G</span> <span class="o">+</span> <span class="n">H</span><span class="p">)))</span>
+        <span class="n">unit_flow_vector</span> <span class="o">=</span> <span class="n">math</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">2.0</span><span class="o">/</span><span class="mf">3.0</span><span class="p">)</span><span class="o">*</span><span class="n">vget_tensor_from_mf</span><span class="p">(</span>
+            <span class="n">flow_vector_mf</span><span class="p">,</span> <span class="n">n_dim</span><span class="p">,</span> <span class="n">comp_order_sym</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">)</span>
+        <span class="n">p_consistent_tangent</span> <span class="o">=</span> <span class="n">e_consistent_tangent</span> \
+            <span class="o">-</span> <span class="n">factor_1</span><span class="o">*</span><span class="n">fodevprojsym</span> <span class="o">+</span> <span class="n">factor_2</span><span class="o">*</span><span class="n">dyad22_1</span><span class="p">(</span>
+                <span class="n">unit_flow_vector</span><span class="p">,</span> <span class="n">unit_flow_vector</span><span class="p">)</span>
+        <span class="c1"># Pick consistent tangent modulus according with plastic step condition</span>
+        <span class="n">consistent_tangent</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">is_plast_cond</span><span class="p">,</span>
+                                         <span class="n">p_consistent_tangent</span><span class="p">,</span>
+                                         <span class="n">e_consistent_tangent</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Build consistent tangent modulus matricial form</span>
+        <span class="n">consistent_tangent_mf</span> <span class="o">=</span> <span class="n">vget_tensor_mf</span><span class="p">(</span><span class="n">consistent_tangent</span><span class="p">,</span> <span class="n">n_dim</span><span class="p">,</span>
+                                               <span class="n">comp_order_sym</span><span class="p">,</span>
+                                               <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">)</span>
+        <span class="c1">#</span>
+        <span class="c1">#                                                    3D &gt; 2D Conversion</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># When the problem type corresponds to a 2D analysis, build the 2D</span>
+        <span class="c1"># consistent tangent modulus (matricial form) from the 3D counterpart</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_problem_type</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">consistent_tangent_mf</span> <span class="o">=</span> <span class="n">vget_state_2Dmf_from_3Dmf</span><span class="p">(</span>
+                <span class="n">consistent_tangent_mf</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Restore floating-point precision</span>
+        <span class="k">if</span> <span class="n">is_precision_conversion</span><span class="p">:</span>
+            <span class="c1"># Reset default floating-point precision</span>
+            <span class="n">torch</span><span class="o">.</span><span class="n">set_default_dtype</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">float32</span><span class="p">)</span>
+            <span class="c1"># Perform floating-point precision conversion</span>
+            <span class="n">state_variables</span> <span class="o">=</span> <span class="n">convert_dict_to_float32</span><span class="p">(</span><span class="n">state_variables</span><span class="p">,</span>
+                                                      <span class="n">is_inplace</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="n">consistent_tangent_mf</span> <span class="o">=</span> \
+                <span class="n">convert_tensor_to_float32</span><span class="p">(</span><span class="n">consistent_tangent_mf</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">state_variables</span><span class="p">,</span> <span class="n">consistent_tangent_mf</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="VonMisesMixedVMAP._elastic_step"><a class="viewcode-back" href="../../../../../../_autosummary/hookeai.model_architectures.rc_base_model.model.recurrent_model.VonMisesMixedVMAP.html#hookeai.model_architectures.rc_base_model.model.recurrent_model.VonMisesMixedVMAP._elastic_step">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_elastic_step</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">e_trial_strain_mf</span><span class="p">,</span> <span class="n">trial_stress_mf</span><span class="p">,</span>
+                      <span class="n">acc_p_strain_old</span><span class="p">,</span> <span class="n">back_stress_old_mf</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform elastic step.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        e_trial_strain_mf : torch.Tensor(1d)</span>
+<span class="sd">            Elastic trial strain (matricial form).</span>
+<span class="sd">        trial_stress_mf : torch.Tensor(1d)</span>
+<span class="sd">            Trial stress (matricial form).</span>
+<span class="sd">        acc_p_strain_old : torch.Tensor(0d)</span>
+<span class="sd">            Last convergence accumulated plastic strain.</span>
+<span class="sd">        back_stress_old_mf : torch.Tensor(1d)</span>
+<span class="sd">            Last converged back-stress (matricial form).</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        elastic_step_output : torch.Tensor(1d)</span>
+<span class="sd">            Elastic step concatenated output data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get device from elastic trial strain</span>
+        <span class="n">device</span> <span class="o">=</span> <span class="n">e_trial_strain_mf</span><span class="o">.</span><span class="n">device</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Update elastic strain</span>
+        <span class="n">e_strain_mf</span> <span class="o">=</span> <span class="n">e_trial_strain_mf</span>
+        <span class="c1"># Update stress</span>
+        <span class="n">stress_mf</span> <span class="o">=</span> <span class="n">trial_stress_mf</span>
+        <span class="c1"># Update accumulated plastic strain</span>
+        <span class="n">acc_p_strain</span> <span class="o">=</span> <span class="n">acc_p_strain_old</span>
+        <span class="c1"># Update back-stress tensor</span>
+        <span class="n">back_stress_mf</span> <span class="o">=</span> <span class="n">back_stress_old_mf</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set plastic step flag</span>
+        <span class="n">is_plast</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="kc">False</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+        <span class="c1"># Set incremental plastic multiplier initial iterative guess</span>
+        <span class="n">inc_p_mult</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+        <span class="c1"># Set state update convergence flag</span>
+        <span class="n">is_converged</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="kc">True</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Build concatenated elastic step output</span>
+        <span class="n">elastic_step_output</span> <span class="o">=</span> \
+            <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">e_strain_mf</span><span class="p">,</span> <span class="n">stress_mf</span><span class="p">,</span> <span class="n">acc_p_strain</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span>
+                       <span class="n">back_stress_mf</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span>
+                       <span class="n">inc_p_mult</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span>
+                       <span class="n">is_plast</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span>
+                       <span class="n">is_converged</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)])</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">elastic_step_output</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="VonMisesMixedVMAP._plastic_step"><a class="viewcode-back" href="../../../../../../_autosummary/hookeai.model_architectures.rc_base_model.model.recurrent_model.VonMisesMixedVMAP.html#hookeai.model_architectures.rc_base_model.model.recurrent_model.VonMisesMixedVMAP._plastic_step">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_plastic_step</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">is_elastic_step</span><span class="p">,</span> <span class="n">e_trial_strain_mf</span><span class="p">,</span>
+                      <span class="n">relative_eq_trial_stress</span><span class="p">,</span> <span class="n">e_consistent_tangent_mf</span><span class="p">,</span>
+                      <span class="n">flow_vector_mf</span><span class="p">,</span> <span class="n">acc_p_strain_old</span><span class="p">,</span> <span class="n">back_stress_old_mf</span><span class="p">,</span>
+                      <span class="n">G</span><span class="p">,</span> <span class="n">hardening_law</span><span class="p">,</span> <span class="n">hardening_parameters</span><span class="p">,</span>
+                      <span class="n">kinematic_hardening_law</span><span class="p">,</span> <span class="n">kinematic_hardening_parameters</span><span class="p">,</span>
+                      <span class="n">su_conv_tol</span><span class="p">,</span> <span class="n">su_max_n_iterations</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform plastic step.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        is_elastic_step : torch.Tensor(0d)</span>
+<span class="sd">            If True, then avoid return mapping computations and compute elastic</span>
+<span class="sd">            response. This flag avoids non-admissible values stemming from</span>
+<span class="sd">            invalid return-mapping problem and consequent runtime errors when</span>
+<span class="sd">            computing gradients with autograd.</span>
+<span class="sd">        e_trial_strain_mf : torch.Tensor(1d)</span>
+<span class="sd">            Elastic trial strain (matricial form).</span>
+<span class="sd">        relative_eq_trial_stress : torch.Tensor(1d)</span>
+<span class="sd">            Relative equivalent trial stress.</span>
+<span class="sd">        e_consistent_tangent_mf : torch.Tensor(2d)</span>
+<span class="sd">            Elastic consistent tangent modulus (matricial form).</span>
+<span class="sd">        flow_vector_mf : torch.Tensor(1d)</span>
+<span class="sd">            Flow vector.</span>
+<span class="sd">        acc_p_strain_old : torch.Tensor(0d)</span>
+<span class="sd">            Last convergence accumulated plastic strain.</span>
+<span class="sd">        back_stress_old_mf : torch.Tensor(1d)</span>
+<span class="sd">            Last converged back-stress (matricial form).</span>
+<span class="sd">        G : torch.Tensor(0d)</span>
+<span class="sd">            Shear modulus.</span>
+<span class="sd">        hardening_law : function</span>
+<span class="sd">            Hardening law.</span>
+<span class="sd">        hardening_parameters : dict</span>
+<span class="sd">            Hardening law parameters.</span>
+<span class="sd">        kinematic_hardening_law : function</span>
+<span class="sd">            Kinematic hardening law.</span>
+<span class="sd">        kinematic_hardening_parameters : dict</span>
+<span class="sd">            Kinematic hardening law parameters.</span>
+<span class="sd">        su_conv_tol : float</span>
+<span class="sd">            State update convergence tolerance.</span>
+<span class="sd">        su_max_n_iterations : int</span>
+<span class="sd">            State update maximum number of iterations.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        plastic_step_output : torch.Tensor(1d)</span>
+<span class="sd">            Plastic step concatenated output data.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get device from elastic trial strain</span>
+        <span class="n">device</span> <span class="o">=</span> <span class="n">e_trial_strain_mf</span><span class="o">.</span><span class="n">device</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set plastic step flag</span>
+        <span class="n">is_plast</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">([</span><span class="kc">True</span><span class="p">],</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+        <span class="c1"># Set incremental plastic multiplier initial iterative guess</span>
+        <span class="n">inc_p_mult</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Compute last converged kinematic hardening stress</span>
+        <span class="n">kin_hard_stress_old</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">kinematic_hardening_law</span><span class="p">(</span>
+            <span class="n">kinematic_hardening_parameters</span><span class="p">,</span> <span class="n">acc_p_strain_old</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Newton-Raphson iterative loop</span>
+        <span class="k">for</span> <span class="n">nr_iter</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">su_max_n_iterations</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="c1"># Compute current yield stress and hardening modulus</span>
+            <span class="n">yield_stress</span><span class="p">,</span> <span class="n">H</span> <span class="o">=</span> <span class="n">hardening_law</span><span class="p">(</span><span class="n">hardening_parameters</span><span class="p">,</span>
+                                            <span class="n">acc_p_strain_old</span> <span class="o">+</span> <span class="n">inc_p_mult</span><span class="p">)</span>
+            <span class="c1"># Compute current kinematic hardening stress and modulus</span>
+            <span class="n">kin_hard_stress</span><span class="p">,</span> <span class="n">kin_hard_slope</span> <span class="o">=</span> \
+                <span class="n">kinematic_hardening_law</span><span class="p">(</span><span class="n">kinematic_hardening_parameters</span><span class="p">,</span>
+                                        <span class="n">acc_p_strain_old</span> <span class="o">+</span> <span class="n">inc_p_mult</span><span class="p">)</span>
+            <span class="c1"># Compute return-mapping residual (scalar)</span>
+            <span class="n">residual</span> <span class="o">=</span> <span class="n">relative_eq_trial_stress</span> <span class="o">-</span> <span class="mf">3.0</span><span class="o">*</span><span class="n">G</span><span class="o">*</span><span class="n">inc_p_mult</span> \
+                <span class="o">-</span> <span class="n">kin_hard_stress</span> <span class="o">+</span> <span class="n">kin_hard_stress_old</span> <span class="o">-</span> <span class="n">yield_stress</span>
+            <span class="c1"># Compute converge condition</span>
+            <span class="n">error</span> <span class="o">=</span> <span class="nb">abs</span><span class="p">(</span><span class="n">residual</span><span class="o">/</span><span class="n">yield_stress</span><span class="p">)</span>
+            <span class="n">conv_cond</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">all</span><span class="p">(</span>
+                <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span><span class="n">error</span> <span class="o">&lt;</span> <span class="n">su_conv_tol</span><span class="p">,</span>
+                             <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">nr_iter</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">bool</span><span class="p">,</span>
+                                          <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">))))</span>
+            <span class="c1"># Check Newton-Raphson iterative procedure convergence</span>
+            <span class="n">is_converged</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">is_elastic_step</span><span class="p">,</span>
+                                       <span class="n">is_elastic_step</span><span class="p">,</span>
+                                       <span class="n">conv_cond</span><span class="p">)</span>
+            <span class="c1"># Compute iterative incremental plastic multiplier</span>
+            <span class="n">inc_p_mult</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">is_converged</span><span class="p">,</span>
+                                     <span class="n">inc_p_mult</span><span class="p">,</span>
+                                     <span class="bp">cls</span><span class="o">.</span><span class="n">_nr_iteration</span><span class="p">(</span><span class="n">inc_p_mult</span><span class="p">,</span> <span class="n">residual</span><span class="p">,</span>
+                                                       <span class="n">G</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">kin_hard_slope</span><span class="p">))</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set incremental plastic multiplier to NaN if state update fails</span>
+        <span class="n">inc_p_mult</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">is_converged</span><span class="p">,</span>
+                                 <span class="n">inc_p_mult</span><span class="p">,</span>
+                                 <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nan</span><span class="p">))</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Update elastic strain</span>
+        <span class="n">e_strain_mf</span> <span class="o">=</span> <span class="n">e_trial_strain_mf</span> <span class="o">-</span> <span class="n">inc_p_mult</span><span class="o">*</span><span class="n">flow_vector_mf</span>
+        <span class="c1"># Update stress</span>
+        <span class="n">stress_mf</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">e_consistent_tangent_mf</span><span class="p">,</span> <span class="n">e_strain_mf</span><span class="p">)</span>
+        <span class="c1"># Update accumulated plastic strain</span>
+        <span class="n">acc_p_strain</span> <span class="o">=</span> <span class="n">acc_p_strain_old</span> <span class="o">+</span> <span class="n">inc_p_mult</span>
+        <span class="c1"># Update back-stress</span>
+        <span class="n">back_stress_mf</span> <span class="o">=</span> <span class="n">back_stress_old_mf</span> \
+            <span class="o">+</span> <span class="p">(</span><span class="n">kin_hard_stress</span> <span class="o">-</span> <span class="n">kin_hard_stress_old</span><span class="p">)</span><span class="o">*</span><span class="n">flow_vector_mf</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Build concatenated plastic step output</span>
+        <span class="n">plastic_step_output</span> <span class="o">=</span> \
+            <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">([</span><span class="n">e_strain_mf</span><span class="p">,</span> <span class="n">stress_mf</span><span class="p">,</span> <span class="n">acc_p_strain</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span>
+                       <span class="n">back_stress_mf</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span>
+                       <span class="n">inc_p_mult</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span>
+                       <span class="n">is_plast</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span>
+                       <span class="n">is_converged</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)])</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">plastic_step_output</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="VonMisesMixedVMAP._nr_iteration"><a class="viewcode-back" href="../../../../../../_autosummary/hookeai.model_architectures.rc_base_model.model.recurrent_model.VonMisesMixedVMAP.html#hookeai.model_architectures.rc_base_model.model.recurrent_model.VonMisesMixedVMAP._nr_iteration">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_nr_iteration</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">inc_p_mult</span><span class="p">,</span> <span class="n">residual</span><span class="p">,</span> <span class="n">G</span><span class="p">,</span> <span class="n">H</span><span class="p">,</span> <span class="n">kin_hard_slope</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Newton-Raphson iteration (return-mapping).</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        inc_p_mult : torch.Tensor(0d)</span>
+<span class="sd">            Incremental plastic multiplier.</span>
+<span class="sd">        residual : torch.Tensor(0d)</span>
+<span class="sd">            Residual.</span>
+<span class="sd">        G : torch.Tensor(0d)</span>
+<span class="sd">            Shear modulus.</span>
+<span class="sd">        H : torch.Tensor(0d)</span>
+<span class="sd">            Hardening modulus.</span>
+<span class="sd">        kin_hard_slope : torch.Tensor(0d)</span>
+<span class="sd">            Kinematic hardening modulus.</span>
+<span class="sd">            </span>
+<span class="sd">        Return</span>
+<span class="sd">        ------</span>
+<span class="sd">        inc_p_mult : torch.Tensor(0d)</span>
+<span class="sd">            Incremental plastic multiplier.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Compute return-mapping Jacobian (scalar)</span>
+        <span class="n">jacobian</span> <span class="o">=</span> <span class="o">-</span><span class="mf">3.0</span><span class="o">*</span><span class="n">G</span> <span class="o">-</span> <span class="n">kin_hard_slope</span> <span class="o">-</span> <span class="n">H</span>
+        <span class="c1"># Solve return-mapping linearized equation</span>
+        <span class="n">d_iter</span> <span class="o">=</span> <span class="o">-</span><span class="n">residual</span><span class="o">/</span><span class="n">jacobian</span>
+        <span class="c1"># Update incremental plastic multiplier</span>
+        <span class="n">inc_p_mult</span> <span class="o">=</span> <span class="n">inc_p_mult</span> <span class="o">+</span> <span class="n">d_iter</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">inc_p_mult</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

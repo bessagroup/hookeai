@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>user_scripts.local_model_update.rnn_material_model.predict &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../_autosummary/hookeai.html">Code</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">user_scripts.local_model_update.rnn_material_model.predict</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for user_scripts.local_model_update.rnn_material_model.predict</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Local prediction: RNN material model.</span>
+
+<span class="sd">Functions</span>
+<span class="sd">---------</span>
+<span class="sd">perform_model_prediction</span>
+<span class="sd">    Perform prediction with RNN-based model.</span>
+<span class="sd">generate_prediction_plots</span>
+<span class="sd">    Generate plots of model predictions.</span>
+<span class="sd">set_default_prediction_options</span>
+<span class="sd">    Set default model prediction options.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#                                                                       Modules</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Standard</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pathlib</span>
+<span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+<span class="c1"># Add project root directory to sys.path</span>
+<span class="n">root_dir</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parents</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+<span class="k">if</span> <span class="n">root_dir</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">root_dir</span><span class="p">)</span>
+<span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="c1"># Third-party</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="c1"># Local</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">time_series_data.time_dataset</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_dataset</span><span class="p">,</span> \
+    <span class="n">concatenate_dataset_features</span><span class="p">,</span> <span class="n">sum_dataset_features</span><span class="p">,</span> \
+    <span class="n">add_dataset_feature_init</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">model_architectures.rnn_base_model.predict.prediction</span><span class="w"> </span><span class="kn">import</span> <span class="n">predict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">model_architectures.procedures.model_prediction</span><span class="w"> </span><span class="kn">import</span> \
+    <span class="n">plot_time_series_prediction</span><span class="p">,</span> <span class="n">plot_truth_vs_prediction</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">model_architectures.materials.process_predictions</span><span class="w"> </span><span class="kn">import</span> \
+    <span class="n">build_prediction_data_arrays</span><span class="p">,</span> <span class="n">build_time_series_predictions_data</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">model_architectures.materials.strain_features</span><span class="w"> </span><span class="kn">import</span> <span class="n">add_strain_features</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ioput.iostandard</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_directory</span><span class="p">,</span> <span class="n">find_unique_file_with_regex</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utilities.output_prediction_metrics</span><span class="w"> </span><span class="kn">import</span> \
+    <span class="n">compute_directory_prediction_metrics</span>
+<span class="c1">#</span>
+<span class="c1">#                                                          Authorship &amp; Credits</span>
+<span class="c1"># =============================================================================</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Bernardo Ferreira (bernardo_ferreira@brown.edu)&#39;</span>
+<span class="n">__credits__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Bernardo Ferreira&#39;</span><span class="p">,</span> <span class="p">]</span>
+<span class="n">__status__</span> <span class="o">=</span> <span class="s1">&#39;Stable&#39;</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="perform_model_prediction"><a class="viewcode-back" href="../../../../_autosummary/hookeai.miscellaneous.pruning.pruning_dataset.perform_model_prediction.html#hookeai.miscellaneous.pruning.pruning_dataset.perform_model_prediction">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">perform_model_prediction</span><span class="p">(</span><span class="n">predict_directory</span><span class="p">,</span> <span class="n">dataset_file_path</span><span class="p">,</span>
+                             <span class="n">model_directory</span><span class="p">,</span>
+                             <span class="n">is_remove_sample_prediction</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                             <span class="n">device_type</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">,</span> <span class="n">is_verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Perform prediction with RNN-based model.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    predict_directory : str</span>
+<span class="sd">        Directory where model predictions results are stored.</span>
+<span class="sd">    dataset_file_path : str</span>
+<span class="sd">        Testing data set file path.</span>
+<span class="sd">    model_directory : str</span>
+<span class="sd">        Directory where model is stored.</span>
+<span class="sd">    is_remove_sample_prediction : bool, default=False</span>
+<span class="sd">        If True, then remove sample prediction files after plots are generated.</span>
+<span class="sd">    device_type : {&#39;cpu&#39;, &#39;cuda&#39;}, default=&#39;cpu&#39;</span>
+<span class="sd">        Type of device on which torch.Tensor is allocated.</span>
+<span class="sd">    is_verbose : bool, default=False</span>
+<span class="sd">        If True, enable verbose output.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    predict_subdir : str</span>
+<span class="sd">        Subdirectory where samples predictions results files are stored.</span>
+<span class="sd">    avg_predict_loss : float</span>
+<span class="sd">        Average prediction loss per sample. Defaults to None if ground-truth is</span>
+<span class="sd">        not available for all data set samples.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Set default model prediction options</span>
+    <span class="n">loss_nature</span><span class="p">,</span> <span class="n">loss_type</span><span class="p">,</span> <span class="n">loss_kwargs</span> <span class="o">=</span> <span class="n">set_default_prediction_options</span><span class="p">()</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get model initialization file path from model directory</span>
+    <span class="n">model_init_file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">model_directory</span><span class="p">,</span>
+                                        <span class="s1">&#39;model_init_file&#39;</span> <span class="o">+</span> <span class="s1">&#39;.pkl&#39;</span><span class="p">)</span>
+    <span class="c1"># Load model initialization attributes from file</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">model_init_file_path</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The model initialization file has not been &#39;</span>
+                           <span class="s1">&#39;found:</span><span class="se">\n\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">model_init_file_path</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">model_init_file_path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">model_init_file</span><span class="p">:</span>
+            <span class="n">model_init_attributes</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">model_init_file</span><span class="p">)</span>
+    <span class="c1"># Get model initialization attributes</span>
+    <span class="n">model_init_args</span> <span class="o">=</span> <span class="n">model_init_attributes</span><span class="p">[</span><span class="s1">&#39;model_init_args&#39;</span><span class="p">]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize new strain-based feature</span>
+    <span class="n">strain_features_labels</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1"># Initialize features concatenation/summing flags</span>
+    <span class="n">features_in_build</span> <span class="o">=</span> <span class="s1">&#39;cat&#39;</span>
+    <span class="n">features_out_build</span> <span class="o">=</span> <span class="s1">&#39;cat&#39;</span>
+    <span class="c1"># Set data features for training</span>
+    <span class="n">features_option</span> <span class="o">=</span> <span class="s1">&#39;strain_to_stress&#39;</span>
+    <span class="k">if</span> <span class="n">features_option</span> <span class="o">==</span> <span class="s1">&#39;strain_to_stress&#39;</span><span class="p">:</span>
+        <span class="c1"># Set input features</span>
+        <span class="n">new_label_in</span> <span class="o">=</span> <span class="s1">&#39;features_in&#39;</span>
+        <span class="n">features_in_list</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;strain_path&#39;</span><span class="p">,)</span>
+        <span class="n">features_in_build</span> <span class="o">=</span> <span class="s1">&#39;cat&#39;</span>
+        <span class="c1"># Set output features</span>
+        <span class="n">new_label_out</span> <span class="o">=</span> <span class="s1">&#39;features_out&#39;</span>
+        <span class="n">features_out_list</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;stress_path&#39;</span><span class="p">,)</span>
+        <span class="n">features_out_build</span> <span class="o">=</span> <span class="s1">&#39;cat&#39;</span>
+        <span class="c1"># Set number of input and output features</span>
+        <span class="n">model_init_args</span><span class="p">[</span><span class="s1">&#39;n_features_in&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">6</span>
+        <span class="n">model_init_args</span><span class="p">[</span><span class="s1">&#39;n_features_out&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">6</span>
+    <span class="k">elif</span> <span class="n">features_option</span> <span class="o">==</span> <span class="s1">&#39;strain_i1_i2_to_stress&#39;</span><span class="p">:</span>
+        <span class="c1"># Set new strain-based features labels</span>
+        <span class="n">strain_features_labels</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;i1_strain&#39;</span><span class="p">,</span> <span class="s1">&#39;i2_strain&#39;</span><span class="p">)</span>
+        <span class="c1"># Set input features</span>
+        <span class="n">new_label_in</span> <span class="o">=</span> <span class="s1">&#39;features_in&#39;</span>
+        <span class="n">features_in_list</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;strain_path&#39;</span><span class="p">,</span> <span class="o">*</span><span class="n">strain_features_labels</span><span class="p">)</span>
+        <span class="n">features_in_build</span> <span class="o">=</span> <span class="s1">&#39;cat&#39;</span>
+        <span class="c1"># Set output features</span>
+        <span class="n">new_label_out</span> <span class="o">=</span> <span class="s1">&#39;features_out&#39;</span>
+        <span class="n">features_out_list</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;stress_path&#39;</span><span class="p">,)</span>
+        <span class="n">features_out_build</span> <span class="o">=</span> <span class="s1">&#39;cat&#39;</span>
+        <span class="c1"># Set number of input and output features</span>
+        <span class="n">model_init_args</span><span class="p">[</span><span class="s1">&#39;n_features_in&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">8</span>
+        <span class="n">model_init_args</span><span class="p">[</span><span class="s1">&#39;n_features_out&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">6</span>
+    <span class="k">elif</span> <span class="n">features_option</span> <span class="o">==</span> <span class="s1">&#39;strain_to_p_strain&#39;</span><span class="p">:</span>
+        <span class="c1"># Set input features</span>
+        <span class="n">new_label_in</span> <span class="o">=</span> <span class="s1">&#39;features_in&#39;</span>
+        <span class="n">features_in_list</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;strain_path&#39;</span><span class="p">,)</span>
+        <span class="n">features_in_weights</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;strain_path&#39;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,}</span>
+        <span class="n">features_in_build</span> <span class="o">=</span> <span class="s1">&#39;sum&#39;</span>
+        <span class="c1"># Set output features</span>
+        <span class="n">new_label_out</span> <span class="o">=</span> <span class="s1">&#39;features_out&#39;</span>
+        <span class="n">features_out_list</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;strain_path&#39;</span><span class="p">,</span> <span class="s1">&#39;e_strain_mf&#39;</span><span class="p">)</span>
+        <span class="n">features_out_weights</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;strain_path&#39;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span> <span class="s1">&#39;e_strain_mf&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">}</span>
+        <span class="n">features_out_build</span> <span class="o">=</span> <span class="s1">&#39;sum&#39;</span>
+        <span class="c1"># Set number of input and output features</span>
+        <span class="n">model_init_args</span><span class="p">[</span><span class="s1">&#39;n_features_in&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">6</span>
+        <span class="n">model_init_args</span><span class="p">[</span><span class="s1">&#39;n_features_out&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">6</span>
+    <span class="k">elif</span> <span class="n">features_option</span> <span class="o">==</span> <span class="s1">&#39;strain_i1_i2_to_p_strain&#39;</span><span class="p">:</span>
+        <span class="c1"># Set new strain-based features labels</span>
+        <span class="n">strain_features_labels</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;i1_strain&#39;</span><span class="p">,</span> <span class="s1">&#39;i2_strain&#39;</span><span class="p">)</span>
+        <span class="c1"># Set input features</span>
+        <span class="n">new_label_in</span> <span class="o">=</span> <span class="s1">&#39;features_in&#39;</span>
+        <span class="n">features_in_list</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;strain_path&#39;</span><span class="p">,</span> <span class="o">*</span><span class="n">strain_features_labels</span><span class="p">)</span>
+        <span class="n">features_in_build</span> <span class="o">=</span> <span class="s1">&#39;cat&#39;</span>
+        <span class="c1"># Set output features</span>
+        <span class="n">new_label_out</span> <span class="o">=</span> <span class="s1">&#39;features_out&#39;</span>
+        <span class="n">features_out_list</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;strain_path&#39;</span><span class="p">,</span> <span class="s1">&#39;e_strain_mf&#39;</span><span class="p">)</span>
+        <span class="n">features_out_weights</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;strain_path&#39;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span> <span class="s1">&#39;e_strain_mf&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">}</span>
+        <span class="n">features_out_build</span> <span class="o">=</span> <span class="s1">&#39;sum&#39;</span>
+        <span class="c1"># Set number of input and output features</span>
+        <span class="n">model_init_args</span><span class="p">[</span><span class="s1">&#39;n_features_in&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">8</span>
+        <span class="n">model_init_args</span><span class="p">[</span><span class="s1">&#39;n_features_out&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">6</span>
+    <span class="k">elif</span> <span class="n">features_option</span> <span class="o">==</span> <span class="s1">&#39;stress_acc_p_strain&#39;</span><span class="p">:</span>
+        <span class="c1"># Set input features</span>
+        <span class="n">new_label_in</span> <span class="o">=</span> <span class="s1">&#39;features_in&#39;</span>
+        <span class="n">features_in_list</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;strain_path&#39;</span><span class="p">,)</span>
+        <span class="n">features_in_build</span> <span class="o">=</span> <span class="s1">&#39;cat&#39;</span>
+        <span class="c1"># Set output features</span>
+        <span class="n">new_label_out</span> <span class="o">=</span> <span class="s1">&#39;features_out&#39;</span>
+        <span class="n">features_out_list</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;stress_path&#39;</span><span class="p">,</span> <span class="s1">&#39;acc_p_strain&#39;</span><span class="p">)</span>
+        <span class="n">features_out_build</span> <span class="o">=</span> <span class="s1">&#39;cat&#39;</span>
+        <span class="c1"># Set number of input and output features</span>
+        <span class="n">model_init_args</span><span class="p">[</span><span class="s1">&#39;n_features_in&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">6</span>
+        <span class="n">model_init_args</span><span class="p">[</span><span class="s1">&#39;n_features_out&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">7</span>
+    <span class="k">elif</span> <span class="n">features_option</span> <span class="o">==</span> <span class="s1">&#39;strain_vf_to_stress&#39;</span><span class="p">:</span>
+        <span class="c1"># Set input features</span>
+        <span class="n">new_label_in</span> <span class="o">=</span> <span class="s1">&#39;features_in&#39;</span>
+        <span class="n">features_in_list</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;strain_path&#39;</span><span class="p">,</span> <span class="s1">&#39;vf_path&#39;</span><span class="p">)</span>
+        <span class="n">features_in_build</span> <span class="o">=</span> <span class="s1">&#39;cat&#39;</span>
+        <span class="c1"># Set output features</span>
+        <span class="n">new_label_out</span> <span class="o">=</span> <span class="s1">&#39;features_out&#39;</span>
+        <span class="n">features_out_list</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;stress_path&#39;</span><span class="p">,)</span>
+        <span class="n">features_out_build</span> <span class="o">=</span> <span class="s1">&#39;cat&#39;</span>
+        <span class="c1"># Set number of input and output features</span>
+        <span class="n">model_init_args</span><span class="p">[</span><span class="s1">&#39;n_features_in&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">7</span>
+        <span class="n">model_init_args</span><span class="p">[</span><span class="s1">&#39;n_features_out&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">6</span>
+    <span class="k">elif</span> <span class="n">features_option</span> <span class="o">==</span> <span class="s1">&#39;strain_temperature_composition_to_stress&#39;</span><span class="p">:</span>
+        <span class="c1"># Set input features</span>
+        <span class="n">new_label_in</span> <span class="o">=</span> <span class="s1">&#39;features_in&#39;</span>
+        <span class="n">features_in_list</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;strain_path&#39;</span><span class="p">,</span> <span class="s1">&#39;temperature_hist&#39;</span><span class="p">,</span>
+                            <span class="s1">&#39;composition_hist&#39;</span><span class="p">)</span>
+        <span class="n">features_in_build</span> <span class="o">=</span> <span class="s1">&#39;cat&#39;</span>
+        <span class="c1"># Set output features</span>
+        <span class="n">new_label_out</span> <span class="o">=</span> <span class="s1">&#39;features_out&#39;</span>
+        <span class="n">features_out_list</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;stress_path&#39;</span><span class="p">,)</span>
+        <span class="n">features_out_build</span> <span class="o">=</span> <span class="s1">&#39;cat&#39;</span>
+        <span class="c1"># Set number of input and output features</span>
+        <span class="n">model_init_args</span><span class="p">[</span><span class="s1">&#39;n_features_in&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">8</span>
+        <span class="n">model_init_args</span><span class="p">[</span><span class="s1">&#39;n_features_out&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="mi">6</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Unknown features option.&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set hidden state initialization</span>
+    <span class="n">hidden_features_in</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">model_init_args</span><span class="p">[</span><span class="s1">&#39;n_recurrent_layers&#39;</span><span class="p">],</span>
+                                      <span class="n">model_init_args</span><span class="p">[</span><span class="s1">&#39;hidden_layer_size&#39;</span><span class="p">]))</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Load data set</span>
+    <span class="n">dataset</span> <span class="o">=</span> <span class="n">load_dataset</span><span class="p">(</span><span class="n">dataset_file_path</span><span class="p">)</span>
+    <span class="c1"># Compute new strain-based features</span>
+    <span class="k">if</span> <span class="n">strain_features_labels</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="c1"># Loop over strain-based features</span>
+        <span class="k">for</span> <span class="n">strain_feature_label</span> <span class="ow">in</span> <span class="n">strain_features_labels</span><span class="p">:</span>
+            <span class="c1"># Add strain-based feature to data set</span>
+            <span class="n">dataset</span> <span class="o">=</span> <span class="n">add_strain_features</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">strain_feature_label</span><span class="p">)</span>
+    <span class="c1"># Set testing data set features labels</span>
+    <span class="k">if</span> <span class="n">features_in_build</span> <span class="o">==</span> <span class="s1">&#39;cat&#39;</span><span class="p">:</span>
+        <span class="n">dataset</span> <span class="o">=</span> <span class="n">concatenate_dataset_features</span><span class="p">(</span>
+            <span class="n">dataset</span><span class="p">,</span> <span class="n">new_label_in</span><span class="p">,</span> <span class="n">features_in_list</span><span class="p">,</span>
+            <span class="n">is_remove_features</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">features_in_build</span> <span class="o">==</span> <span class="s1">&#39;sum&#39;</span><span class="p">:</span>
+        <span class="n">dataset</span> <span class="o">=</span> <span class="n">sum_dataset_features</span><span class="p">(</span>
+            <span class="n">dataset</span><span class="p">,</span> <span class="n">new_label_in</span><span class="p">,</span> <span class="n">features_in_list</span><span class="p">,</span>
+            <span class="n">features_weights</span><span class="o">=</span><span class="n">features_in_weights</span><span class="p">,</span> <span class="n">is_remove_features</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">if</span> <span class="n">features_out_build</span> <span class="o">==</span> <span class="s1">&#39;cat&#39;</span><span class="p">:</span>
+        <span class="n">dataset</span> <span class="o">=</span> <span class="n">concatenate_dataset_features</span><span class="p">(</span>
+            <span class="n">dataset</span><span class="p">,</span> <span class="n">new_label_out</span><span class="p">,</span> <span class="n">features_out_list</span><span class="p">,</span>
+            <span class="n">is_remove_features</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">features_out_build</span> <span class="o">==</span> <span class="s1">&#39;sum&#39;</span><span class="p">:</span>
+        <span class="n">dataset</span> <span class="o">=</span> <span class="n">sum_dataset_features</span><span class="p">(</span>
+            <span class="n">dataset</span><span class="p">,</span> <span class="n">new_label_out</span><span class="p">,</span> <span class="n">features_out_list</span><span class="p">,</span>
+            <span class="n">features_weights</span><span class="o">=</span><span class="n">features_out_weights</span><span class="p">,</span> <span class="n">is_remove_features</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="c1"># Add hidden state initialization to data set</span>
+    <span class="n">dataset</span> <span class="o">=</span> <span class="n">add_dataset_feature_init</span><span class="p">(</span>
+        <span class="n">dataset</span><span class="p">,</span> <span class="s1">&#39;hidden_features_in&#39;</span><span class="p">,</span> <span class="n">hidden_features_in</span><span class="p">)</span>    
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set loss type</span>
+    <span class="n">loss_type</span> <span class="o">=</span> <span class="s1">&#39;mse&#39;</span>
+    <span class="c1"># Set loss parameters</span>
+    <span class="n">loss_kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="c1"># Set prediction loss normalization</span>
+    <span class="n">is_normalized_loss</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="c1"># Set prediction batch size</span>
+    <span class="n">batch_size</span> <span class="o">=</span> <span class="nb">min</span><span class="p">((</span><span class="mi">512</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">dataset</span><span class="p">)))</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set model state loading</span>
+    <span class="n">model_load_state</span> <span class="o">=</span> <span class="s1">&#39;best&#39;</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Prediction with RNN-based model</span>
+    <span class="n">predict_subdir</span><span class="p">,</span> <span class="n">avg_predict_loss</span> <span class="o">=</span> \
+        <span class="n">predict</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">model_directory</span><span class="p">,</span> <span class="n">predict_directory</span><span class="o">=</span><span class="n">predict_directory</span><span class="p">,</span>
+                <span class="n">model_load_state</span><span class="o">=</span><span class="n">model_load_state</span><span class="p">,</span> <span class="n">loss_nature</span><span class="o">=</span><span class="n">loss_nature</span><span class="p">,</span>
+                <span class="n">loss_type</span><span class="o">=</span><span class="n">loss_type</span><span class="p">,</span> <span class="n">loss_kwargs</span><span class="o">=</span><span class="n">loss_kwargs</span><span class="p">,</span>
+                <span class="n">is_normalized_loss</span><span class="o">=</span><span class="n">is_normalized_loss</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>
+                <span class="n">dataset_file_path</span><span class="o">=</span><span class="n">dataset_file_path</span><span class="p">,</span>
+                <span class="n">device_type</span><span class="o">=</span><span class="n">device_type</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_verbose</span><span class="o">=</span><span class="n">is_verbose</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set mean predictions metrics</span>
+    <span class="n">mean_prediction_metrics</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;rmse&#39;</span><span class="p">,</span> <span class="s1">&#39;nrmse&#39;</span><span class="p">,]</span>
+    <span class="c1"># Compute mean prediction metrics</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">compute_directory_prediction_metrics</span><span class="p">(</span>
+        <span class="n">predict_subdir</span><span class="p">,</span> <span class="n">mean_prediction_metrics</span><span class="p">,</span> <span class="n">is_save_file</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+        <span class="n">is_display_results</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Generate plots of model predictions</span>
+    <span class="n">generate_prediction_plots</span><span class="p">(</span><span class="n">dataset_file_path</span><span class="p">,</span> <span class="n">predict_subdir</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Remove sample prediction files</span>
+    <span class="k">if</span> <span class="n">is_remove_sample_prediction</span><span class="p">:</span>
+        <span class="c1"># Set sample prediction file regex</span>
+        <span class="n">sample_regex</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">compile</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^prediction_sample_\d+\.pkl$&#39;</span><span class="p">)</span>
+        <span class="c1"># Walk through prediction set directory recursively</span>
+        <span class="k">for</span> <span class="n">root</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">files</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">walk</span><span class="p">(</span><span class="n">predict_subdir</span><span class="p">):</span>
+            <span class="c1"># Loop over prediction set directory files</span>
+            <span class="k">for</span> <span class="n">file</span> <span class="ow">in</span> <span class="n">files</span><span class="p">:</span>
+                <span class="c1"># Remove sample prediction file</span>
+                <span class="k">if</span> <span class="n">sample_regex</span><span class="o">.</span><span class="n">match</span><span class="p">(</span><span class="n">file</span><span class="p">):</span>
+                    <span class="c1"># Set sample prediction file path</span>
+                    <span class="n">sample_file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">root</span><span class="p">,</span> <span class="n">file</span><span class="p">)</span>
+                    <span class="c1"># Remove sample prediction file</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">sample_file_path</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">predict_subdir</span><span class="p">,</span> <span class="n">avg_predict_loss</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="generate_prediction_plots"><a class="viewcode-back" href="../../../../_autosummary/hookeai.model_architectures.rnn_base_model.optimization.hydra_optimization.generate_prediction_plots.html#hookeai.miscellaneous.pruning.pruning_dataset.generate_prediction_plots">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">generate_prediction_plots</span><span class="p">(</span><span class="n">dataset_file_path</span><span class="p">,</span> <span class="n">predict_subdir</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate plots of model predictions.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dataset_file_path : str</span>
+<span class="sd">        Testing data set file path.</span>
+<span class="sd">    predict_subdir : str</span>
+<span class="sd">        Subdirectory where samples predictions results files are stored.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Create plot directory</span>
+    <span class="n">plot_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">predict_subdir</span><span class="p">),</span> <span class="s1">&#39;plots&#39;</span><span class="p">)</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">plot_dir</span><span class="p">):</span>
+        <span class="n">make_directory</span><span class="p">(</span><span class="n">plot_dir</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Load testing data set</span>
+    <span class="n">testing_dataset</span> <span class="o">=</span> <span class="n">load_dataset</span><span class="p">(</span><span class="n">dataset_file_path</span><span class="p">)</span>
+    <span class="c1"># Get testing data set size</span>
+    <span class="n">n_sample</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">testing_dataset</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get first sample from testing data set</span>
+    <span class="n">probe_response_path</span> <span class="o">=</span> <span class="n">testing_dataset</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="c1"># Get strain and stress components</span>
+    <span class="n">strain_comps_order</span> <span class="o">=</span> <span class="n">probe_response_path</span><span class="p">[</span><span class="s1">&#39;strain_comps_order&#39;</span><span class="p">]</span>
+    <span class="n">stress_comps_order</span> <span class="o">=</span> <span class="n">probe_response_path</span><span class="p">[</span><span class="s1">&#39;stress_comps_order&#39;</span><span class="p">]</span>
+    <span class="c1"># Build strain and stress components predictions labels</span>
+    <span class="n">stress_labels</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span><span class="sa">f</span><span class="s1">&#39;stress_</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">stress_comps_order</span><span class="p">])</span>
+    <span class="c1">#p_strain_labels = tuple([f&#39;p_strain_{x}&#39; for x in strain_comps_order])</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set prediction types and corresponding labels</span>
+    <span class="n">prediction_types</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">prediction_types</span><span class="p">[</span><span class="s1">&#39;stress_comps&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">stress_labels</span>
+    <span class="c1">#prediction_types[&#39;acc_p_strain&#39;] = (&#39;acc_p_strain&#39;,)</span>
+    <span class="c1">#prediction_types[&#39;p_strain_comps&#39;] = p_strain_labels</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Plot model predictions against ground-truth</span>
+    <span class="k">for</span> <span class="n">prediction_type</span><span class="p">,</span> <span class="n">prediction_labels</span> <span class="ow">in</span> <span class="n">prediction_types</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="c1"># Build samples predictions data arrays with predictions and</span>
+        <span class="c1"># ground-truth</span>
+        <span class="n">prediction_data_arrays</span> <span class="o">=</span> <span class="n">build_prediction_data_arrays</span><span class="p">(</span>
+            <span class="n">predict_subdir</span><span class="p">,</span> <span class="n">prediction_type</span><span class="p">,</span> <span class="n">prediction_labels</span><span class="p">,</span>
+            <span class="n">samples_ids</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Loop over samples predictions data arrays</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">data_array</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">prediction_data_arrays</span><span class="p">):</span>
+            <span class="c1"># Get prediction plot file name</span>
+            <span class="n">filename</span> <span class="o">=</span> <span class="n">prediction_labels</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="c1"># Set prediction process</span>
+            <span class="k">if</span> <span class="n">prediction_type</span> <span class="o">==</span> <span class="s1">&#39;stress_comps&#39;</span><span class="p">:</span>
+                <span class="n">prediction_sets</span> <span class="o">=</span> \
+                    <span class="p">{</span><span class="sa">f</span><span class="s1">&#39;Stress </span><span class="si">{</span><span class="n">prediction_labels</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">:</span>
+                     <span class="n">data_array</span><span class="p">,}</span>
+            <span class="k">elif</span> <span class="n">prediction_type</span> <span class="o">==</span> <span class="s1">&#39;acc_p_strain&#39;</span><span class="p">:</span>
+                <span class="n">prediction_sets</span> <span class="o">=</span> \
+                    <span class="p">{</span><span class="sa">f</span><span class="s1">&#39;Accumulated plastic strain&#39;</span><span class="p">:</span> <span class="n">data_array</span><span class="p">,}</span>
+            <span class="k">elif</span> <span class="n">prediction_type</span> <span class="o">==</span> <span class="s1">&#39;p_strain_comps&#39;</span><span class="p">:</span>
+                <span class="n">prediction_sets</span> <span class="o">=</span> \
+                    <span class="p">{</span><span class="sa">f</span><span class="s1">&#39;Plastic strain </span><span class="si">{</span><span class="n">prediction_labels</span><span class="p">[</span><span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s2">&quot;_&quot;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">:</span>
+                     <span class="n">data_array</span><span class="p">,}</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Plot model predictions against ground-truth</span>
+            <span class="n">plot_truth_vs_prediction</span><span class="p">(</span><span class="n">prediction_sets</span><span class="p">,</span> <span class="n">error_bound</span><span class="o">=</span><span class="mf">0.1</span><span class="p">,</span>
+                                     <span class="n">is_r2_coefficient</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                     <span class="n">is_normalize_data</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                     <span class="n">filename</span><span class="o">=</span><span class="n">filename</span><span class="p">,</span>
+                                     <span class="n">save_dir</span><span class="o">=</span><span class="n">plot_dir</span><span class="p">,</span>
+                                     <span class="n">is_save_fig</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">is_stdout_display</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                     <span class="n">is_latex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Plot model time series prediction and ground-truth</span>
+    <span class="k">for</span> <span class="n">prediction_type</span><span class="p">,</span> <span class="n">prediction_labels</span> <span class="ow">in</span> <span class="n">prediction_types</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="c1"># Set samples for which time series data is plotted</span>
+        <span class="n">samples_ids</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">((</span><span class="mi">5</span><span class="p">,</span> <span class="n">n_sample</span><span class="p">)),</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">int</span><span class="p">))</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ </span>
+        <span class="c1"># Build times series predictions data arrays</span>
+        <span class="n">prediction_data_dicts</span> <span class="o">=</span> <span class="n">build_time_series_predictions_data</span><span class="p">(</span>
+            <span class="n">dataset_file_path</span><span class="p">,</span> <span class="n">predict_subdir</span><span class="p">,</span> <span class="n">prediction_type</span><span class="p">,</span>
+            <span class="n">prediction_labels</span><span class="p">,</span> <span class="n">samples_ids</span><span class="o">=</span><span class="n">samples_ids</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~   </span>
+        <span class="c1"># Loop over times series predictions components</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">data_dict</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">prediction_data_dicts</span><span class="p">):</span>
+            <span class="c1"># Loop over samples (time series paths)</span>
+            <span class="k">for</span> <span class="n">sample_id</span><span class="p">,</span> <span class="n">prediction_array</span> <span class="ow">in</span> <span class="n">data_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="c1"># Set prediction processes data</span>
+                <span class="n">prediction_sets</span> <span class="o">=</span> <span class="p">{}</span>
+                <span class="n">prediction_sets</span><span class="p">[</span><span class="s1">&#39;Ground-truth&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">prediction_array</span><span class="p">[:,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]]</span>
+                <span class="n">prediction_sets</span><span class="p">[</span><span class="s1">&#39;Prediction&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">prediction_array</span><span class="p">[:,</span> <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]]</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Get prediction plot file name</span>
+                <span class="n">filename</span> <span class="o">=</span> <span class="n">prediction_labels</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;_path_sample_</span><span class="si">{</span><span class="n">sample_id</span><span class="si">}</span><span class="s1">&#39;</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Set prediction type label</span>
+                <span class="k">if</span> <span class="n">prediction_type</span> <span class="o">==</span> <span class="s1">&#39;stress_comps&#39;</span><span class="p">:</span>
+                    <span class="n">y_label</span> <span class="o">=</span> <span class="s1">&#39;Stress (MPa)&#39;</span>
+                <span class="k">elif</span> <span class="n">prediction_type</span> <span class="o">==</span> <span class="s1">&#39;acc_p_strain&#39;</span><span class="p">:</span>
+                    <span class="n">y_label</span> <span class="o">=</span> <span class="s1">&#39;Accumulated plastic strain&#39;</span>
+                <span class="k">elif</span> <span class="n">prediction_type</span> <span class="o">==</span> <span class="s1">&#39;p_strain_comps&#39;</span><span class="p">:</span>
+                    <span class="n">y_label</span> <span class="o">=</span> <span class="s1">&#39;Plastic strain&#39;</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Plot model times series predictions against ground-truth</span>
+                <span class="n">plot_time_series_prediction</span><span class="p">(</span>
+                    <span class="n">prediction_sets</span><span class="p">,</span> <span class="n">is_normalize_data</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                    <span class="n">x_label</span><span class="o">=</span><span class="s1">&#39;Time&#39;</span><span class="p">,</span> <span class="n">y_label</span><span class="o">=</span><span class="n">y_label</span><span class="p">,</span>
+                    <span class="n">filename</span><span class="o">=</span><span class="n">filename</span><span class="p">,</span>
+                    <span class="n">save_dir</span><span class="o">=</span><span class="n">plot_dir</span><span class="p">,</span><span class="n">is_save_fig</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="n">is_stdout_display</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_latex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span></div>
+<span class="c1"># =============================================================================</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">set_default_prediction_options</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Set default model prediction options.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    loss_nature : {&#39;features_out&#39;,}, default=&#39;features_out&#39;</span>
+<span class="sd">        Loss nature:</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;features_out&#39; : Based on output features</span>
+
+<span class="sd">    loss_type : {&#39;mse&#39;,}, default=&#39;mse&#39;</span>
+<span class="sd">        Loss function type:</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;mse&#39;  : MSE (torch.nn.MSELoss)</span>
+<span class="sd">        </span>
+<span class="sd">    loss_kwargs : dict</span>
+<span class="sd">        Arguments of torch.nn._Loss initializer.   </span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="n">loss_nature</span> <span class="o">=</span> <span class="s1">&#39;features_out&#39;</span>
+    <span class="n">loss_type</span> <span class="o">=</span> <span class="s1">&#39;mse&#39;</span>
+    <span class="n">loss_kwargs</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">loss_nature</span><span class="p">,</span> <span class="n">loss_type</span><span class="p">,</span> <span class="n">loss_kwargs</span>
+<span class="c1"># =============================================================================</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="c1"># Set testing type</span>
+    <span class="n">testing_type</span> <span class="o">=</span> \
+        <span class="p">(</span><span class="s1">&#39;training&#39;</span><span class="p">,</span> <span class="s1">&#39;validation&#39;</span><span class="p">,</span> <span class="s1">&#39;in_distribution&#39;</span><span class="p">,</span> <span class="s1">&#39;out_distribution&#39;</span><span class="p">)[</span><span class="mi">2</span><span class="p">]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set case studies base directory</span>
+    <span class="n">base_dir</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;/home/username/Documents/brown/projects/&#39;</span>
+                <span class="s1">&#39;darpa_project/8_global_random_specimen/von_mises/&#39;</span>
+                <span class="s1">&#39;1_local_vanilla_GRU/strain_to_stress&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize case study directories</span>
+    <span class="n">case_study_dirs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># Set case study directories</span>
+    <span class="k">if</span> <span class="kc">False</span><span class="p">:</span>
+        <span class="c1"># Set training data set sizes</span>
+        <span class="n">training_sizes</span> <span class="o">=</span> <span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="mi">20</span><span class="p">,</span> <span class="mi">40</span><span class="p">,</span> <span class="mi">80</span><span class="p">,</span> <span class="mi">160</span><span class="p">,</span> <span class="mi">320</span><span class="p">,</span> <span class="mi">640</span><span class="p">,</span> <span class="mi">1280</span><span class="p">,</span> <span class="mi">2560</span><span class="p">)</span>
+        <span class="c1"># Set case study directories</span>
+        <span class="n">case_study_dirs</span> <span class="o">+=</span> <span class="p">[</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">base_dir</span><span class="p">),</span> <span class="sa">f</span><span class="s1">&#39;n</span><span class="si">{</span><span class="n">n</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+                            <span class="k">for</span> <span class="n">n</span> <span class="ow">in</span> <span class="n">training_sizes</span><span class="p">]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">case_study_dirs</span> <span class="o">+=</span> <span class="p">[</span><span class="n">base_dir</span><span class="p">,]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Loop over case study directories</span>
+    <span class="k">for</span> <span class="n">case_study_dir</span> <span class="ow">in</span> <span class="n">case_study_dirs</span><span class="p">:</span>
+        <span class="c1"># Check case study directory</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">case_study_dir</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The case study directory has not been found:&#39;</span>
+                               <span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">case_study_dir</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set testing data set directory</span>
+        <span class="k">if</span> <span class="n">testing_type</span> <span class="o">==</span> <span class="s1">&#39;training&#39;</span><span class="p">:</span>
+            <span class="c1"># Set testing data set directory (training data set)</span>
+            <span class="n">dataset_directory</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">case_study_dir</span><span class="p">),</span>
+                                             <span class="s1">&#39;1_training_dataset&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">testing_type</span> <span class="o">==</span> <span class="s1">&#39;validation&#39;</span><span class="p">:</span>
+            <span class="c1"># Set testing data set directory (validation data set)</span>
+            <span class="n">dataset_directory</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">case_study_dir</span><span class="p">),</span>
+                                             <span class="s1">&#39;2_validation_dataset&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">testing_type</span> <span class="o">==</span> <span class="s1">&#39;in_distribution&#39;</span><span class="p">:</span>
+            <span class="c1"># Set testing data set directory (in-distribution testing data set)</span>
+            <span class="n">dataset_directory</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">case_study_dir</span><span class="p">),</span>
+                                             <span class="s1">&#39;5_testing_id_dataset&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">testing_type</span> <span class="o">==</span> <span class="s1">&#39;out_distribution&#39;</span><span class="p">:</span>
+            <span class="c1"># Set testing data set directory (out-of-distribution testing</span>
+            <span class="c1"># data set)</span>
+            <span class="n">dataset_directory</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">case_study_dir</span><span class="p">),</span>
+                                             <span class="s1">&#39;6_testing_od_dataset&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Unknown testing type.&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get testing data set file path</span>
+        <span class="n">regex</span> <span class="o">=</span> <span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^ss_paths_dataset_n[0-9]+.pkl$&#39;</span><span class="p">,)</span>
+        <span class="n">is_file_found</span><span class="p">,</span> <span class="n">dataset_file_path</span> <span class="o">=</span> \
+            <span class="n">find_unique_file_with_regex</span><span class="p">(</span><span class="n">dataset_directory</span><span class="p">,</span> <span class="n">regex</span><span class="p">)</span>
+        <span class="c1"># Check data set file</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">is_file_found</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Testing data set file has not been found &#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;in data set directory:</span><span class="se">\n\n</span><span class="s1">&#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">dataset_directory</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set model directory</span>
+        <span class="n">model_directory</span> <span class="o">=</span> \
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">case_study_dir</span><span class="p">),</span> <span class="s1">&#39;3_model&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set model predictions directory</span>
+        <span class="n">prediction_directory</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">case_study_dir</span><span class="p">),</span>
+                                            <span class="s1">&#39;7_prediction&#39;</span><span class="p">)</span>
+        <span class="c1"># Create model predictions directory</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">prediction_directory</span><span class="p">):</span>
+            <span class="n">make_directory</span><span class="p">(</span><span class="n">prediction_directory</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Create model predictions subdirectory</span>
+        <span class="n">prediction_subdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">prediction_directory</span><span class="p">),</span> <span class="n">testing_type</span><span class="p">)</span>
+        <span class="c1"># Create prediction subdirectory</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">prediction_subdir</span><span class="p">):</span>
+            <span class="n">make_directory</span><span class="p">(</span><span class="n">prediction_subdir</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set device type</span>
+        <span class="k">if</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
+            <span class="n">device_type</span> <span class="o">=</span> <span class="s1">&#39;cuda&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">device_type</span> <span class="o">=</span> <span class="s1">&#39;cpu&#39;</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Perform prediction with model</span>
+        <span class="n">perform_model_prediction</span><span class="p">(</span><span class="n">prediction_subdir</span><span class="p">,</span> <span class="n">dataset_file_path</span><span class="p">,</span>
+                                 <span class="n">model_directory</span><span class="p">,</span>
+                                 <span class="n">is_remove_sample_prediction</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                 <span class="n">device_type</span><span class="o">=</span><span class="n">device_type</span><span class="p">,</span> <span class="n">is_verbose</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

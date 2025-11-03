@@ -1,0 +1,887 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>hookeai.utilities.data_scalers &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../_autosummary/hookeai.html">Code</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">hookeai.utilities.data_scalers</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for hookeai.utilities.data_scalers</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Torch-based data scalers.</span>
+
+<span class="sd">Classes</span>
+<span class="sd">-------</span>
+<span class="sd">TorchMinMaxScaler</span>
+<span class="sd">    PyTorch tensor min-max data scaler.</span>
+<span class="sd">TorchStandardScaler</span>
+<span class="sd">    PyTorch tensor standardization data scaler.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#                                                                       Modules</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Third-party</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="c1">#</span>
+<span class="c1">#                                                          Authorship &amp; Credits</span>
+<span class="c1"># =============================================================================</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Bernardo Ferreira (bernardo_ferreira@brown.edu)&#39;</span>
+<span class="n">__credits__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Bernardo Ferreira&#39;</span><span class="p">,</span> <span class="p">]</span>
+<span class="n">__status__</span> <span class="o">=</span> <span class="s1">&#39;Stable&#39;</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="TorchMinMaxScaler"><a class="viewcode-back" href="../../../_autosummary/hookeai.utilities.data_scalers.TorchMinMaxScaler.html#hookeai.utilities.data_scalers.TorchMinMaxScaler">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">TorchMinMaxScaler</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;PyTorch tensor min-max data scaler.</span>
+<span class="sd">    </span>
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    _n_features : int</span>
+<span class="sd">        Number of features to normalize.</span>
+<span class="sd">    _minimum : torch.Tensor</span>
+<span class="sd">        Features normalization minimum tensor stored as a torch.Tensor with</span>
+<span class="sd">        shape (n_features,).</span>
+<span class="sd">    _maximum : torch.Tensor</span>
+<span class="sd">        Features normalization maximum tensor stored as a torch.Tensor with</span>
+<span class="sd">        shape (n_features,).</span>
+<span class="sd">    _norm_minimum : float</span>
+<span class="sd">        Normalization lower bound, shared by all normalized features.</span>
+<span class="sd">    _norm_maximum : float</span>
+<span class="sd">        Normalization upper found, shared by all normalized features.</span>
+<span class="sd">    _device : torch.device</span>
+<span class="sd">        Device on which torch.Tensor is allocated.</span>
+<span class="sd">    </span>
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    set_device(self, device_type)</span>
+<span class="sd">        Set device on which torch.Tensor is allocated.</span>
+<span class="sd">    set_minimum(self, minimum)</span>
+<span class="sd">        Set features normalization minimum tensor.</span>
+<span class="sd">    set_maximum(self, maximum)</span>
+<span class="sd">        Set features normalization maximum tensor.</span>
+<span class="sd">    set_minimum_and_maximum(self, minimum, maximum)</span>
+<span class="sd">        Set features normalization minimum and maximum tensors.</span>
+<span class="sd">    get_minimum_and_maximum(self)</span>
+<span class="sd">        Get features normalization minimum and maximum tensors.</span>
+<span class="sd">    fit(self, tensor)</span>
+<span class="sd">        Fit features normalization minimum and maximum tensors.</span>
+<span class="sd">    transform(self, tensor, is_check_data=False)</span>
+<span class="sd">        Normalize features tensor.</span>
+<span class="sd">    inverse_transform(self, tensor, is_check_data=False)</span>
+<span class="sd">        Denormalize features tensor.</span>
+<span class="sd">    _check_minimum(self, minimum)</span>
+<span class="sd">        Check features normalization minimum tensor.</span>
+<span class="sd">    _check_maximum(self, maximum)</span>
+<span class="sd">        Check features normalization maximum tensor.</span>
+<span class="sd">    _check_tensor(self, tensor)</span>
+<span class="sd">        Check features tensor to be transformed.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="TorchMinMaxScaler.__init__"><a class="viewcode-back" href="../../../_autosummary/hookeai.utilities.data_scalers.TorchMinMaxScaler.html#hookeai.utilities.data_scalers.TorchMinMaxScaler.__init__">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_features</span><span class="p">,</span> <span class="n">minimum</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">maximum</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                 <span class="n">norm_minimum</span><span class="o">=-</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">norm_maximum</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+                 <span class="n">device_type</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Constructor.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        n_features : int</span>
+<span class="sd">            Number of features to scale.</span>
+<span class="sd">        minimum : torch.Tensor</span>
+<span class="sd">            Features normalization minimum tensor stored as a torch.Tensor with</span>
+<span class="sd">            shape (n_features,).</span>
+<span class="sd">        maximum : torch.Tensor</span>
+<span class="sd">            Features normalization maximum tensor stored as a torch.Tensor with</span>
+<span class="sd">            shape (n_features,).</span>
+<span class="sd">        norm_minimum : float, default=-1.0</span>
+<span class="sd">            Normalization lower bound, shared by all normalized features.</span>
+<span class="sd">        norm_maximum : float, default=1.0</span>
+<span class="sd">            Normalization upper found, shared by all normalized features.</span>
+<span class="sd">        device_type : {&#39;cpu&#39;, &#39;cuda&#39;}, default=&#39;cpu&#39;</span>
+<span class="sd">            Type of device on which torch.Tensor is allocated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">n_features</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">or</span> <span class="n">n_features</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Number of features is not positive int.&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_n_features</span> <span class="o">=</span> <span class="n">n_features</span>
+        <span class="k">if</span> <span class="n">minimum</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_minimum</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_minimum</span><span class="p">(</span><span class="n">minimum</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_minimum</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">maximum</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_maximum</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_maximum</span><span class="p">(</span><span class="n">maximum</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_maximum</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_norm_minimum</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">norm_minimum</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_norm_maximum</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">norm_maximum</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="n">device_type</span><span class="p">)</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="TorchMinMaxScaler.set_device"><a class="viewcode-back" href="../../../_autosummary/hookeai.utilities.data_scalers.TorchMinMaxScaler.html#hookeai.utilities.data_scalers.TorchMinMaxScaler.set_device">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">set_device</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device_type</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set device on which torch.Tensor is allocated.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        device_type : {&#39;cpu&#39;, &#39;cuda&#39;}</span>
+<span class="sd">            Type of device on which torch.Tensor is allocated.</span>
+<span class="sd">        device : torch.device</span>
+<span class="sd">            Device on which torch.Tensor is allocated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">device_type</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;cpu&#39;</span><span class="p">,</span> <span class="s1">&#39;cuda&#39;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">device_type</span> <span class="o">==</span> <span class="s1">&#39;cuda&#39;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;PyTorch with CUDA is not available. &#39;</span>
+                                   <span class="s1">&#39;Please set the model device type as CPU &#39;</span>
+                                   <span class="s1">&#39;as:</span><span class="se">\n\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="s1">&#39;model.set_device(</span><span class="se">\&#39;</span><span class="s1">cpu</span><span class="se">\&#39;</span><span class="s1">).&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_device_type</span> <span class="o">=</span> <span class="n">device_type</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="n">device_type</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Invalid device type.&#39;</span><span class="p">)</span></div>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+<div class="viewcode-block" id="TorchMinMaxScaler.set_minimum"><a class="viewcode-back" href="../../../_autosummary/hookeai.utilities.data_scalers.TorchMinMaxScaler.html#hookeai.utilities.data_scalers.TorchMinMaxScaler.set_minimum">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">set_minimum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">minimum</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set features normalization minimum tensor.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        minimum : torch.Tensor</span>
+<span class="sd">            Features normalization minimum tensor stored as a torch.Tensor with</span>
+<span class="sd">            shape (n_features,).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_minimum</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_minimum</span><span class="p">(</span><span class="n">minimum</span><span class="p">)</span></div>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+<div class="viewcode-block" id="TorchMinMaxScaler.set_maximum"><a class="viewcode-back" href="../../../_autosummary/hookeai.utilities.data_scalers.TorchMinMaxScaler.html#hookeai.utilities.data_scalers.TorchMinMaxScaler.set_maximum">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">set_maximum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maximum</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set features normalization maximum tensor.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        maximum : torch.Tensor</span>
+<span class="sd">            Features normalization maximum tensor stored as a torch.Tensor with</span>
+<span class="sd">            shape (n_features,).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_maximum</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_maximum</span><span class="p">(</span><span class="n">maximum</span><span class="p">)</span></div>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+<div class="viewcode-block" id="TorchMinMaxScaler.set_minimum_and_maximum"><a class="viewcode-back" href="../../../_autosummary/hookeai.utilities.data_scalers.TorchMinMaxScaler.html#hookeai.utilities.data_scalers.TorchMinMaxScaler.set_minimum_and_maximum">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">set_minimum_and_maximum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">minimum</span><span class="p">,</span> <span class="n">maximum</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set features normalization minimum and maximum tensors.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        minimum : torch.Tensor</span>
+<span class="sd">            Features normalization minimum tensor stored as a torch.Tensor with</span>
+<span class="sd">            shape (n_features,).</span>
+<span class="sd">        maximum : torch.Tensor</span>
+<span class="sd">            Features normalization maximum tensor stored as a torch.Tensor with</span>
+<span class="sd">            shape (n_features,).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_minimum</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_minimum</span><span class="p">(</span><span class="n">minimum</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_maximum</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_maximum</span><span class="p">(</span><span class="n">maximum</span><span class="p">)</span></div>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+<div class="viewcode-block" id="TorchMinMaxScaler.get_minimum_and_maximum"><a class="viewcode-back" href="../../../_autosummary/hookeai.utilities.data_scalers.TorchMinMaxScaler.html#hookeai.utilities.data_scalers.TorchMinMaxScaler.get_minimum_and_maximum">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_minimum_and_maximum</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get features normalization minimum and maximum tensors.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        minimum : torch.Tensor</span>
+<span class="sd">            Features normalization minimum tensor stored as a torch.Tensor with</span>
+<span class="sd">            shape (n_features,).</span>
+<span class="sd">        maximum : torch.Tensor</span>
+<span class="sd">            Features normalization maximum tensor stored as a torch.Tensor with</span>
+<span class="sd">            shape (n_features,).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_minimum</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_maximum</span></div>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+<div class="viewcode-block" id="TorchMinMaxScaler.fit"><a class="viewcode-back" href="../../../_autosummary/hookeai.utilities.data_scalers.TorchMinMaxScaler.html#hookeai.utilities.data_scalers.TorchMinMaxScaler.fit">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tensor</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Fit features normalization minimum and maximum tensors.</span>
+<span class="sd">        </span>
+<span class="sd">        If sequential data is provided, then all sequence times are</span>
+<span class="sd">        concatenated and the normalization procedures take into account the</span>
+<span class="sd">        whole sequence length data for each feature.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tensor : torch.Tensor</span>
+<span class="sd">            Features PyTorch tensor stored as torch.Tensor with shape</span>
+<span class="sd">            (n_samples, n_features) or as torch.Tensor with shape</span>
+<span class="sd">            (sequence_length, n_samples, n_features).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check features tensor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_tensor</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Concatenate sequential data</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_features</span><span class="p">))</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set normalization minimum and maximum</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_minimum</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_minimum</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_maximum</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_maximum</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)[</span><span class="mi">0</span><span class="p">])</span></div>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+<div class="viewcode-block" id="TorchMinMaxScaler.transform"><a class="viewcode-back" href="../../../_autosummary/hookeai.utilities.data_scalers.TorchMinMaxScaler.html#hookeai.utilities.data_scalers.TorchMinMaxScaler.transform">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tensor</span><span class="p">,</span> <span class="n">is_check_data</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Normalize features tensor.</span>
+
+<span class="sd">        If sequential data is provided, then all sequence times are</span>
+<span class="sd">        concatenated and the normalization procedures take into account the</span>
+<span class="sd">        whole sequence length data for each feature.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tensor : torch.Tensor</span>
+<span class="sd">            Features PyTorch tensor stored as torch.Tensor with shape</span>
+<span class="sd">            (n_samples, n_features) or as torch.Tensor with shape</span>
+<span class="sd">            (sequence_length, n_samples, n_features).</span>
+<span class="sd">        is_check_data : bool, default=False</span>
+<span class="sd">            If True, then check transformed tensor data.</span>
+<span class="sd">            </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        transformed_tensor : torch.Tensor</span>
+<span class="sd">            Normalized features PyTorch tensor stored as torch.Tensor with</span>
+<span class="sd">            shape (n_samples, n_features) or as torch.Tensor with shape</span>
+<span class="sd">            (sequence_length, n_samples, n_features).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check features tensor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_tensor</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Store input tensor shape</span>
+        <span class="n">input_shape</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">shape</span>
+        <span class="c1"># Get input tensor device</span>
+        <span class="n">input_device</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">device</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Concatenate sequential data</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_features</span><span class="p">))</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get number of samples</span>
+        <span class="n">n_samples</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># Build minimum and maximum tensors for normalization</span>
+        <span class="n">minimum</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_minimum</span><span class="p">,</span> <span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">input_device</span><span class="p">)</span>
+        <span class="n">maximum</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_maximum</span><span class="p">,</span> <span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">input_device</span><span class="p">)</span>
+        <span class="c1"># Get normalization bounds</span>
+        <span class="n">norm_minimum</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_norm_minimum</span>
+        <span class="n">norm_maximum</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_norm_maximum</span>
+        <span class="c1"># Normalization features tensor</span>
+        <span class="n">transformed_tensor</span> <span class="o">=</span> \
+            <span class="n">norm_minimum</span><span class="o">*</span><span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">input_device</span><span class="p">)</span> \
+            <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">div</span><span class="p">((</span><span class="n">norm_maximum</span> <span class="o">-</span> <span class="n">norm_minimum</span><span class="p">)</span><span class="o">*</span><span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span>
+                <span class="n">tensor</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">input_device</span><span class="p">),</span> <span class="n">maximum</span> <span class="o">-</span> <span class="n">minimum</span><span class="p">)</span><span class="o">*</span><span class="p">(</span>
+                    <span class="n">tensor</span> <span class="o">-</span> <span class="n">minimum</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Revert concatenation of sequential data</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">transformed_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">transformed_tensor</span><span class="p">,</span> <span class="n">input_shape</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Check transformed tensor</span>
+        <span class="k">if</span> <span class="n">is_check_data</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">transformed_tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">),</span>
+                               <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">input_shape</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Input and transformed tensors do not &#39;</span>
+                                   <span class="s1">&#39;have the same shape.&#39;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">torch</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">transformed_tensor</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;One or more NaN elements were detected in &#39;</span>
+                                   <span class="s1">&#39;the transformed tensor.&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">transformed_tensor</span></div>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+<div class="viewcode-block" id="TorchMinMaxScaler.inverse_transform"><a class="viewcode-back" href="../../../_autosummary/hookeai.utilities.data_scalers.TorchMinMaxScaler.html#hookeai.utilities.data_scalers.TorchMinMaxScaler.inverse_transform">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">inverse_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tensor</span><span class="p">,</span> <span class="n">is_check_data</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Denormalize features tensor.</span>
+
+<span class="sd">        If sequential data is provided, then all sequence times are</span>
+<span class="sd">        concatenated and the normalization procedures take into account the</span>
+<span class="sd">        whole sequence length data for each feature.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tensor : torch.Tensor</span>
+<span class="sd">            Normalized features PyTorch tensor stored as torch.Tensor with</span>
+<span class="sd">            shape (n_samples, n_features) or as torch.Tensor with shape</span>
+<span class="sd">            (sequence_length, n_samples, n_features).</span>
+<span class="sd">        is_check_data : bool, default=False</span>
+<span class="sd">            If True, then check transformed tensor data.</span>
+<span class="sd">            </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        transformed_tensor : torch.Tensor</span>
+<span class="sd">            Features PyTorch tensor stored as torch.Tensor with shape</span>
+<span class="sd">            (n_samples, n_features) or as torch.Tensor with shape</span>
+<span class="sd">            (sequence_length, n_samples, n_features).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check features tensor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_tensor</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Store input tensor shape</span>
+        <span class="n">input_shape</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">shape</span>
+        <span class="c1"># Get input tensor device</span>
+        <span class="n">input_device</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">device</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Concatenate sequential data</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_features</span><span class="p">))</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get number of samples</span>
+        <span class="n">n_samples</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># Build minimum and maximum tensors for normalization</span>
+        <span class="n">minimum</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_minimum</span><span class="p">,</span> <span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">input_device</span><span class="p">)</span>
+        <span class="n">maximum</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_maximum</span><span class="p">,</span> <span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">input_device</span><span class="p">)</span>
+        <span class="c1"># Get normalization bounds</span>
+        <span class="n">norm_minimum</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_norm_minimum</span>
+        <span class="n">norm_maximum</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_norm_maximum</span>
+        <span class="c1"># Denormalize features tensor</span>
+        <span class="n">transformed_tensor</span> <span class="o">=</span> <span class="n">minimum</span> <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">div</span><span class="p">(</span>
+            <span class="n">maximum</span> <span class="o">-</span> <span class="n">minimum</span><span class="p">,</span> <span class="p">(</span><span class="n">norm_maximum</span> <span class="o">-</span> <span class="n">norm_minimum</span><span class="p">)</span><span class="o">*</span><span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span>
+                <span class="n">tensor</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">input_device</span><span class="p">))</span><span class="o">*</span><span class="p">(</span>
+                    <span class="n">tensor</span> <span class="o">-</span> <span class="n">norm_minimum</span><span class="o">*</span><span class="n">torch</span><span class="o">.</span><span class="n">ones_like</span><span class="p">(</span>
+                        <span class="n">tensor</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">input_device</span><span class="p">))</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Revert concatenation of sequential data</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">transformed_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">transformed_tensor</span><span class="p">,</span> <span class="n">input_shape</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Check transformed tensor</span>
+        <span class="k">if</span> <span class="n">is_check_data</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">transformed_tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">),</span>
+                               <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">input_shape</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Input and transformed tensors do not have &#39;</span>
+                                   <span class="s1">&#39;the same shape.&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">transformed_tensor</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="TorchMinMaxScaler._check_minimum"><a class="viewcode-back" href="../../../_autosummary/hookeai.utilities.data_scalers.TorchMinMaxScaler.html#hookeai.utilities.data_scalers.TorchMinMaxScaler._check_minimum">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">_check_minimum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">minimum</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check features normalization minimum tensor.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        minimum : torch.Tensor</span>
+<span class="sd">            Features normalization minimum tensor stored as a torch.Tensor with</span>
+<span class="sd">            shape (n_features,).</span>
+<span class="sd">            </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        minimum : torch.Tensor</span>
+<span class="sd">            Features normalization minimum tensor stored as a torch.Tensor with</span>
+<span class="sd">            shape (n_features,).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check features normalization minimum tensor        </span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">minimum</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Features normalization minimum tensor is not &#39;</span>
+                               <span class="s1">&#39;a torch.Tensor.&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">minimum</span><span class="p">)</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_features</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Features standardization minimum tensor is &#39;</span>
+                               <span class="s1">&#39;not a torch.Tensor(1d) with shape &#39;</span>
+                               <span class="s1">&#39;(n_features,).&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">minimum</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="TorchMinMaxScaler._check_maximum"><a class="viewcode-back" href="../../../_autosummary/hookeai.utilities.data_scalers.TorchMinMaxScaler.html#hookeai.utilities.data_scalers.TorchMinMaxScaler._check_maximum">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">_check_maximum</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">maximum</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check features normalization maximum tensor.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        maximum : torch.Tensor</span>
+<span class="sd">            Features normalization maximum tensor stored as a torch.Tensor with</span>
+<span class="sd">            shape (n_features,).</span>
+<span class="sd">            </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        maximum : torch.Tensor</span>
+<span class="sd">            Features normalization maximum tensor stored as a torch.Tensor with</span>
+<span class="sd">            shape (n_features,).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check features normalization maximum tensor</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">maximum</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Features normalization maximum tensor is not &#39;</span>
+                               <span class="s1">&#39;a torch.Tensor.&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">maximum</span><span class="p">)</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_features</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Features standardization maximum tensor is &#39;</span>
+                               <span class="s1">&#39;not a torch.Tensor(1d) with shape &#39;</span>
+                               <span class="s1">&#39;(n_features,).&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">maximum</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="TorchMinMaxScaler._check_tensor"><a class="viewcode-back" href="../../../_autosummary/hookeai.utilities.data_scalers.TorchMinMaxScaler.html#hookeai.utilities.data_scalers.TorchMinMaxScaler._check_tensor">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">_check_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tensor</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check features tensor to be transformed.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tensor : torch.Tensor</span>
+<span class="sd">            Features PyTorch tensor stored as torch.Tensor with shape</span>
+<span class="sd">            (n_samples, n_features) or as torch.Tensor with shape</span>
+<span class="sd">            (sequence_length, n_samples, n_features).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Features tensor is not a torch.Tensor.&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Features tensor is not a torch.Tensor with &#39;</span>
+                               <span class="s1">&#39;shape (n_samples, n_features) or &#39;</span>
+                               <span class="s1">&#39;torch.Tensor with shape &#39;</span>
+                               <span class="s1">&#39;(sequence_length, n_samples, n_features).&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_features</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Features tensor is not consistent with data&#39;</span>
+                               <span class="s1">&#39;scaler number of features.&#39;</span><span class="p">)</span></div></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="TorchStandardScaler"><a class="viewcode-back" href="../../../_autosummary/hookeai.utilities.data_scalers.TorchStandardScaler.html#hookeai.utilities.data_scalers.TorchStandardScaler">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">TorchStandardScaler</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;PyTorch tensor standardization data scaler.</span>
+<span class="sd">    </span>
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    _n_features : int</span>
+<span class="sd">        Number of features to standardize.</span>
+<span class="sd">    _mean : torch.Tensor</span>
+<span class="sd">        Features standardization mean tensor stored as a torch.Tensor with</span>
+<span class="sd">        shape (n_features,).</span>
+<span class="sd">    _std : torch.Tensor</span>
+<span class="sd">        Features standardization standard deviation tensor stored as a</span>
+<span class="sd">        torch.Tensor with shape (n_features,).</span>
+<span class="sd">    _device : torch.device</span>
+<span class="sd">        Device on which torch.Tensor is allocated.</span>
+<span class="sd">    </span>
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    set_device(self, device_type)</span>
+<span class="sd">        Set device on which torch.Tensor is allocated.</span>
+<span class="sd">    set_mean(self, mean)</span>
+<span class="sd">        Set features standardization mean tensor.</span>
+<span class="sd">    set_std(self, std)</span>
+<span class="sd">        Set features standardization standard deviation tensor.</span>
+<span class="sd">    set_mean_and_std(self, mean, std)</span>
+<span class="sd">        Set features standardization mean and standard deviation tensors.</span>
+<span class="sd">    get_mean_and_std(self)</span>
+<span class="sd">        Get features standardization mean and standard deviation tensors.</span>
+<span class="sd">    fit(self, tensor)</span>
+<span class="sd">        Fit features standardization mean and standard deviation tensors.</span>
+<span class="sd">    transform(self, tensor, is_check_data=False)</span>
+<span class="sd">        Standardize features tensor.</span>
+<span class="sd">    inverse_transform(self, tensor, is_check_data=False)</span>
+<span class="sd">        Destandardize features tensor.</span>
+<span class="sd">    _check_mean(self, mean):</span>
+<span class="sd">        Check features standardization mean tensor.</span>
+<span class="sd">    _check_std(self, std)</span>
+<span class="sd">        Check features standardization standard deviation tensor.</span>
+<span class="sd">    _check_tensor(self, tensor):</span>
+<span class="sd">        Check features tensor to be transformed.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="TorchStandardScaler.__init__"><a class="viewcode-back" href="../../../_autosummary/hookeai.utilities.data_scalers.TorchStandardScaler.html#hookeai.utilities.data_scalers.TorchStandardScaler.__init__">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_features</span><span class="p">,</span> <span class="n">mean</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">std</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">device_type</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Constructor.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        n_features : int</span>
+<span class="sd">            Number of features to standardize.</span>
+<span class="sd">        mean : torch.Tensor, default=None</span>
+<span class="sd">            Features standardization mean tensor stored as a torch.Tensor with</span>
+<span class="sd">            shape (n_features,).</span>
+<span class="sd">        std : torch.Tensor, default=None</span>
+<span class="sd">            Features standardization standard deviation tensor stored as a</span>
+<span class="sd">            torch.Tensor with shape (n_features,).</span>
+<span class="sd">        device_type : {&#39;cpu&#39;, &#39;cuda&#39;}, default=&#39;cpu&#39;</span>
+<span class="sd">            Type of device on which torch.Tensor is allocated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">n_features</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">or</span> <span class="n">n_features</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Number of features is not positive int.&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_n_features</span> <span class="o">=</span> <span class="n">n_features</span>
+        <span class="k">if</span> <span class="n">mean</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_mean</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_mean</span><span class="p">(</span><span class="n">mean</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_mean</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="k">if</span> <span class="n">std</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_std</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_std</span><span class="p">(</span><span class="n">std</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+             <span class="bp">self</span><span class="o">.</span><span class="n">_std</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="n">device_type</span><span class="p">)</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="TorchStandardScaler.set_device"><a class="viewcode-back" href="../../../_autosummary/hookeai.utilities.data_scalers.TorchStandardScaler.html#hookeai.utilities.data_scalers.TorchStandardScaler.set_device">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">set_device</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device_type</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set device on which torch.Tensor is allocated.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        device_type : {&#39;cpu&#39;, &#39;cuda&#39;}</span>
+<span class="sd">            Type of device on which torch.Tensor is allocated.</span>
+<span class="sd">        device : torch.device</span>
+<span class="sd">            Device on which torch.Tensor is allocated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">device_type</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;cpu&#39;</span><span class="p">,</span> <span class="s1">&#39;cuda&#39;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">device_type</span> <span class="o">==</span> <span class="s1">&#39;cuda&#39;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;PyTorch with CUDA is not available. &#39;</span>
+                                   <span class="s1">&#39;Please set the model device type as CPU &#39;</span>
+                                   <span class="s1">&#39;as:</span><span class="se">\n\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="s1">&#39;model.set_device(</span><span class="se">\&#39;</span><span class="s1">cpu</span><span class="se">\&#39;</span><span class="s1">).&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_device_type</span> <span class="o">=</span> <span class="n">device_type</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="n">device_type</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Invalid device type.&#39;</span><span class="p">)</span></div>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+<div class="viewcode-block" id="TorchStandardScaler.set_mean"><a class="viewcode-back" href="../../../_autosummary/hookeai.utilities.data_scalers.TorchStandardScaler.html#hookeai.utilities.data_scalers.TorchStandardScaler.set_mean">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">set_mean</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mean</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set features standardization mean tensor.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        mean : torch.Tensor</span>
+<span class="sd">            Features standardization mean tensor stored as a torch.Tensor with</span>
+<span class="sd">            shape (n_features,).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mean</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_mean</span><span class="p">(</span><span class="n">mean</span><span class="p">)</span></div>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+<div class="viewcode-block" id="TorchStandardScaler.set_std"><a class="viewcode-back" href="../../../_autosummary/hookeai.utilities.data_scalers.TorchStandardScaler.html#hookeai.utilities.data_scalers.TorchStandardScaler.set_std">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">set_std</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">std</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set features standardization standard deviation tensor.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        std : torch.Tensor</span>
+<span class="sd">            Features standardization standard deviation tensor stored as a</span>
+<span class="sd">            torch.Tensor with shape (n_features,).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_std</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_std</span><span class="p">(</span><span class="n">std</span><span class="p">)</span></div>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+<div class="viewcode-block" id="TorchStandardScaler.set_mean_and_std"><a class="viewcode-back" href="../../../_autosummary/hookeai.utilities.data_scalers.TorchStandardScaler.html#hookeai.utilities.data_scalers.TorchStandardScaler.set_mean_and_std">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">set_mean_and_std</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mean</span><span class="p">,</span> <span class="n">std</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set features standardization mean and standard deviation tensors.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        mean : torch.Tensor</span>
+<span class="sd">            Features standardization mean tensor stored as a torch.Tensor with</span>
+<span class="sd">            shape (n_features,).</span>
+<span class="sd">        std : torch.Tensor</span>
+<span class="sd">            Features standardization standard deviation tensor stored as a</span>
+<span class="sd">            torch.Tensor with shape (n_features,).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mean</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_mean</span><span class="p">(</span><span class="n">mean</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_std</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_std</span><span class="p">(</span><span class="n">std</span><span class="p">)</span></div>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+<div class="viewcode-block" id="TorchStandardScaler.get_mean_and_std"><a class="viewcode-back" href="../../../_autosummary/hookeai.utilities.data_scalers.TorchStandardScaler.html#hookeai.utilities.data_scalers.TorchStandardScaler.get_mean_and_std">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_mean_and_std</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get features standardization mean and standard deviation tensors.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        mean : torch.Tensor</span>
+<span class="sd">            Features standardization mean tensor stored as a torch.Tensor with</span>
+<span class="sd">            shape (n_features,).</span>
+<span class="sd">        std : torch.Tensor</span>
+<span class="sd">            Features standardization standard deviation tensor stored as a</span>
+<span class="sd">            torch.Tensor with shape (n_features,).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_mean</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_std</span></div>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+<div class="viewcode-block" id="TorchStandardScaler.fit"><a class="viewcode-back" href="../../../_autosummary/hookeai.utilities.data_scalers.TorchStandardScaler.html#hookeai.utilities.data_scalers.TorchStandardScaler.fit">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">fit</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tensor</span><span class="p">,</span> <span class="n">is_bessel</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Fit features standardization mean and standard deviation tensors.</span>
+<span class="sd">        </span>
+<span class="sd">        If sequential data is provided, then all sequence times are</span>
+<span class="sd">        concatenated and the standardization procedures take into account the</span>
+<span class="sd">        whole sequence length data for each feature.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tensor : torch.Tensor</span>
+<span class="sd">            Features PyTorch tensor stored as torch.Tensor with shape</span>
+<span class="sd">            (n_samples, n_features) or as torch.Tensor with shape</span>
+<span class="sd">            (sequence_length, n_samples, n_features).</span>
+<span class="sd">        is_bessel : bool, default=False</span>
+<span class="sd">            If True, apply Bessel&#39;s correction to compute standard deviation,</span>
+<span class="sd">            False otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check features tensor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_tensor</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Concatenate sequential data</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_features</span><span class="p">))</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set standardization mean and standard deviation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_mean</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_mean</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">))</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_std</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_check_std</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">std</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span>
+                                              <span class="n">correction</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">is_bessel</span><span class="p">)))</span></div>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+<div class="viewcode-block" id="TorchStandardScaler.transform"><a class="viewcode-back" href="../../../_autosummary/hookeai.utilities.data_scalers.TorchStandardScaler.html#hookeai.utilities.data_scalers.TorchStandardScaler.transform">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tensor</span><span class="p">,</span> <span class="n">is_check_data</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Standardize features tensor.</span>
+
+<span class="sd">        If sequential data is provided, then all sequence times are</span>
+<span class="sd">        concatenated and the standardization procedures take into account the</span>
+<span class="sd">        whole sequence length data for each feature.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tensor : torch.Tensor</span>
+<span class="sd">            Features PyTorch tensor stored as torch.Tensor with shape</span>
+<span class="sd">            (n_samples, n_features) or as torch.Tensor with shape</span>
+<span class="sd">            (sequence_length, n_samples, n_features).</span>
+<span class="sd">        is_check_data : bool, default=False</span>
+<span class="sd">            If True, then check transformed tensor data.</span>
+<span class="sd">            </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        transformed_tensor : torch.Tensor</span>
+<span class="sd">            Standardized features PyTorch tensor stored as torch.Tensor with</span>
+<span class="sd">            shape (n_samples, n_features) or as torch.Tensor with shape</span>
+<span class="sd">            (sequence_length, n_samples, n_features).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check features tensor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_tensor</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Store input tensor shape</span>
+        <span class="n">input_shape</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">shape</span>
+        <span class="c1"># Get input tensor device</span>
+        <span class="n">input_device</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">device</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Concatenate sequential data</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_features</span><span class="p">))</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get number of samples</span>
+        <span class="n">n_samples</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># Build mean and standard deviation tensors for standardization</span>
+        <span class="n">mean</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mean</span><span class="p">,</span> <span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">input_device</span><span class="p">)</span>
+        <span class="n">std</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_std</span><span class="p">,</span> <span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">input_device</span><span class="p">)</span>
+        <span class="c1"># Set non-null standard deviation mask</span>
+        <span class="n">non_null_mask</span> <span class="o">=</span> <span class="p">(</span><span class="n">std</span> <span class="o">!=</span> <span class="mi">0</span><span class="p">)</span>
+        <span class="c1"># Standardize features tensor</span>
+        <span class="n">transformed_tensor</span> <span class="o">=</span> <span class="n">tensor</span> <span class="o">-</span> <span class="n">mean</span>
+        <span class="n">transformed_tensor</span><span class="p">[</span><span class="n">non_null_mask</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="n">torch</span><span class="o">.</span><span class="n">div</span><span class="p">(</span><span class="n">transformed_tensor</span><span class="p">[</span><span class="n">non_null_mask</span><span class="p">],</span> <span class="n">std</span><span class="p">[</span><span class="n">non_null_mask</span><span class="p">])</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Revert concatenation of sequential data</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">transformed_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">transformed_tensor</span><span class="p">,</span> <span class="n">input_shape</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Check transformed tensor</span>
+        <span class="k">if</span> <span class="n">is_check_data</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">transformed_tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">),</span>
+                               <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">input_shape</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Input and transformed tensors do not &#39;</span>
+                                   <span class="s1">&#39;have the same shape.&#39;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">torch</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">isnan</span><span class="p">(</span><span class="n">transformed_tensor</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;One or more NaN elements were detected in &#39;</span>
+                                   <span class="s1">&#39;the transformed tensor.&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">transformed_tensor</span></div>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+<div class="viewcode-block" id="TorchStandardScaler.inverse_transform"><a class="viewcode-back" href="../../../_autosummary/hookeai.utilities.data_scalers.TorchStandardScaler.html#hookeai.utilities.data_scalers.TorchStandardScaler.inverse_transform">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">inverse_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tensor</span><span class="p">,</span> <span class="n">is_check_data</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Destandardize features tensor.</span>
+
+<span class="sd">        If sequential data is provided, then all sequence times are</span>
+<span class="sd">        concatenated and the standardization procedures take into account the</span>
+<span class="sd">        whole sequence length data for each feature.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tensor : torch.Tensor</span>
+<span class="sd">            Standardized features PyTorch tensor stored as torch.Tensor with</span>
+<span class="sd">            shape (n_samples, n_features) or as torch.Tensor with shape</span>
+<span class="sd">            (sequence_length, n_samples, n_features).</span>
+<span class="sd">        is_check_data : bool, default=False</span>
+<span class="sd">            If True, then check transformed tensor data.</span>
+<span class="sd">            </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        transformed_tensor : torch.Tensor</span>
+<span class="sd">            Features PyTorch tensor stored as torch.Tensor with shape</span>
+<span class="sd">            (n_samples, n_features) or as torch.Tensor with shape</span>
+<span class="sd">            (sequence_length, n_samples, n_features).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check features tensor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_tensor</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Store input tensor shape</span>
+        <span class="n">input_shape</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">shape</span>
+        <span class="c1"># Get input tensor device</span>
+        <span class="n">input_device</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">device</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Concatenate sequential data</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_features</span><span class="p">))</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get number of samples</span>
+        <span class="n">n_samples</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># Build mean and standard deviation tensors for standardization</span>
+        <span class="n">mean</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_mean</span><span class="p">,</span> <span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">input_device</span><span class="p">)</span>
+        <span class="n">std</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tile</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_std</span><span class="p">,</span> <span class="p">(</span><span class="n">n_samples</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">input_device</span><span class="p">)</span>
+        <span class="c1"># Destandardize features tensor</span>
+        <span class="n">transformed_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mul</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">std</span><span class="p">)</span> <span class="o">+</span> <span class="n">mean</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Revert concatenation of sequential data</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">input_shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="n">transformed_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="n">transformed_tensor</span><span class="p">,</span> <span class="n">input_shape</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Check transformed tensor</span>
+        <span class="k">if</span> <span class="n">is_check_data</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">equal</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">transformed_tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">),</span>
+                               <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">input_shape</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Input and transformed tensors do not have &#39;</span>
+                                   <span class="s1">&#39;the same shape.&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">transformed_tensor</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="TorchStandardScaler._check_mean"><a class="viewcode-back" href="../../../_autosummary/hookeai.utilities.data_scalers.TorchStandardScaler.html#hookeai.utilities.data_scalers.TorchStandardScaler._check_mean">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">_check_mean</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mean</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check features standardization mean tensor.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        mean : torch.Tensor</span>
+<span class="sd">            Features standardization mean tensor stored as a torch.Tensor with</span>
+<span class="sd">            shape (n_features,).</span>
+<span class="sd">            </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        mean : torch.Tensor</span>
+<span class="sd">            Features standardization mean tensor stored as a torch.Tensor with</span>
+<span class="sd">            shape (n_features,).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check features standardization mean tensor</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">mean</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Features standardization mean tensor is not a &#39;</span>
+                                <span class="s1">&#39;torch.Tensor.&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">mean</span><span class="p">)</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_features</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Features standardization mean tensor is not a &#39;</span>
+                               <span class="s1">&#39;torch.Tensor(1d) with shape (n_features,).&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">mean</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="TorchStandardScaler._check_std"><a class="viewcode-back" href="../../../_autosummary/hookeai.utilities.data_scalers.TorchStandardScaler.html#hookeai.utilities.data_scalers.TorchStandardScaler._check_std">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">_check_std</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">std</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check features standardization standard deviation tensor.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        std : torch.Tensor</span>
+<span class="sd">            Features standardization standard deviation tensor stored as a</span>
+<span class="sd">            torch.Tensor with shape (n_features,).</span>
+<span class="sd">            </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        std : torch.Tensor</span>
+<span class="sd">            Features standardization standard deviation tensor stored as a</span>
+<span class="sd">            torch.Tensor with shape (n_features,).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check features standardization standard deviation tensor</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">std</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Features standardization standard deviation &#39;</span>
+                               <span class="s1">&#39;tensor is not a torch.Tensor.&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">std</span><span class="p">)</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_features</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Features standardization standard deviation &#39;</span>
+                               <span class="s1">&#39;tensor is not a torch.Tensor(1d) with shape &#39;</span>
+                               <span class="s1">&#39;(n_features,).&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">std</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="TorchStandardScaler._check_tensor"><a class="viewcode-back" href="../../../_autosummary/hookeai.utilities.data_scalers.TorchStandardScaler.html#hookeai.utilities.data_scalers.TorchStandardScaler._check_tensor">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">_check_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tensor</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check features tensor to be transformed.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tensor : torch.Tensor</span>
+<span class="sd">            Standardized features PyTorch tensor stored as torch.Tensor with</span>
+<span class="sd">            shape (n_samples, n_features).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Features tensor is not a torch.Tensor.&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">2</span><span class="p">,</span> <span class="mi">3</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Features tensor is not a torch.Tensor with &#39;</span>
+                               <span class="s1">&#39;shape (n_samples, n_features) or &#39;</span>
+                               <span class="s1">&#39;torch.Tensor with shape &#39;</span>
+                               <span class="s1">&#39;(sequence_length, n_samples, n_features).&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_features</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Features tensor is not consistent with data&#39;</span>
+                               <span class="s1">&#39;scaler number of features.&#39;</span><span class="p">)</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

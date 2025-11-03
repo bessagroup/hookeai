@@ -1,0 +1,980 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>model_architectures.hybrid_base_model.model.hybrid_model &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../_autosummary/hookeai.html">Code</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">model_architectures.hybrid_base_model.model.hybrid_model</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for model_architectures.hybrid_base_model.model.hybrid_model</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Hybrid model.</span>
+
+<span class="sd">Classes</span>
+<span class="sd">-------</span>
+<span class="sd">HybridModel(torch.nn.Module)</span>
+<span class="sd">    Hybrid model.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#                                                                       Modules</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Standard</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
+<span class="c1"># Third-party</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="c1"># Local</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">model_architectures.hybrid_base_model.model.hybridization</span><span class="w"> </span><span class="kn">import</span> \
+    <span class="n">HybridizationModel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">model_architectures.procedures.model_data_scaling</span><span class="w"> </span><span class="kn">import</span> <span class="n">init_data_scalers</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">model_architectures.procedures.model_data_scaling</span><span class="w"> </span><span class="kn">import</span> \
+    <span class="n">data_scaler_transform</span>
+<span class="c1">#</span>
+<span class="c1">#                                                          Authorship &amp; Credits</span>
+<span class="c1"># =============================================================================</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Bernardo Ferreira (bernardo_ferreira@brown.edu)&#39;</span>
+<span class="n">__credits__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Bernardo Ferreira&#39;</span><span class="p">,</span> <span class="p">]</span>
+<span class="n">__status__</span> <span class="o">=</span> <span class="s1">&#39;Stable&#39;</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="HybridModel"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.fetorch.structure.structure_state.HybridModel.html#hookeai.material_model_finder.model.material_discovery.HybridModel">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">HybridModel</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Hybrid model.</span>
+<span class="sd">    </span>
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    model_directory : {str, None}</span>
+<span class="sd">        Directory where model is stored. If None, then all methods that depend</span>
+<span class="sd">        on an existent model directory become unavailable.</span>
+<span class="sd">    model_name : {str, None}</span>
+<span class="sd">        Name of model. If None, then all methods that depend on a valid model</span>
+<span class="sd">        name become unavailable.</span>
+<span class="sd">    _n_features_in : int</span>
+<span class="sd">        Number of input features.</span>
+<span class="sd">    _n_features_out : int</span>
+<span class="sd">        Number of output features.</span>
+<span class="sd">    _hyb_models_dict : dict</span>
+<span class="sd">        For each hybridized model (key, str), store dictionary (item, dict)</span>
+<span class="sd">        with the hybridized model data.</span>
+<span class="sd">    _hyb_models_names : list[str]</span>
+<span class="sd">        Hybridized models names.</span>
+<span class="sd">    _hyb_models : torch.nn.ModuleList</span>
+<span class="sd">        Hybridized models.</span>
+<span class="sd">    _hyb_channels : dict</span>
+<span class="sd">        For each hybridization channel (key, str[int]), store the</span>
+<span class="sd">        corresponding hybridized models module index (item, list[int]),</span>
+<span class="sd">        sorted according with the associated hybridization indices.</span>
+<span class="sd">        Hybridization channels are labeled between 0 and n_hyb_channel,</span>
+<span class="sd">        where n_hyb_channel is the total number of channels required to</span>
+<span class="sd">        place the hybridized models.</span>
+<span class="sd">    _hyb_models_input_residual : dict</span>
+<span class="sd">        For each hybridization model (key, str), store input residual</span>
+<span class="sd">        connection flag (item, bool). If True, then input residual</span>
+<span class="sd">        connection is assigned to hybridized model, False otherwise.</span>
+<span class="sd">    _hybridization_type : str</span>
+<span class="sd">        Hybridization model type.</span>
+<span class="sd">    _hybridization_model : HybridizationModel</span>
+<span class="sd">        Hybridization model.</span>
+<span class="sd">    _device_type : {&#39;cpu&#39;, &#39;cuda&#39;}</span>
+<span class="sd">        Type of device on which torch.Tensor is allocated.</span>
+<span class="sd">    _device : torch.device</span>
+<span class="sd">        Device on which torch.Tensor is allocated.</span>
+<span class="sd">    is_model_in_normalized : bool</span>
+<span class="sd">        If True, then model expects normalized input features (normalized</span>
+<span class="sd">        input data has been seen during model training).</span>
+<span class="sd">    is_model_out_normalized : bool</span>
+<span class="sd">        If True, then model expects normalized output features (normalized</span>
+<span class="sd">        output data has been seen during model training).</span>
+<span class="sd">    _data_scalers : dict</span>
+<span class="sd">        Data scaler (item, TorchStandardScaler) for each feature data</span>
+<span class="sd">        (key, str).</span>
+
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    init_model_from_file(model_directory=None, model_init_file_path=None)</span>
+<span class="sd">        Initialize model from initialization file.</span>
+<span class="sd">    get_hybridization_channels(cls, hyb_models_dict)</span>
+<span class="sd">        Get hybrid model hybridization channels.</span>
+<span class="sd">    get_hybridized_model(self, hyb_model_name)</span>
+<span class="sd">        Get hybridized model from name.</span>
+<span class="sd">    get_hybridized_models(self)</span>
+<span class="sd">        Get hybridized models.</span>
+<span class="sd">    get_hybridized_models_names(self)</span>
+<span class="sd">        Get hybridized models names.</span>
+<span class="sd">    set_device(self, device_type)</span>
+<span class="sd">        Set device on which torch.Tensor is allocated.</span>
+<span class="sd">    get_device(self)</span>
+<span class="sd">        Get device on which torch.Tensor is allocated.</span>
+<span class="sd">    get_detached_model_parameters(self, is_normalized_out=False)</span>
+<span class="sd">        Get model parameters detached of gradients.</span>
+<span class="sd">    get_model_parameters_bounds(self)</span>
+<span class="sd">        Get model parameters bounds.</span>
+<span class="sd">    forward(self, features_in)</span>
+<span class="sd">        Forward propagation.</span>
+<span class="sd">    check_model_in_normalized(cls, model)</span>
+<span class="sd">        Check if generic model expects normalized input features.</span>
+<span class="sd">    check_model_out_normalized(cls, model)</span>
+<span class="sd">        Check if generic model expects normalized output features.</span>
+<span class="sd">    features_out_extractor(cls, model_output)</span>
+<span class="sd">        Extract output features from generic model output.</span>
+<span class="sd">    save_model_init_file(self)</span>
+<span class="sd">        Save model initialization file.</span>
+<span class="sd">    sync_material_model_parameters(self)</span>
+<span class="sd">        Synchronize model parameters with learnable parameters.</span>
+<span class="sd">    check_hyb_models_data_scalers(self)</span>
+<span class="sd">        Check hybridized models data scalers.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="HybridModel.__init__"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.fetorch.structure.structure_state.HybridModel.html#hookeai.material_model_finder.model.material_discovery.HybridModel.__init__">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_features_in</span><span class="p">,</span> <span class="n">n_features_out</span><span class="p">,</span> <span class="n">hyb_models_dict</span><span class="p">,</span>
+                 <span class="n">model_directory</span><span class="p">,</span> <span class="n">model_name</span><span class="o">=</span><span class="s1">&#39;hybrid_model&#39;</span><span class="p">,</span>
+                 <span class="n">hybridization_type</span><span class="o">=</span><span class="s1">&#39;identity&#39;</span><span class="p">,</span> <span class="n">is_model_in_normalized</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">is_model_out_normalized</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_save_model_init_file</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                 <span class="n">device_type</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Constructor.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        n_features_in : int</span>
+<span class="sd">            Number of input features.</span>
+<span class="sd">        n_features_out : int</span>
+<span class="sd">            Number of output features.</span>
+<span class="sd">        hyb_models_dict : dict</span>
+<span class="sd">            For each hybridized model (key, str), store dictionary (item, dict)</span>
+<span class="sd">            with the hybridized model data, namely:</span>
+<span class="sd">            </span>
+<span class="sd">            &#39;hyb_model&#39; : Hybridized model (torch.nn.Module)</span>
+<span class="sd">            </span>
+<span class="sd">            &#39;hyb_indices&#39; : Hybridization indices (tuple[int])</span>
+<span class="sd">            </span>
+<span class="sd">            &#39;is_input_residual&#39; Input residual connection (concatenation)</span>
+
+<span class="sd">        model_directory : str</span>
+<span class="sd">            Directory where model is stored. If None, then all methods that</span>
+<span class="sd">            depend on an existent model directory become unavailable.</span>
+<span class="sd">        model_name : str, default=&#39;hybrid_model&#39;</span>
+<span class="sd">            Name of model. If None, then all methods that depend on a valid</span>
+<span class="sd">            model name become unavailable.</span>
+<span class="sd">        hybridization_type : str, default=&#39;identity&#39;</span>
+<span class="sd">            Hybridization model type.</span>
+<span class="sd">        is_model_in_normalized : bool, default=False</span>
+<span class="sd">            If True, then model expects normalized input features (normalized</span>
+<span class="sd">            input data has been seen during model training).</span>
+<span class="sd">        is_model_out_normalized : bool, default=False</span>
+<span class="sd">            If True, then model expects normalized output features (normalized</span>
+<span class="sd">            output data has been seen during model training).</span>
+<span class="sd">        is_save_model_init_file: bool, default=True</span>
+<span class="sd">            If True, saves model initialization file when model is initialized</span>
+<span class="sd">            (overwritting existent initialization file), False otherwise. When</span>
+<span class="sd">            initializing model from initialization file this option should be</span>
+<span class="sd">            set to False to avoid updating the initialization file and preserve</span>
+<span class="sd">            fitted data scalers.</span>
+<span class="sd">        device_type : {&#39;cpu&#39;, &#39;cuda&#39;}, default=&#39;cpu&#39;</span>
+<span class="sd">            Type of device on which torch.Tensor is allocated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Initialize from base class</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">HybridModel</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set number of features</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_n_features_in</span> <span class="o">=</span> <span class="n">n_features_in</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_n_features_out</span> <span class="o">=</span> <span class="n">n_features_out</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set hybridized models dictionary</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_hyb_models_dict</span> <span class="o">=</span> <span class="n">hyb_models_dict</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set hybridization channels</span>
+        <span class="n">hyb_models_names</span><span class="p">,</span> <span class="n">hyb_models</span><span class="p">,</span> <span class="n">hyb_channels</span><span class="p">,</span> \
+            <span class="n">hyb_models_input_residual</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_hybridization_channels</span><span class="p">(</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_hyb_models_dict</span><span class="p">)</span>
+        <span class="c1"># Set hybridized model names</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_hyb_models_names</span> <span class="o">=</span> <span class="n">hyb_models_names</span>
+        <span class="c1"># Set hybridized models</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_hyb_models</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleList</span><span class="p">(</span><span class="n">hyb_models</span><span class="p">)</span>
+        <span class="c1"># Set hybridization channels</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_hyb_channels</span> <span class="o">=</span> <span class="n">hyb_channels</span>
+        <span class="c1"># Set hybridization models input residual connections</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_hyb_models_input_residual</span> <span class="o">=</span> <span class="n">hyb_models_input_residual</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set model directory</span>
+        <span class="k">if</span> <span class="n">model_directory</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model_directory</span> <span class="o">=</span> <span class="n">model_directory</span>
+        <span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">model_directory</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model_directory</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">model_directory</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The model directory has not been found.&#39;</span><span class="p">)</span>
+        <span class="c1"># Set model name</span>
+        <span class="k">if</span> <span class="n">model_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model_name</span> <span class="o">=</span> <span class="n">model_name</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model_name</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model_name</span> <span class="o">=</span> <span class="n">model_name</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The model name must be a string.&#39;</span><span class="p">)</span>
+        <span class="c1"># Set hybridization model type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_hybridization_type</span> <span class="o">=</span> <span class="n">hybridization_type</span>
+        <span class="c1"># Set model input and output features normalization</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_model_in_normalized</span> <span class="o">=</span> <span class="n">is_model_in_normalized</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_model_out_normalized</span> <span class="o">=</span> <span class="n">is_model_out_normalized</span>
+        <span class="c1"># Set save initialization file flag</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_is_save_model_init_file</span> <span class="o">=</span> <span class="n">is_save_model_init_file</span>
+        <span class="c1"># Set device</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_device</span><span class="p">(</span><span class="n">device_type</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Check hybridized models data scalers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">check_hyb_models_data_scalers</span><span class="p">()</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize hybridization model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_hybridization_model</span> <span class="o">=</span> \
+            <span class="n">HybridizationModel</span><span class="p">(</span><span class="n">hybridization_type</span><span class="o">=</span><span class="n">hybridization_type</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize data scalers</span>
+        <span class="n">init_data_scalers</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Save model initialization file</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_save_model_init_file</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">save_model_init_file</span><span class="p">()</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="HybridModel.init_model_from_file"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.fetorch.structure.structure_state.HybridModel.html#hookeai.material_model_finder.model.material_discovery.HybridModel.init_model_from_file">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">init_model_from_file</span><span class="p">(</span><span class="n">model_directory</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">model_init_file_path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize model from initialization file.</span>
+<span class="sd">        </span>
+<span class="sd">        If model directory is provided, then (1) model initialization file is</span>
+<span class="sd">        assumed to be stored in the model directory under the name</span>
+<span class="sd">        model_init_file.pkl and (2) model initialization attributes are read</span>
+<span class="sd">        from the stored model_init_file.pkl file.</span>
+<span class="sd">        </span>
+<span class="sd">        In model initialization file path is provided, then (1) model</span>
+<span class="sd">        initialization attributes are read from the provided</span>
+<span class="sd">        model_init_file.pkl file and (2) model directory is set as the</span>
+<span class="sd">        corresponding directory.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        model_directory : str, default=None</span>
+<span class="sd">            Directory where model is stored.</span>
+<span class="sd">        model_init_file_path : str, default=None</span>
+<span class="sd">            Model initialization file path. Ignored if model_directory is</span>
+<span class="sd">            provided.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get model directory or model initialization file path</span>
+        <span class="k">if</span> <span class="n">model_directory</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Check model directory</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">model_directory</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The model directory has not been found:&#39;</span>
+                                   <span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">model_directory</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Set model initialization file path from model directory</span>
+            <span class="n">model_init_file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">model_directory</span><span class="p">,</span>
+                                                <span class="s1">&#39;model_init_file&#39;</span> <span class="o">+</span> <span class="s1">&#39;.pkl&#39;</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Check model initialization file</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">model_init_file_path</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The model initialization file has not &#39;</span>
+                                   <span class="s1">&#39;been found:</span><span class="se">\n\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">model_init_file_path</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">model_init_file_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Check model initialization file</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">model_init_file_path</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The model initialization file has not &#39;</span>
+                                   <span class="s1">&#39;been found:</span><span class="se">\n\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">model_init_file_path</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Get model directory from model initialization file path</span>
+            <span class="n">model_directory</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">model_init_file_path</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Either the model directory or the model &#39;</span>
+                               <span class="s1">&#39;initialization file path must be provided in &#39;</span>
+                               <span class="s1">&#39;order to initialize the model.&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Load model initialization attributes from file</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">model_init_file_path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">model_init_file</span><span class="p">:</span>
+            <span class="n">model_init_attributes</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">model_init_file</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get model initialization attributes</span>
+        <span class="n">model_init_args</span> <span class="o">=</span> <span class="n">model_init_attributes</span><span class="p">[</span><span class="s1">&#39;model_init_args&#39;</span><span class="p">]</span>
+        <span class="c1"># Update model directory</span>
+        <span class="n">model_init_args</span><span class="p">[</span><span class="s1">&#39;model_directory&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">model_directory</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize model</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">HybridModel</span><span class="p">(</span><span class="o">**</span><span class="n">model_init_args</span><span class="p">,</span> <span class="n">is_save_model_init_file</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set model data scalers</span>
+        <span class="n">model_data_scalers</span> <span class="o">=</span> <span class="n">model_init_attributes</span><span class="p">[</span><span class="s1">&#39;model_data_scalers&#39;</span><span class="p">]</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">_data_scalers</span> <span class="o">=</span> <span class="n">model_data_scalers</span>
+        <span class="c1"># Loop over model data scalers and set device</span>
+        <span class="k">if</span> <span class="n">model</span><span class="o">.</span><span class="n">_data_scalers</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">data_scaler</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">_data_scalers</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">data_scaler</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">data_scaler</span><span class="o">.</span><span class="n">set_device</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">_device_type</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Check hybridized models data scalers</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">check_hyb_models_data_scalers</span><span class="p">()</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">model</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="HybridModel.get_hybridization_channels"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.fetorch.structure.structure_state.HybridModel.html#hookeai.material_model_finder.model.material_discovery.HybridModel.get_hybridization_channels">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_hybridization_channels</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">hyb_models_dict</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get hybrid model hybridization channels.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        hyb_models_dict : dict</span>
+<span class="sd">            For each hybridized model (key, str), store dictionary (item, dict)</span>
+<span class="sd">            with the hybridized model data.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        hyb_models_names : list[str]</span>
+<span class="sd">            Hybridized models names.</span>
+<span class="sd">        hyb_models : list[torch.nn.Module]</span>
+<span class="sd">            Hybridized models.</span>
+<span class="sd">        hyb_channels : dict</span>
+<span class="sd">            For each hybridization channel (key, str[int]), store the</span>
+<span class="sd">            corresponding hybridized models module index (item, list[int]),</span>
+<span class="sd">            sorted according with the associated hybridization indices.</span>
+<span class="sd">            Hybridization channels are labeled between 0 and n_hyb_channel,</span>
+<span class="sd">            where n_hyb_channel is the total number of channels required to</span>
+<span class="sd">            place the hybridized models.</span>
+<span class="sd">        hyb_models_input_residual : dict</span>
+<span class="sd">            For each hybridization model (key, str), store input residual</span>
+<span class="sd">            connection flag (item, bool). If True, then input residual</span>
+<span class="sd">            connection is assigned to hybridized model, False otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Initialize hybridized models names</span>
+        <span class="n">hyb_models_names</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># Initialize hybridized models</span>
+        <span class="n">hyb_models</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># Initialize hybridization channels</span>
+        <span class="n">hyb_channels</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># Initialize hybridized models input residual connection</span>
+        <span class="n">hyb_models_input_residual</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize hybridized models indices</span>
+        <span class="n">hyb_models_indices</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">),</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+        <span class="c1"># Loop over hybridized models</span>
+        <span class="k">for</span> <span class="n">hyb_model_name</span><span class="p">,</span> <span class="n">hyb_model_data</span> <span class="ow">in</span> <span class="n">hyb_models_dict</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="c1"># Get hybridized model indices</span>
+            <span class="n">hyb_indices</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">hyb_model_data</span><span class="p">[</span><span class="s1">&#39;hyb_indices&#39;</span><span class="p">],</span>
+                                       <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">int</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">)</span>
+            <span class="c1"># Store hybridized model name</span>
+            <span class="n">hyb_models_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hyb_model_name</span><span class="p">)</span>
+            <span class="c1"># Store hybridized model indices</span>
+            <span class="n">hyb_models_indices</span> <span class="o">=</span> \
+                <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">hyb_models_indices</span><span class="p">,</span> <span class="n">hyb_indices</span><span class="p">),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get sorted column indices (secondary)</span>
+        <span class="n">sorted_cols_indices</span> <span class="o">=</span> \
+            <span class="n">torch</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">hyb_models_indices</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">stable</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># Sort hybridized models</span>
+        <span class="n">hyb_models_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">hyb_models_names</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">sorted_cols_indices</span><span class="p">]</span>
+        <span class="n">hyb_models_indices</span> <span class="o">=</span> <span class="n">hyb_models_indices</span><span class="p">[</span><span class="n">sorted_cols_indices</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="c1"># Get sorted row indices (primary)</span>
+        <span class="n">sorted_rows_indices</span> <span class="o">=</span> \
+            <span class="n">torch</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">hyb_models_indices</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">stable</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># Sort hybridized models</span>
+        <span class="n">hyb_models_names</span> <span class="o">=</span> <span class="p">[</span><span class="n">hyb_models_names</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">sorted_rows_indices</span><span class="p">]</span>
+        <span class="n">hyb_models_indices</span> <span class="o">=</span> <span class="n">hyb_models_indices</span><span class="p">[</span><span class="n">sorted_rows_indices</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize hybridization channel id</span>
+        <span class="n">channel_id</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c1"># Initialize hybridized model index</span>
+        <span class="n">model_idx</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c1"># Initialize hybridization channel</span>
+        <span class="n">hyb_channels</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">channel_id</span><span class="p">)]</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># Loop over (sorted) hybridized models</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">hyb_model_name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">hyb_models_names</span><span class="p">):</span>
+            <span class="c1"># Get hybridized model</span>
+            <span class="n">hyb_model</span> <span class="o">=</span> <span class="n">hyb_models_dict</span><span class="p">[</span><span class="n">hyb_model_name</span><span class="p">][</span><span class="s1">&#39;hyb_model&#39;</span><span class="p">]</span>
+            <span class="c1"># Store hybridized model</span>
+            <span class="n">hyb_models</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">hyb_model</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Get hybridized model indices</span>
+            <span class="n">hyb_indices</span> <span class="o">=</span> <span class="n">hyb_models_indices</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span>
+            <span class="c1"># Assemble hybridized model to channel</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">hyb_channels</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">channel_id</span><span class="p">)])</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                <span class="n">hyb_channels</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">channel_id</span><span class="p">)]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">model_idx</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="n">hyb_indices</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">==</span> <span class="n">hyb_models_indices</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">]:</span>
+                <span class="c1"># Check for duplicate indices</span>
+                <span class="k">if</span> <span class="n">hyb_indices</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="n">hyb_models_indices</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]:</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s1">&#39;Two hybridization models were assigned similar &#39;</span>
+                        <span class="sa">f</span><span class="s1">&#39;hybridization indices (</span><span class="si">{</span><span class="n">hyb_indices</span><span class="o">.</span><span class="n">tolist</span><span class="p">()</span><span class="si">}</span><span class="s1">). &#39;</span>
+                        <span class="sa">f</span><span class="s1">&#39;Check hybridization models </span><span class="se">\&#39;</span><span class="si">{</span><span class="n">hyb_model_name</span><span class="si">}</span><span class="se">\&#39;</span><span class="s1"> &#39;</span>
+                        <span class="sa">f</span><span class="s1">&#39;and </span><span class="se">\&#39;</span><span class="si">{</span><span class="n">hyb_models_names</span><span class="p">[</span><span class="n">i</span><span class="w"> </span><span class="o">-</span><span class="w"> </span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="se">\&#39;</span><span class="s1">.&#39;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">hyb_channels</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">channel_id</span><span class="p">)]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">model_idx</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Increment hybridization channel id</span>
+                <span class="n">channel_id</span> <span class="o">+=</span> <span class="mi">1</span>
+                <span class="c1"># Initialize hybridized channel</span>
+                <span class="n">hyb_channels</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">channel_id</span><span class="p">)]</span> <span class="o">=</span> <span class="p">[]</span>
+                <span class="c1"># Assemble hybridized model to channel</span>
+                <span class="n">hyb_channels</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">channel_id</span><span class="p">)]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">model_idx</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Get hybridized model input residual connection</span>
+            <span class="n">hyb_models_input_residual</span><span class="p">[</span><span class="n">hyb_model_name</span><span class="p">]</span> <span class="o">=</span> \
+                <span class="n">hyb_models_dict</span><span class="p">[</span><span class="n">hyb_model_name</span><span class="p">][</span><span class="s1">&#39;is_input_residual&#39;</span><span class="p">]</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Increment hybridized model index</span>
+            <span class="n">model_idx</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">hyb_models_names</span><span class="p">,</span> <span class="n">hyb_models</span><span class="p">,</span> <span class="n">hyb_channels</span><span class="p">,</span> \
+            <span class="n">hyb_models_input_residual</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="HybridModel.get_hybridized_model"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.fetorch.structure.structure_state.HybridModel.html#hookeai.material_model_finder.model.material_discovery.HybridModel.get_hybridized_model">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_hybridized_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">hyb_model_name</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get hybridized model from name.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        hyb_model_name : str</span>
+<span class="sd">            Hybridized model name.</span>
+<span class="sd">            </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        hyb_model : torch.nn.Module</span>
+<span class="sd">            Hybridized model.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check hybridized model name</span>
+        <span class="k">if</span> <span class="n">hyb_model_name</span> <span class="ow">not</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hyb_models_names</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Unknown hybridized model &#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;</span><span class="se">\&#39;</span><span class="si">{</span><span class="n">hyb_model_name</span><span class="si">}</span><span class="se">\&#39;</span><span class="s1">.&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get hybridized model module index</span>
+        <span class="n">model_idx</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hyb_models_names</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">hyb_model_name</span><span class="p">)</span>
+        <span class="c1"># Get hybridized model</span>
+        <span class="n">hyb_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hyb_models</span><span class="p">[</span><span class="n">model_idx</span><span class="p">]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">hyb_model</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="HybridModel.get_hybridized_models"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.fetorch.structure.structure_state.HybridModel.html#hookeai.material_model_finder.model.material_discovery.HybridModel.get_hybridized_models">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_hybridized_models</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get hybridized models.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        hyb_models : torch.nn.ModuleList</span>
+<span class="sd">            Hybridized models.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hyb_models</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="HybridModel.get_hybridized_models_names"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.fetorch.structure.structure_state.HybridModel.html#hookeai.material_model_finder.model.material_discovery.HybridModel.get_hybridized_models_names">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_hybridized_models_names</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get hybridized models names.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        hyb_models_names : list[str]</span>
+<span class="sd">            Hybridized models names.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hyb_models_names</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="HybridModel.set_device"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.fetorch.structure.structure_state.HybridModel.html#hookeai.material_model_finder.model.material_discovery.HybridModel.set_device">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">set_device</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device_type</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set device on which torch.Tensor is allocated.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        device_type : {&#39;cpu&#39;, &#39;cuda&#39;}</span>
+<span class="sd">            Type of device on which torch.Tensor is allocated.</span>
+<span class="sd">        device : torch.device</span>
+<span class="sd">            Device on which torch.Tensor is allocated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">device_type</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;cpu&#39;</span><span class="p">,</span> <span class="s1">&#39;cuda&#39;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">device_type</span> <span class="o">==</span> <span class="s1">&#39;cuda&#39;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;PyTorch with CUDA is not available. &#39;</span>
+                                   <span class="s1">&#39;Please set the model device type as CPU &#39;</span>
+                                   <span class="s1">&#39;as:</span><span class="se">\n\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="s1">&#39;model.set_device(</span><span class="se">\&#39;</span><span class="s1">cpu</span><span class="se">\&#39;</span><span class="s1">).&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_device_type</span> <span class="o">=</span> <span class="n">device_type</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="n">device_type</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Consistent update of hybridized models device</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_hyb_models_dict&#39;</span><span class="p">):</span>
+                <span class="c1"># Loop over hybridized models</span>
+                <span class="k">for</span> <span class="n">hyb_model_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hyb_models_names</span><span class="p">:</span>
+                    <span class="c1"># Get hybridized model</span>
+                    <span class="n">hyb_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_hybridized_model</span><span class="p">(</span><span class="n">hyb_model_name</span><span class="p">)</span>
+                    <span class="c1"># Update hybridized model device </span>
+                    <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">hyb_model</span><span class="p">,</span> <span class="s1">&#39;set_device&#39;</span><span class="p">):</span>
+                        <span class="n">hyb_model</span><span class="o">.</span><span class="n">set_device</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_device_type</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Invalid device type.&#39;</span><span class="p">)</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="HybridModel.get_device"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.fetorch.structure.structure_state.HybridModel.html#hookeai.material_model_finder.model.material_discovery.HybridModel.get_device">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_device</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get device on which torch.Tensor is allocated.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        device_type : {&#39;cpu&#39;, &#39;cuda&#39;}</span>
+<span class="sd">            Type of device on which torch.Tensor is allocated.</span>
+<span class="sd">        device : torch.device</span>
+<span class="sd">            Device on which torch.Tensor is allocated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">device_type</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">device</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="HybridModel.get_detached_model_parameters"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.fetorch.structure.structure_state.HybridModel.html#hookeai.material_model_finder.model.material_discovery.HybridModel.get_detached_model_parameters">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_detached_model_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">is_normalized_out</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get model parameters detached of gradients.</span>
+<span class="sd">        </span>
+<span class="sd">        Only collects parameters from hybridized models with explicit learnable</span>
+<span class="sd">        parameters. Parameters labels are prefixed with hybridized model name.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        is_normalized_out : bool, default=False</span>
+<span class="sd">            If True, then model parameters are normalized.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        model_parameters : dict</span>
+<span class="sd">            Model parameters.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Initialize model parameters</span>
+        <span class="n">model_parameters</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># Loop over hybridized models</span>
+        <span class="k">for</span> <span class="n">hyb_model_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hyb_models_names</span><span class="p">:</span>
+            <span class="c1"># Get hybridized model</span>
+            <span class="n">hyb_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_hybridized_model</span><span class="p">(</span><span class="n">hyb_model_name</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Check if hybridized model parameters are collected</span>
+            <span class="n">is_collect_params</span> <span class="o">=</span> <span class="p">(</span><span class="nb">hasattr</span><span class="p">(</span><span class="n">hyb_model</span><span class="p">,</span> <span class="s1">&#39;is_explicit_parameters&#39;</span><span class="p">)</span>
+                                 <span class="ow">and</span> <span class="n">hyb_model</span><span class="o">.</span><span class="n">is_explicit_parameters</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Skip hybridized model parameters</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">is_collect_params</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Get detached hybridized model parameters</span>
+            <span class="n">detached_parameters</span> <span class="o">=</span> <span class="n">hyb_model</span><span class="o">.</span><span class="n">get_detached_model_parameters</span><span class="p">(</span>
+                <span class="n">is_normalized_out</span><span class="o">=</span><span class="n">is_normalized_out</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Collect parameters (prefix with hybridized model name)</span>
+            <span class="k">for</span> <span class="n">param</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">detached_parameters</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="c1"># Set parameter label</span>
+                <span class="n">param_label</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">hyb_model_name</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">param</span><span class="si">}</span><span class="s1">&#39;</span>
+                <span class="c1"># Store parameter</span>
+                <span class="n">model_parameters</span><span class="p">[</span><span class="n">param_label</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">model_parameters</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="HybridModel.get_model_parameters_bounds"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.fetorch.structure.structure_state.HybridModel.html#hookeai.material_model_finder.model.material_discovery.HybridModel.get_model_parameters_bounds">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_model_parameters_bounds</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get model parameters bounds.</span>
+<span class="sd">        </span>
+<span class="sd">        Only collects parameters from hybridized models with explicit learnable</span>
+<span class="sd">        parameters. Parameters labels are prefixed with hybridized model name.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        model_parameters_bounds : dict</span>
+<span class="sd">            Model learnable parameters bounds. For each parameter (key, str),</span>
+<span class="sd">            the corresponding bounds are stored as a</span>
+<span class="sd">            tuple(lower_bound, upper_bound) (item, tuple).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Initialize model parameters bounds</span>
+        <span class="n">model_parameters_bounds</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># Loop over hybridized models</span>
+        <span class="k">for</span> <span class="n">hyb_model_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hyb_models_names</span><span class="p">:</span>
+            <span class="c1"># Get hybridized model</span>
+            <span class="n">hyb_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_hybridized_model</span><span class="p">(</span><span class="n">hyb_model_name</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Check if hybridized model parameters are collected</span>
+            <span class="n">is_collect_params</span> <span class="o">=</span> <span class="p">(</span><span class="nb">hasattr</span><span class="p">(</span><span class="n">hyb_model</span><span class="p">,</span> <span class="s1">&#39;is_explicit_parameters&#39;</span><span class="p">)</span>
+                                 <span class="ow">and</span> <span class="n">hyb_model</span><span class="o">.</span><span class="n">is_explicit_parameters</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Skip hybridized model parameters</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">is_collect_params</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Get hybridized model parameters bounds</span>
+            <span class="n">parameters_bounds</span> <span class="o">=</span> <span class="n">hyb_model</span><span class="o">.</span><span class="n">get_model_parameters_bounds</span><span class="p">()</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Collect parameters bounds (prefix with hybridized model name)</span>
+            <span class="k">for</span> <span class="n">param</span><span class="p">,</span> <span class="n">value</span> <span class="ow">in</span> <span class="n">parameters_bounds</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="c1"># Set parameter label</span>
+                <span class="n">param_label</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">hyb_model_name</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">param</span><span class="si">}</span><span class="s1">&#39;</span>
+                <span class="c1"># Store parameter bounds</span>
+                <span class="n">model_parameters_bounds</span><span class="p">[</span><span class="n">param_label</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">model_parameters_bounds</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="HybridModel.forward"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.fetorch.structure.structure_state.HybridModel.html#hookeai.material_model_finder.model.material_discovery.HybridModel.forward">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">features_in</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Forward propagation.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        features_in : torch.Tensor</span>
+<span class="sd">            Tensor of input features stored as torch.Tensor(2d) of shape</span>
+<span class="sd">            (sequence_length, n_features_in) for unbatched input or</span>
+<span class="sd">            torch.Tensor(3d) of shape</span>
+<span class="sd">            (sequence_length, batch_size, n_features_in) for batched input.</span>
+<span class="sd">            </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        features_out : torch.Tensor</span>
+<span class="sd">            Tensor of output features stored as torch.Tensor(2d) of shape</span>
+<span class="sd">            (sequence_length, n_features_out) for unbatched input or</span>
+<span class="sd">            torch.Tensor(3d) of shape</span>
+<span class="sd">            (sequence_length, batch_size, n_features_out) for batched input.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check input state features</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">features_in</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Input features were not provided as &#39;</span>
+                               <span class="s1">&#39;torch.Tensor.&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get sorted hybridization channels ids</span>
+        <span class="n">channels_ids</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">([</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hyb_channels</span><span class="o">.</span><span class="n">keys</span><span class="p">()])</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize hybridized models outputs</span>
+        <span class="n">list_features_out</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># Loop over hybridization channels</span>
+        <span class="k">for</span> <span class="n">channel_id</span> <span class="ow">in</span> <span class="n">channels_ids</span><span class="p">:</span>
+            <span class="c1"># Initialize hybridization channel output features (recursive)</span>
+            <span class="n">features_out</span> <span class="o">=</span> <span class="n">features_in</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Loop over hybridization channel hybridized models</span>
+            <span class="k">for</span> <span class="n">hyb_model_idx</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hyb_channels</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">channel_id</span><span class="p">)]:</span>
+                <span class="c1"># Get hybridized model name</span>
+                <span class="n">hyb_model_name</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hyb_models_names</span><span class="p">[</span><span class="n">hyb_model_idx</span><span class="p">]</span>
+                <span class="c1"># Get hybridized model</span>
+                <span class="n">hyb_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_hybridized_model</span><span class="p">(</span><span class="n">hyb_model_name</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Check hybridized model input residual connection</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hyb_models_input_residual</span><span class="p">[</span><span class="n">hyb_model_name</span><span class="p">]:</span>
+                    <span class="c1"># Concatenate input residual connection</span>
+                    <span class="n">features_out</span> <span class="o">=</span> \
+                        <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">features_out</span><span class="p">,</span> <span class="n">features_in</span><span class="p">),</span> <span class="n">dim</span><span class="o">=-</span><span class="mi">1</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Get hybridized model input features</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_model_in_normalized</span><span class="p">(</span><span class="n">hyb_model</span><span class="p">):</span>
+                    <span class="c1"># Normalize hybridized model input features</span>
+                    <span class="n">hyb_model_features_in</span> <span class="o">=</span> <span class="n">hyb_model</span><span class="o">.</span><span class="n">data_scaler_transform</span><span class="p">(</span>
+                        <span class="n">features_out</span><span class="p">,</span> <span class="s1">&#39;features_in&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;normalize&#39;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">hyb_model_features_in</span> <span class="o">=</span> <span class="n">features_out</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Perform forward propagation of hybridized model</span>
+                <span class="n">hyb_model_output</span> <span class="o">=</span> <span class="n">hyb_model</span><span class="p">(</span><span class="n">hyb_model_features_in</span><span class="p">)</span>
+                <span class="c1"># Extract hybridized model output features</span>
+                <span class="n">features_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">features_out_extractor</span><span class="p">(</span><span class="n">hyb_model_output</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Get hybridized model output features</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">check_model_out_normalized</span><span class="p">(</span><span class="n">hyb_model</span><span class="p">):</span>
+                    <span class="n">features_out</span> <span class="o">=</span> <span class="n">hyb_model</span><span class="o">.</span><span class="n">data_scaler_transform</span><span class="p">(</span>
+                        <span class="n">features_out</span><span class="p">,</span> <span class="s1">&#39;features_out&#39;</span><span class="p">,</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;denormalize&#39;</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Store hybridization channel output features</span>
+            <span class="n">list_features_out</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">features_out</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Compute hybridization model output features</span>
+        <span class="n">features_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hybridization_model</span><span class="p">(</span><span class="n">list_features_out</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Normalize hybrid model output features</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_model_out_normalized</span><span class="p">:</span>
+            <span class="n">features_out</span> <span class="o">=</span> <span class="n">data_scaler_transform</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tensor</span><span class="o">=</span><span class="n">features_out</span><span class="p">,</span>
+                                                 <span class="n">features_type</span><span class="o">=</span><span class="s1">&#39;features_out&#39;</span><span class="p">,</span>
+                                                 <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;normalize&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">features_out</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="HybridModel.check_model_in_normalized"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.fetorch.structure.structure_state.HybridModel.html#hookeai.material_model_finder.model.material_discovery.HybridModel.check_model_in_normalized">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_model_in_normalized</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if generic model expects normalized input features.</span>
+<span class="sd">        </span>
+<span class="sd">        A model expects normalized input features if it has an attribute</span>
+<span class="sd">        &#39;is_model_in_normalized&#39; set to True.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        model : torch.nn.Module</span>
+<span class="sd">            Model.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        is_model_in_normalized : bool</span>
+<span class="sd">            If True, then model expects normalized input features (normalized</span>
+<span class="sd">            input data has been seen during model training).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get model input features normalization</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s1">&#39;is_model_in_normalized&#39;</span><span class="p">):</span>
+            <span class="n">is_model_in_normalized</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">is_model_in_normalized</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">is_model_in_normalized</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">is_model_in_normalized</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="HybridModel.check_model_out_normalized"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.fetorch.structure.structure_state.HybridModel.html#hookeai.material_model_finder.model.material_discovery.HybridModel.check_model_out_normalized">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">check_model_out_normalized</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check if generic model expects normalized output features.</span>
+<span class="sd">        </span>
+<span class="sd">        A model expects normalized output features if it has an attribute</span>
+<span class="sd">        &#39;is_model_out_normalized&#39; set to True.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        model : torch.nn.Module</span>
+<span class="sd">            Model.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        is_model_out_normalized : bool</span>
+<span class="sd">            If True, then model expects normalized output features (normalized</span>
+<span class="sd">            output data has been seen during model training).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get model output features normalization</span>
+        <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s1">&#39;is_model_out_normalized&#39;</span><span class="p">):</span>
+            <span class="n">is_model_out_normalized</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">is_model_out_normalized</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">is_model_out_normalized</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">is_model_out_normalized</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="HybridModel.features_out_extractor"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.fetorch.structure.structure_state.HybridModel.html#hookeai.material_model_finder.model.material_discovery.HybridModel.features_out_extractor">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">features_out_extractor</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">model_output</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Extract output features from generic model output.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        model_output : {torch.Tensor, tuple}</span>
+<span class="sd">            Model output.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        features_out : torch.Tensor</span>
+<span class="sd">            Tensor of output features stored as torch.Tensor(2d) of shape</span>
+<span class="sd">            (sequence_length, n_features_out) for unbatched input or</span>
+<span class="sd">            torch.Tensor(3d) of shape</span>
+<span class="sd">            (sequence_length, batch_size, n_features_out) for batched input.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Extract output features</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model_output</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">):</span>
+            <span class="c1"># Assume output features are stored in the first output index</span>
+            <span class="c1"># of model output</span>
+            <span class="n">features_out</span> <span class="o">=</span> <span class="n">model_output</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model_output</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+            <span class="c1"># Output features correspond directly to model output</span>
+            <span class="n">features_out</span> <span class="o">=</span> <span class="n">model_output</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Unexpected model output of type &#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;(</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">model_output</span><span class="p">)</span><span class="si">}</span><span class="s1">). Output features &#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;extraction is not implemented.&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">features_out</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="HybridModel.save_model_init_file"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.fetorch.structure.structure_state.HybridModel.html#hookeai.material_model_finder.model.material_discovery.HybridModel.save_model_init_file">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">save_model_init_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save model initialization file.</span>
+<span class="sd">        </span>
+<span class="sd">        Initialization file is stored in the model directory under the name</span>
+<span class="sd">        model_init_file.pkl.</span>
+<span class="sd">        </span>
+<span class="sd">        Initialization file contains a dictionary model_init_attributes that</span>
+<span class="sd">        includes:</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;model_init_args&#39; - Model initialization parameters</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;model_data_scalers&#39; - Model fitted data scalers</span>
+
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check model directory</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_directory</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The model directory has not been found:</span><span class="se">\n\n</span><span class="s1">&#39;</span>
+                               <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_directory</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize model initialization attributes</span>
+        <span class="n">model_init_attributes</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Build initialization parameters</span>
+        <span class="n">model_init_args</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">model_init_args</span><span class="p">[</span><span class="s1">&#39;n_features_in&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_features_in</span>
+        <span class="n">model_init_args</span><span class="p">[</span><span class="s1">&#39;n_features_out&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_features_out</span>
+        <span class="n">model_init_args</span><span class="p">[</span><span class="s1">&#39;hyb_models_dict&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hyb_models_dict</span>
+        <span class="n">model_init_args</span><span class="p">[</span><span class="s1">&#39;model_directory&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_directory</span>
+        <span class="n">model_init_args</span><span class="p">[</span><span class="s1">&#39;model_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_name</span>
+        <span class="n">model_init_args</span><span class="p">[</span><span class="s1">&#39;hybridization_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hybridization_type</span>
+        <span class="n">model_init_args</span><span class="p">[</span><span class="s1">&#39;is_model_in_normalized&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">is_model_in_normalized</span>
+        <span class="n">model_init_args</span><span class="p">[</span><span class="s1">&#39;is_model_out_normalized&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">is_model_out_normalized</span>
+        <span class="n">model_init_args</span><span class="p">[</span><span class="s1">&#39;device_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_device_type</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Assemble initialization parameters</span>
+        <span class="n">model_init_attributes</span><span class="p">[</span><span class="s1">&#39;model_init_args&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">model_init_args</span>
+        <span class="c1"># Assemble model data scalers</span>
+        <span class="n">model_init_attributes</span><span class="p">[</span><span class="s1">&#39;model_data_scalers&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data_scalers</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set model initialization file path</span>
+        <span class="n">model_init_file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_directory</span><span class="p">,</span>
+                                            <span class="s1">&#39;model_init_file&#39;</span> <span class="o">+</span> <span class="s1">&#39;.pkl&#39;</span><span class="p">)</span>
+        <span class="c1"># Save model initialization file</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">model_init_file_path</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">init_file</span><span class="p">:</span>
+            <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">model_init_attributes</span><span class="p">,</span> <span class="n">init_file</span><span class="p">)</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="HybridModel.sync_material_model_parameters"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.fetorch.structure.structure_state.HybridModel.html#hookeai.material_model_finder.model.material_discovery.HybridModel.sync_material_model_parameters">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">sync_material_model_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Synchronize model parameters with learnable parameters.</span>
+<span class="sd">        </span>
+<span class="sd">        Required to update wrapped constitutive model parameters in</span>
+<span class="sd">        hybridized models of class RecurrentConstitutiveModel.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Loop over hybridized models</span>
+        <span class="k">for</span> <span class="n">hyb_model_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hyb_models_names</span><span class="p">:</span>
+            <span class="c1"># Get hybridized model</span>
+            <span class="n">hyb_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_hybridized_model</span><span class="p">(</span><span class="n">hyb_model_name</span><span class="p">)</span>
+            <span class="c1"># Synchronize model parameters with learnable parameters</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nb">hasattr</span><span class="p">(</span><span class="n">hyb_model</span><span class="p">,</span> <span class="s1">&#39;sync_material_model_parameters&#39;</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="nb">callable</span><span class="p">(</span><span class="n">hyb_model</span><span class="o">.</span><span class="n">sync_material_model_parameters</span><span class="p">)):</span>
+                <span class="n">hyb_model</span><span class="o">.</span><span class="n">sync_material_model_parameters</span><span class="p">()</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="HybridModel.check_hyb_models_data_scalers"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.fetorch.structure.structure_state.HybridModel.html#hookeai.material_model_finder.model.material_discovery.HybridModel.check_hyb_models_data_scalers">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">check_hyb_models_data_scalers</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check hybridized models data scalers.&quot;&quot;&quot;</span>
+        <span class="c1"># Loop over hybridized models</span>
+        <span class="k">for</span> <span class="n">hyb_model_name</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hyb_models_names</span><span class="p">:</span>
+            <span class="c1"># Get hybridized model</span>
+            <span class="n">hyb_model</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_hybridized_model</span><span class="p">(</span><span class="n">hyb_model_name</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Check hybridized model features normalization</span>
+            <span class="n">is_model_in_normalized</span> <span class="o">=</span> \
+                <span class="bp">self</span><span class="o">.</span><span class="n">check_model_in_normalized</span><span class="p">(</span><span class="n">hyb_model</span><span class="p">)</span>
+            <span class="n">is_model_out_normalized</span> <span class="o">=</span> \
+                <span class="bp">self</span><span class="o">.</span><span class="n">check_model_out_normalized</span><span class="p">(</span><span class="n">hyb_model</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Skip checking procedures if normalization is not required</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">is_model_in_normalized</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_model_out_normalized</span><span class="p">:</span>
+                <span class="k">continue</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Check hybridized model data scalers</span>
+            <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">hyb_model</span><span class="p">,</span> <span class="s1">&#39;_data_scalers&#39;</span><span class="p">)</span>
+                    <span class="ow">or</span> <span class="n">hyb_model</span><span class="o">.</span><span class="n">_data_scalers</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s1">&#39;Data scalers are not available to hybridized &#39;</span>
+                    <span class="sa">f</span><span class="s1">&#39;model </span><span class="se">\&#39;</span><span class="si">{</span><span class="n">hyb_model_name</span><span class="si">}</span><span class="se">\&#39;</span><span class="s1">. Either the data_scalers &#39;</span>
+                    <span class="sa">f</span><span class="s1">&#39;attribute is missing or is set to None.&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">data_scalers</span> <span class="o">=</span> <span class="n">hyb_model</span><span class="o">.</span><span class="n">_data_scalers</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Check hybridized model input features data scaler</span>
+            <span class="n">is_features_in_data_scaler</span> <span class="o">=</span> \
+                <span class="p">(</span><span class="s1">&#39;features_in&#39;</span> <span class="ow">in</span> <span class="n">data_scalers</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+                 <span class="ow">and</span> <span class="n">data_scalers</span><span class="p">[</span><span class="s1">&#39;features_in&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="c1"># Check hybridized model input features normalization</span>
+            <span class="k">if</span> <span class="n">is_model_in_normalized</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_features_in_data_scaler</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s1">&#39;Data scalers to normalize </span><span class="se">\&#39;</span><span class="s1">features_in</span><span class="se">\&#39;</span><span class="s1"> are not &#39;</span>
+                    <span class="sa">f</span><span class="s1">&#39;available to hybridized model </span><span class="se">\&#39;</span><span class="si">{</span><span class="n">hyb_model_name</span><span class="si">}</span><span class="se">\&#39;</span><span class="s1"> &#39;</span>
+                    <span class="sa">f</span><span class="s1">&#39;with </span><span class="se">\&#39;</span><span class="s1">is_model_in_normalized=True</span><span class="se">\&#39;</span><span class="s1">.&#39;</span>
+                    <span class="sa">f</span><span class="s1">&#39;The corresponding data_scaler[</span><span class="se">\&#39;</span><span class="s1">features_in</span><span class="se">\&#39;</span><span class="s1">] is &#39;</span>
+                    <span class="sa">f</span><span class="s1">&#39;either missing or set to None.&#39;</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Check hybridized model output features data scaler</span>
+            <span class="n">is_features_out_data_scaler</span> <span class="o">=</span> \
+                <span class="p">(</span><span class="s1">&#39;features_out&#39;</span> <span class="ow">in</span> <span class="n">data_scalers</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+                 <span class="ow">and</span> <span class="n">data_scalers</span><span class="p">[</span><span class="s1">&#39;features_out&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="c1"># Check hybridized model output features normalization</span>
+            <span class="k">if</span> <span class="n">is_model_out_normalized</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">is_features_out_data_scaler</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                    <span class="sa">f</span><span class="s1">&#39;Data scalers to normalize </span><span class="se">\&#39;</span><span class="s1">features_out</span><span class="se">\&#39;</span><span class="s1"> are not &#39;</span>
+                    <span class="sa">f</span><span class="s1">&#39;available to hybridized model </span><span class="se">\&#39;</span><span class="si">{</span><span class="n">hyb_model_name</span><span class="si">}</span><span class="se">\&#39;</span><span class="s1"> &#39;</span>
+                    <span class="sa">f</span><span class="s1">&#39;with </span><span class="se">\&#39;</span><span class="s1">is_model_out_normalized=True</span><span class="se">\&#39;</span><span class="s1">.&#39;</span>
+                    <span class="sa">f</span><span class="s1">&#39;The corresponding data_scaler[</span><span class="se">\&#39;</span><span class="s1">features_in</span><span class="se">\&#39;</span><span class="s1">] is &#39;</span>
+                    <span class="sa">f</span><span class="s1">&#39;either missing or set to None.&#39;</span><span class="p">)</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

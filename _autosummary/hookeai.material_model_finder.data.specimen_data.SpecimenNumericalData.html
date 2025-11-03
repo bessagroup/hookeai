@@ -1,0 +1,448 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="hookeai.material_model_finder.data.specimen_data.StructureMesh" href="hookeai.material_model_finder.data.specimen_data.StructureMesh.html" />
+    <link rel="prev" title="hookeai.material_model_finder.data.specimen_data" href="hookeai.material_model_finder.data.specimen_data.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="hookeai.html">Code</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="hookeai.data_generation.html">hookeai.data_generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.ioput.html">hookeai.ioput</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="hookeai.material_model_finder.html">hookeai.material_model_finder</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="hookeai.material_model_finder.data.html">hookeai.material_model_finder.data</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="hookeai.material_model_finder.data.specimen_data.html">hookeai.material_model_finder.data.specimen_data</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="hookeai.material_model_finder.model.html">hookeai.material_model_finder.model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hookeai.material_model_finder.train.html">hookeai.material_model_finder.train</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hookeai.material_model_finder.utilities.html">hookeai.material_model_finder.utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.miscellaneous.html">hookeai.miscellaneous</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.model_architectures.html">hookeai.model_architectures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.simulators.html">hookeai.simulators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.time_series_data.html">hookeai.time_series_data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.utilities.html">hookeai.utilities</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="hookeai.html">hookeai</a></li>
+          <li class="breadcrumb-item"><a href="hookeai.material_model_finder.html">hookeai.material_model_finder</a></li>
+          <li class="breadcrumb-item"><a href="hookeai.material_model_finder.data.html">hookeai.material_model_finder.data</a></li>
+          <li class="breadcrumb-item"><a href="hookeai.material_model_finder.data.specimen_data.html">hookeai.material_model_finder.data.specimen_data</a></li>
+      <li class="breadcrumb-item active">hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="hookeai-material-model-finder-data-specimen-data-specimennumericaldata">
+<h1>hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData<a class="headerlink" href="#hookeai-material-model-finder-data-specimen-data-specimennumericaldata" title="Permalink to this heading">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">SpecimenNumericalData</span></span><a class="reference internal" href="../_modules/hookeai/material_model_finder/data/specimen_data.html#SpecimenNumericalData"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Specimen numerical data translated from experimental results.</p>
+<p>After discretizing the specimen in a suitable finite element mesh, the
+experimental results are translated to numerical data, namely the
+nodes displacement history and reaction forces history.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.specimen_mesh">
+<span class="sig-name descname"><span class="pre">specimen_mesh</span></span><a class="headerlink" href="#hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.specimen_mesh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Specimen finite element mesh.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference internal" href="hookeai.material_model_finder.data.specimen_data.StructureMesh.html#hookeai.material_model_finder.data.specimen_data.StructureMesh" title="hookeai.material_model_finder.data.specimen_data.StructureMesh">StructureMesh</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.nodes_disps_mesh_hist">
+<span class="sig-name descname"><span class="pre">nodes_disps_mesh_hist</span></span><a class="headerlink" href="#hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.nodes_disps_mesh_hist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Displacements history of finite element mesh nodes stored as
+torch.Tensor(3d) of shape (n_node_mesh, n_dim, n_time).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor(3d)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.reaction_forces_mesh_hist">
+<span class="sig-name descname"><span class="pre">reaction_forces_mesh_hist</span></span><a class="headerlink" href="#hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.reaction_forces_mesh_hist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Reaction forces (Dirichlet boundary conditions) history of finite
+element mesh nodes stored as torch.Tensor(3d) of shape
+(n_node_mesh, n_dim, n_time).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor(3d)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.dirichlet_bc_mesh_hist">
+<span class="sig-name descname"><span class="pre">dirichlet_bc_mesh_hist</span></span><a class="headerlink" href="#hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.dirichlet_bc_mesh_hist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Dirichlet boundary constraints history of finite element mesh nodes
+stored as torch.Tensor(3d) of shape (n_node_mesh, n_dim, n_time).
+Encodes if each degree of freedom is free (assigned 0) or constrained
+(greater than 0) under Dirichlet boundary conditions. The encoding
+depends on the selected force equilibrium loss type.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor(3d)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.time_hist">
+<span class="sig-name descname"><span class="pre">time_hist</span></span><a class="headerlink" href="#hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.time_hist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Discrete time history.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor(1d)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.set_specimen_mesh">
+<span class="sig-name descname"><span class="pre">set_specimen_mesh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodes_coords_mesh_init</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elements_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">connectivities</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/material_model_finder/data/specimen_data.html#SpecimenNumericalData.set_specimen_mesh"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.set_specimen_mesh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the specimen finite element mesh.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.set_specimen_data">
+<span class="sig-name descname"><span class="pre">set_specimen_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodes_disps_mesh_hist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reaction_forces_mesh_hist</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/material_model_finder/data/specimen_data.html#SpecimenNumericalData.set_specimen_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.set_specimen_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set specimen numerical data translated from experimental results.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.update_specimen_mesh_configuration">
+<span class="sig-name descname"><span class="pre">update_specimen_mesh_configuration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_update_coords</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/material_model_finder/data/specimen_data.html#SpecimenNumericalData.update_specimen_mesh_configuration"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.update_specimen_mesh_configuration" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update the specimen mesh configuration for given discrete time.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.get_batched_mesh_configuration_hist">
+<span class="sig-name descname"><span class="pre">get_batched_mesh_configuration_hist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_update_coords</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/material_model_finder/data/specimen_data.html#SpecimenNumericalData.get_batched_mesh_configuration_hist"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.get_batched_mesh_configuration_hist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get batched finite element mesh configuration history.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.get_element_nodes_field_hist">
+<span class="sig-name descname"><span class="pre">get_element_nodes_field_hist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">element_nodes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodes_field_mesh_hist</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/material_model_finder/data/specimen_data.html#SpecimenNumericalData.get_element_nodes_field_hist"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.get_element_nodes_field_hist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get field history of finite element nodes.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.get_n_dim">
+<span class="sig-name descname"><span class="pre">get_n_dim</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/material_model_finder/data/specimen_data.html#SpecimenNumericalData.get_n_dim"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.get_n_dim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get number of spatial dimensions.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.check_dirichlet_bc_mesh_hist">
+<span class="sig-name descname"><span class="pre">check_dirichlet_bc_mesh_hist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">force_equilibrium_loss_type</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/material_model_finder/data/specimen_data.html#SpecimenNumericalData.check_dirichlet_bc_mesh_hist"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.check_dirichlet_bc_mesh_hist" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if Dirichlet boundary constraints history is admissible.</p>
+</dd></dl>
+
+<p>Constructor.</p>
+<p class="rubric">List of Public Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id0" title="hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.check_dirichlet_bc_mesh_hist"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_dirichlet_bc_mesh_hist</span></code></a></p></td>
+<td><p>Check if Dirichlet boundary constraints history is admissible.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#id1" title="hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.get_batched_mesh_configuration_hist"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_batched_mesh_configuration_hist</span></code></a></p></td>
+<td><p>Get batched finite element mesh configuration history.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id2" title="hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.get_element_nodes_field_hist"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_element_nodes_field_hist</span></code></a></p></td>
+<td><p>Get field history of finite element nodes.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#id3" title="hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.get_n_dim"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_n_dim</span></code></a></p></td>
+<td><p>Get number of spatial dimensions.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id4" title="hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.set_specimen_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_specimen_data</span></code></a></p></td>
+<td><p>Set specimen numerical data translated from experimental results.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#id5" title="hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.set_specimen_mesh"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_specimen_mesh</span></code></a></p></td>
+<td><p>Set the specimen finite element mesh.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id6" title="hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.update_specimen_mesh_configuration"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update_specimen_mesh_configuration</span></code></a></p></td>
+<td><p>Update the specimen mesh configuration for given discrete time.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/material_model_finder/data/specimen_data.html#SpecimenNumericalData.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructor.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">check_dirichlet_bc_mesh_hist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">force_equilibrium_loss_type</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/material_model_finder/data/specimen_data.html#SpecimenNumericalData.check_dirichlet_bc_mesh_hist"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id0" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if Dirichlet boundary constraints history is admissible.</p>
+<p>Dirichlet boundary constraints history must be consistent with the
+selected force equilibrium loss type in the material model finder.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>force_equilibrium_loss_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Type of force equilibrium loss.</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id1">
+<span class="sig-name descname"><span class="pre">get_batched_mesh_configuration_hist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">is_update_coords</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/material_model_finder/data/specimen_data.html#SpecimenNumericalData.get_batched_mesh_configuration_hist"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id1" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get batched finite element mesh configuration history.</p>
+<p>Batching operation over elements requires that all finite element mesh
+elements share the same element type (number of nodes).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>is_update_coords</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=True</em>) – If False, then finite element mesh nodes coordinates are kept fixed
+throughout history. If True, then finite element mesh nodes
+coordinates are computed from nodes displacements history.</p></li>
+<li><p><strong>device</strong> (<em>torch.device</em><em>, </em><em>default=None</em>) – Device on which torch.Tensor is allocated.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>elements_coords_hist</strong> (<em>torch.Tensor(4d)</em>) – Coordinates history of finite element mesh elements nodes stored
+as torch.Tensor(4d) of shape (n_elem, n_node, n_dim, n_time).</p></li>
+<li><p><strong>elements_disps_hist</strong> (<em>torch.Tensor(4d)</em>) – Displacements history of finite element mesh elements nodes stored
+as torch.Tensor(4d) of shape (n_elem, n_node, n_dim, n_time).</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id2">
+<span class="sig-name descname"><span class="pre">get_element_nodes_field_hist</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">element_nodes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodes_field_mesh_hist</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/material_model_finder/data/specimen_data.html#SpecimenNumericalData.get_element_nodes_field_hist"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get field history of finite element nodes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>element_nodes</strong> (<em>torch.Tensor</em><em>(</em><em>1d</em><em>)</em>) – Finite element mesh element connectitivities stored as
+torch.Tensor(1d) of shape (n_node,). Nodes are labeled from
+1 to n_node_mesh.</p></li>
+<li><p><strong>nodes_field_mesh_hist</strong> (<em>torch.Tensor</em><em>(</em><em>3d</em><em>)</em>) – Field history of finite element mesh nodes stored as
+torch.Tensor(3d) of shape (n_node_mesh, n_dim, n_time).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>element_nodes_hist</strong> – Field history of finite element nodes stored as
+torch.Tensor(3d) of shape (n_node, n_dim, n_time).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor(3d)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id3">
+<span class="sig-name descname"><span class="pre">get_n_dim</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/material_model_finder/data/specimen_data.html#SpecimenNumericalData.get_n_dim"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id3" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get number of spatial dimensions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>n_dim</strong> – Number of spatial dimensions.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id4">
+<span class="sig-name descname"><span class="pre">set_specimen_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nodes_disps_mesh_hist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">reaction_forces_mesh_hist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dirichlet_bc_mesh_hist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_hist</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/material_model_finder/data/specimen_data.html#SpecimenNumericalData.set_specimen_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id4" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set specimen numerical data translated from experimental results.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nodes_disps_mesh_hist</strong> (<em>torch.Tensor</em><em>(</em><em>3d</em><em>)</em>) – Displacements history of finite element mesh nodes stored as
+torch.Tensor(3d) of shape (n_node_mesh, n_dim, n_time).</p></li>
+<li><p><strong>reaction_forces_mesh_hist</strong> (<em>torch.Tensor</em><em>(</em><em>3d</em><em>)</em>) – Reaction forces (Dirichlet boundary conditions) history of finite
+element mesh nodes stored as torch.Tensor(3d) of shape
+(n_node_mesh, n_dim, n_time).</p></li>
+<li><p><strong>dirichlet_bc_mesh_hist</strong> (<em>torch.Tensor</em><em>(</em><em>3d</em><em>)</em>) – Dirichlet boundary constraints history of finite element mesh nodes
+stored as torch.Tensor(3d) of shape (n_node_mesh, n_dim, n_time).
+Encodes if each degree of freedom is free (assigned 0) or
+constrained (greater than 0) under Dirichlet boundary conditions.
+The encoding depends on the selected force equilibrium loss type.</p></li>
+<li><p><strong>time_hist</strong> (<em>torch.Tensor</em><em>(</em><em>1d</em><em>)</em>) – Discrete time history.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id5">
+<span class="sig-name descname"><span class="pre">set_specimen_mesh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nodes_coords_mesh_init</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elements_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">connectivities</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dirichlet_bool_mesh</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/material_model_finder/data/specimen_data.html#SpecimenNumericalData.set_specimen_mesh"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id5" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set the specimen finite element mesh.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nodes_coords_mesh_init</strong> (<em>torch.Tensor</em><em>(</em><em>2d</em><em>)</em>) – Initial coordinates of finite element mesh nodes stored as
+torch.Tensor(2d) of shape (n_node_mesh, n_dim).</p></li>
+<li><p><strong>elements_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – FETorch element type (item, ElementType) of each finite element
+mesh element (str[int]). Elements labels must be within the range
+of 1 to n_elem (included).</p></li>
+<li><p><strong>connectivities</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Nodes (item, tuple[int]) of each finite element mesh element
+(key, str[int]). Nodes must be within the range of 1 to n_node_mesh
+(included). Elements labels must be within the range of 1 to n_elem
+(included).</p></li>
+<li><p><strong>dirichlet_bool_mesh</strong> (<em>torch.Tensor</em><em>(</em><em>2d</em><em>)</em>) – Degrees of freedom of finite element mesh subject to Dirichlet
+boundary conditions. Stored as torch.Tensor(2d) of shape
+(n_node_mesh, n_dim) where constrained degrees of freedom are
+labeled 1, otherwise 0.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id6">
+<span class="sig-name descname"><span class="pre">update_specimen_mesh_configuration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time_idx</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_update_coords</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/material_model_finder/data/specimen_data.html#SpecimenNumericalData.update_specimen_mesh_configuration"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id6" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update the specimen mesh configuration for given discrete time.</p>
+<p>For a given discrete time, the known nodes displacement history is used
+to update the specimen finite element mesh nodes coordinates and
+displacements. A similar update is performed for the last converged
+mesh configuration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>time_idx</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Discrete time index.</p></li>
+<li><p><strong>is_update_coords</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=True</em>) – If False, then only updates the displacements of the finite element
+mesh nodes, leaving the nodes coordinates unchanged. If True, then
+update both coordinates and displacements of finite element mesh
+nodes.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="hookeai.material_model_finder.data.specimen_data.html" class="btn btn-neutral float-left" title="hookeai.material_model_finder.data.specimen_data" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="hookeai.material_model_finder.data.specimen_data.StructureMesh.html" class="btn btn-neutral float-right" title="hookeai.material_model_finder.data.specimen_data.StructureMesh" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

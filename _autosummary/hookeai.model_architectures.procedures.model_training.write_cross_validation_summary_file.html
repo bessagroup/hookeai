@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>hookeai.model_architectures.procedures.model_training.write_cross_validation_summary_file &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="hookeai.model_architectures.procedures.model_training.write_summary_file" href="hookeai.model_architectures.procedures.model_training.write_summary_file.html" />
+    <link rel="prev" title="hookeai.model_architectures.procedures.model_training.save_training_state" href="hookeai.model_architectures.procedures.model_training.save_training_state.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="hookeai.html">Code</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="hookeai.data_generation.html">hookeai.data_generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.ioput.html">hookeai.ioput</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.material_model_finder.html">hookeai.material_model_finder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.miscellaneous.html">hookeai.miscellaneous</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="hookeai.model_architectures.html">hookeai.model_architectures</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="hookeai.model_architectures.hybrid_base_model.html">hookeai.model_architectures.hybrid_base_model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hookeai.model_architectures.materials.html">hookeai.model_architectures.materials</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="hookeai.model_architectures.procedures.html">hookeai.model_architectures.procedures</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="hookeai.model_architectures.procedures.convergence_plots.html">hookeai.model_architectures.procedures.convergence_plots</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hookeai.model_architectures.procedures.model_data_scaling.html">hookeai.model_architectures.procedures.model_data_scaling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hookeai.model_architectures.procedures.model_prediction.html">hookeai.model_architectures.procedures.model_prediction</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hookeai.model_architectures.procedures.model_state_files.html">hookeai.model_architectures.procedures.model_state_files</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hookeai.model_architectures.procedures.model_summary.html">hookeai.model_architectures.procedures.model_summary</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="hookeai.model_architectures.procedures.model_training.html">hookeai.model_architectures.procedures.model_training</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="hookeai.model_architectures.rc_base_model.html">hookeai.model_architectures.rc_base_model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hookeai.model_architectures.rnn_base_model.html">hookeai.model_architectures.rnn_base_model</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.simulators.html">hookeai.simulators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.time_series_data.html">hookeai.time_series_data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.utilities.html">hookeai.utilities</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="hookeai.html">hookeai</a></li>
+          <li class="breadcrumb-item"><a href="hookeai.model_architectures.html">hookeai.model_architectures</a></li>
+          <li class="breadcrumb-item"><a href="hookeai.model_architectures.procedures.html">hookeai.model_architectures.procedures</a></li>
+          <li class="breadcrumb-item"><a href="hookeai.model_architectures.procedures.model_training.html">hookeai.model_architectures.procedures.model_training</a></li>
+      <li class="breadcrumb-item active">hookeai.model_architectures.procedures.model_training.write_cross_validation_summary_file</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="hookeai-model-architectures-procedures-model-training-write-cross-validation-summary-file">
+<h1>hookeai.model_architectures.procedures.model_training.write_cross_validation_summary_file<a class="headerlink" href="#hookeai-model-architectures-procedures-model-training-write-cross-validation-summary-file" title="Permalink to this heading">¶</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="hookeai.model_architectures.procedures.model_training.write_cross_validation_summary_file">
+<span class="sig-name descname"><span class="pre">write_cross_validation_summary_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cross_validation_dir</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_fold</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_max_epochs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_model_in_normalized</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_model_out_normalized</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">batch_size</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loss_nature</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loss_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">loss_kwargs</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset_file_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dataset</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">k_fold_loss_array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">total_time_sec</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">avg_time_fold</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/model_architectures/procedures/model_training.html#write_cross_validation_summary_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.model_architectures.procedures.model_training.write_cross_validation_summary_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write summary data file for model cross-validation process.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>cross_validation_dir</strong> (<em>dir</em>) – Directory where cross-validation process data is stored.</p></li>
+<li><p><strong>device_type</strong> (<em>{'cpu'</em><em>, </em><em>'cuda'}</em>) – Type of device on which torch.Tensor is allocated.</p></li>
+<li><p><strong>n_fold</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of folds into which the data set is split to perform
+cross-validation.</p></li>
+<li><p><strong>n_max_epochs</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Maximum number of training epochs.</p></li>
+<li><p><strong>is_model_in_normalized</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – If True, then model input features are assumed to be normalized
+(normalized input data has been seen during model training).</p></li>
+<li><p><strong>is_model_out_normalized</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – If True, then model output features are assumed to be normalized
+(normalized output data has been seen during model training).</p></li>
+<li><p><strong>batch_size</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of samples loaded per batch.</p></li>
+<li><p><strong>loss_nature</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Loss nature.</p></li>
+<li><p><strong>loss_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Loss function type.</p></li>
+<li><p><strong>loss_kwargs</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Arguments of torch.nn._Loss initializer.</p></li>
+<li><p><strong>dataset_file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Data set file path if such file exists. Only used for output purposes</p></li>
+<li><p><strong>dataset</strong> (<em>torch.utils.data.Dataset</em>) – Data set.</p></li>
+<li><p><strong>k_fold_loss_array</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>numpy.ndarray</em></a><em>(</em><em>2d</em><em>)</em>) – k-fold cross-validation loss array. For the i-th fold,
+data_array[i, 0] stores the best training loss and data_array[i, 1]
+stores the average prediction loss per sample.</p></li>
+<li><p><strong>total_time_sec</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Total cross-validation time in seconds.</p></li>
+<li><p><strong>avg_time_fold</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a>) – Average cross-validation time per fold.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="hookeai.model_architectures.procedures.model_training.save_training_state.html" class="btn btn-neutral float-left" title="hookeai.model_architectures.procedures.model_training.save_training_state" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="hookeai.model_architectures.procedures.model_training.write_summary_file.html" class="btn btn-neutral float-right" title="hookeai.model_architectures.procedures.model_training.write_summary_file" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

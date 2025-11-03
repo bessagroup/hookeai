@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>model_architectures.rnn_base_model.model.gru_model &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../_autosummary/hookeai.html">Code</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">model_architectures.rnn_base_model.model.gru_model</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for model_architectures.rnn_base_model.model.gru_model</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Multi-layer gated recurrent unit (GRU) recurrent neural network model.</span>
+
+<span class="sd">Classes</span>
+<span class="sd">-------</span>
+<span class="sd">GRURNNModel(torch.nn.Module)</span>
+<span class="sd">    Multi-layer gated recurrent unit (GRU) recurrent neural network model.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#                                                                       Modules</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Standard</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
+<span class="c1"># Third-party</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="c1"># Local</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">model_architectures.rnn_base_model.custom.gru_vmap</span><span class="w"> </span><span class="kn">import</span> <span class="n">GRU</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">model_architectures.procedures.model_data_scaling</span><span class="w"> </span><span class="kn">import</span> <span class="n">init_data_scalers</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">model_architectures.procedures.model_state_files</span><span class="w"> </span><span class="kn">import</span> <span class="n">save_model_state</span>
+<span class="c1">#</span>
+<span class="c1">#                                                          Authorship &amp; Credits</span>
+<span class="c1"># =============================================================================</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Bernardo Ferreira (bernardo_ferreira@brown.edu)&#39;</span>
+<span class="n">__credits__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Bernardo Ferreira&#39;</span><span class="p">,</span> <span class="p">]</span>
+<span class="n">__status__</span> <span class="o">=</span> <span class="s1">&#39;Stable&#39;</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="GRURNNModel"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.fetorch.structure.structure_state.GRURNNModel.html#hookeai.model_architectures.rnn_base_model.predict.prediction.GRURNNModel">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">GRURNNModel</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Multi-layer gated recurrent unit (GRU) recurrent neural network model.</span>
+<span class="sd">    </span>
+<span class="sd">    The model is composed of a multi-layer GRU followed by a (time distributed)</span>
+<span class="sd">    linear layer sharing the same number of hidden state features.</span>
+<span class="sd">    </span>
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    model_directory : {str, None}</span>
+<span class="sd">        Directory where model is stored. If None, then all methods that depend</span>
+<span class="sd">        on an existent model directory become unavailable.</span>
+<span class="sd">    model_name : {str, None}</span>
+<span class="sd">        Name of model. If None, then all methods that depend on a valid model</span>
+<span class="sd">        name become unavailable.</span>
+<span class="sd">    _n_features_in : int</span>
+<span class="sd">        Number of input features.</span>
+<span class="sd">    _n_features_out : int</span>
+<span class="sd">        Number of output features.</span>
+<span class="sd">    _hidden_layer_size : int</span>
+<span class="sd">        Number of hidden state features.</span>
+<span class="sd">    _n_recurrent_layers : int</span>
+<span class="sd">        Number of recurrent layers. A number of recurrent layers greater than 1</span>
+<span class="sd">        results in a stacked GRU (output of GRU in each time t is the input of</span>
+<span class="sd">        next GRU).</span>
+<span class="sd">    _dropout : int</span>
+<span class="sd">        Dropout probability. If non-zero, each GRU recurrent layer is followed</span>
+<span class="sd">        by a dropout layer with the provided dropout probability.</span>
+<span class="sd">    _gru_model_source : {&#39;torch&#39;, &#39;custom&#39;}, default=&#39;torch&#39;</span>
+<span class="sd">        GRU model source: &#39;torch&#39; imports torch.nn.GRU model, while</span>
+<span class="sd">        &#39;custom&#39; gets custom GRU implementation.</span>
+<span class="sd">    _gru_rnn_model : torch.nn.Module</span>
+<span class="sd">        Multi-layer gated recurrent unit (GRU) recurrent neural network model.</span>
+<span class="sd">    _linear_layer : torch.nn.Module</span>
+<span class="sd">        Linear layer.</span>
+<span class="sd">    _device_type : {&#39;cpu&#39;, &#39;cuda&#39;}</span>
+<span class="sd">        Type of device on which torch.Tensor is allocated.</span>
+<span class="sd">    _device : torch.device</span>
+<span class="sd">        Device on which torch.Tensor is allocated.</span>
+<span class="sd">    is_explicit_parameters : bool</span>
+<span class="sd">        True if model learnable parameters are explicit, False otherwise.</span>
+<span class="sd">    is_model_in_normalized : bool</span>
+<span class="sd">        If True, then model expects normalized input features (normalized</span>
+<span class="sd">        input data has been seen during model training).</span>
+<span class="sd">    is_model_out_normalized : bool</span>
+<span class="sd">        If True, then model expects normalized output features (normalized</span>
+<span class="sd">        output data has been seen during model training).</span>
+<span class="sd">    _is_save_model_init_file: bool, default=True</span>
+<span class="sd">        If True, saves model initialization file when model is initialized</span>
+<span class="sd">        (overwritting existent initialization file), False otherwise.</span>
+<span class="sd">    _data_scalers : dict</span>
+<span class="sd">        Data scaler (item, TorchStandardScaler) for each feature data</span>
+<span class="sd">        (key, str).</span>
+
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    init_model_from_file(model_directory=None, model_init_file_path=None)</span>
+<span class="sd">        Initialize model from initialization file.</span>
+<span class="sd">    set_device(self, device_type)</span>
+<span class="sd">        Set device on which torch.Tensor is allocated.</span>
+<span class="sd">    get_device(self)</span>
+<span class="sd">        Get device on which torch.Tensor is allocated.</span>
+<span class="sd">    forward(self, features_in, hidden_features_in=None)</span>
+<span class="sd">        Forward propagation.</span>
+<span class="sd">    save_model_init_file(self)</span>
+<span class="sd">        Save model class initialization attributes.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="GRURNNModel.__init__"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.fetorch.structure.structure_state.GRURNNModel.html#hookeai.model_architectures.rnn_base_model.predict.prediction.GRURNNModel.__init__">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_features_in</span><span class="p">,</span> <span class="n">n_features_out</span><span class="p">,</span> <span class="n">hidden_layer_size</span><span class="p">,</span>
+                 <span class="n">model_directory</span><span class="p">,</span> <span class="n">model_name</span><span class="o">=</span><span class="s1">&#39;gru_material_model&#39;</span><span class="p">,</span>
+                 <span class="n">is_model_in_normalized</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_model_out_normalized</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                 <span class="n">n_recurrent_layers</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">dropout</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">is_save_model_init_file</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                 <span class="n">gru_model_source</span><span class="o">=</span><span class="s1">&#39;torch&#39;</span><span class="p">,</span> <span class="n">device_type</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Constructor.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        n_features_in : int</span>
+<span class="sd">            Number of input features.</span>
+<span class="sd">        n_features_out : int</span>
+<span class="sd">            Number of output features.</span>
+<span class="sd">        hidden_layer_size : int</span>
+<span class="sd">            Number of hidden state features.</span>
+<span class="sd">        model_directory : {str, None}</span>
+<span class="sd">            Directory where model is stored. If None, then all methods that</span>
+<span class="sd">            depend on an existent model directory become unavailable.</span>
+<span class="sd">        model_name : {str, None}, default=&#39;gru_material_model&#39;</span>
+<span class="sd">            Name of model. If None, then all methods that depend on a valid</span>
+<span class="sd">            model name become unavailable.</span>
+<span class="sd">        is_model_in_normalized : bool, default=False</span>
+<span class="sd">            If True, then model expects normalized input features (normalized</span>
+<span class="sd">            input data has been seen during model training).</span>
+<span class="sd">        is_model_out_normalized : bool, default=False</span>
+<span class="sd">            If True, then model expects normalized output features (normalized</span>
+<span class="sd">            output data has been seen during model training).</span>
+<span class="sd">        n_recurrent_layers : int, default=1</span>
+<span class="sd">            Number of recurrent layers. A number of recurrent layers greater</span>
+<span class="sd">            than 1 results in a stacked GRU (output of GRU in each time t is</span>
+<span class="sd">            the input of next GRU).</span>
+<span class="sd">        dropout : float, default=0</span>
+<span class="sd">            Dropout probability. If non-zero, each GRU recurrent layer is</span>
+<span class="sd">            followed by a dropout layer with the provided dropout probability.</span>
+<span class="sd">        is_save_model_init_file: bool, default=True</span>
+<span class="sd">            If True, saves model initialization file when model is initialized</span>
+<span class="sd">            (overwritting existent initialization file), False otherwise. When</span>
+<span class="sd">            initializing model from initialization file this option should be</span>
+<span class="sd">            set to False to avoid updating the initialization file and preserve</span>
+<span class="sd">            fitted data scalers.</span>
+<span class="sd">        gru_model_source : {&#39;torch&#39;, &#39;custom&#39;}, default=&#39;torch&#39;</span>
+<span class="sd">            GRU model source: &#39;torch&#39; imports torch.nn.GRU model, while</span>
+<span class="sd">            &#39;custom&#39; gets custom GRU implementation.</span>
+<span class="sd">        device_type : {&#39;cpu&#39;, &#39;cuda&#39;}, default=&#39;cpu&#39;</span>
+<span class="sd">            Type of device on which torch.Tensor is allocated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Initialize from base class</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">GRURNNModel</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set number of features</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_n_features_in</span> <span class="o">=</span> <span class="n">n_features_in</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_n_features_out</span> <span class="o">=</span> <span class="n">n_features_out</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_hidden_layer_size</span> <span class="o">=</span> <span class="n">hidden_layer_size</span>
+        <span class="c1"># Set architecture parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_n_recurrent_layers</span> <span class="o">=</span> <span class="n">n_recurrent_layers</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dropout</span> <span class="o">=</span> <span class="n">dropout</span>
+        <span class="c1"># Set model directory</span>
+        <span class="k">if</span> <span class="n">model_directory</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model_directory</span> <span class="o">=</span> <span class="n">model_directory</span>
+        <span class="k">elif</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">model_directory</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model_directory</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">model_directory</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The model directory has not been found.&#39;</span><span class="p">)</span>
+        <span class="c1"># Set model name</span>
+        <span class="k">if</span> <span class="n">model_name</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model_name</span> <span class="o">=</span> <span class="n">model_name</span>
+        <span class="k">elif</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model_name</span><span class="p">,</span> <span class="nb">str</span><span class="p">):</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">model_name</span> <span class="o">=</span> <span class="n">model_name</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The model name must be a string.&#39;</span><span class="p">)</span>
+        <span class="c1"># Set model input and output features normalization</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_model_in_normalized</span> <span class="o">=</span> <span class="n">is_model_in_normalized</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_model_out_normalized</span> <span class="o">=</span> <span class="n">is_model_out_normalized</span>
+        <span class="c1"># Set save initialization file flag</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_is_save_model_init_file</span> <span class="o">=</span> <span class="n">is_save_model_init_file</span>
+        <span class="c1"># Set multi-layer gated recurrent unit (GRU) model source</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_gru_model_source</span> <span class="o">=</span> <span class="n">gru_model_source</span>
+        <span class="c1"># Set device</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">set_device</span><span class="p">(</span><span class="n">device_type</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize multi-layer gated recurrent unit (GRU) recurrent neural</span>
+        <span class="c1"># network</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gru_model_source</span> <span class="o">==</span> <span class="s1">&#39;custom&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_gru_rnn_model</span> <span class="o">=</span> \
+                <span class="n">GRU</span><span class="p">(</span><span class="n">input_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_features_in</span><span class="p">,</span>
+                    <span class="n">hidden_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_hidden_layer_size</span><span class="p">,</span>
+                    <span class="n">num_layers</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_recurrent_layers</span><span class="p">,</span>
+                    <span class="n">bias</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_gru_rnn_model</span> <span class="o">=</span> \
+                <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">GRU</span><span class="p">(</span><span class="n">input_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_features_in</span><span class="p">,</span>
+                            <span class="n">hidden_size</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_hidden_layer_size</span><span class="p">,</span>
+                            <span class="n">num_layers</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_recurrent_layers</span><span class="p">,</span>
+                            <span class="n">bias</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                            <span class="n">batch_first</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                            <span class="n">dropout</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_dropout</span><span class="p">,</span>
+                            <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">)</span>
+        <span class="c1"># Initialize linear layer</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_linear_layer</span> <span class="o">=</span> \
+            <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Linear</span><span class="p">(</span><span class="n">in_features</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_hidden_layer_size</span><span class="p">,</span>
+                            <span class="n">out_features</span><span class="o">=</span><span class="n">n_features_out</span><span class="p">,</span> <span class="n">bias</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                            <span class="n">device</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_device</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set learnable parameters nature</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">is_explicit_parameters</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize data scalers</span>
+        <span class="n">init_data_scalers</span><span class="p">(</span><span class="bp">self</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Save model initialization file</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_is_save_model_init_file</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">save_model_init_file</span><span class="p">()</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="GRURNNModel.init_model_from_file"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.fetorch.structure.structure_state.GRURNNModel.html#hookeai.model_architectures.rnn_base_model.predict.prediction.GRURNNModel.init_model_from_file">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">init_model_from_file</span><span class="p">(</span><span class="n">model_directory</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">model_init_file_path</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize model from initialization file.</span>
+<span class="sd">        </span>
+<span class="sd">        If model directory is provided, then (1) model initialization file is</span>
+<span class="sd">        assumed to be stored in the model directory under the name</span>
+<span class="sd">        model_init_file.pkl and (2) model initialization attributes are read</span>
+<span class="sd">        from the stored model_init_file.pkl file.</span>
+<span class="sd">        </span>
+<span class="sd">        In model initialization file path is provided, then (1) model</span>
+<span class="sd">        initialization attributes are read from the provided</span>
+<span class="sd">        model_init_file.pkl file and (2) model directory is set as the</span>
+<span class="sd">        corresponding directory.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        model_directory : str, default=None</span>
+<span class="sd">            Directory where model is stored.</span>
+<span class="sd">        model_init_file_path : str, default=None</span>
+<span class="sd">            Model initialization file path. Ignored if model_directory is</span>
+<span class="sd">            provided.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get model directory or model initialization file path</span>
+        <span class="k">if</span> <span class="n">model_directory</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Check model directory</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">model_directory</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The model directory has not been found:&#39;</span>
+                                   <span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">model_directory</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Set model initialization file path from model directory</span>
+            <span class="n">model_init_file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">model_directory</span><span class="p">,</span>
+                                                <span class="s1">&#39;model_init_file&#39;</span> <span class="o">+</span> <span class="s1">&#39;.pkl&#39;</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Check model initialization file</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">model_init_file_path</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The model initialization file has not &#39;</span>
+                                   <span class="s1">&#39;been found:</span><span class="se">\n\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">model_init_file_path</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">model_init_file_path</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Check model initialization file</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">model_init_file_path</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The model initialization file has not &#39;</span>
+                                   <span class="s1">&#39;been found:</span><span class="se">\n\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">model_init_file_path</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Get model directory from model initialization file path</span>
+            <span class="n">model_directory</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">model_init_file_path</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Either the model directory or the model &#39;</span>
+                               <span class="s1">&#39;initialization file path must be provided in &#39;</span>
+                               <span class="s1">&#39;order to initialize the model.&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Load model initialization attributes from file</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">model_init_file_path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">model_init_file</span><span class="p">:</span>
+            <span class="n">model_init_attributes</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">model_init_file</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get model initialization attributes</span>
+        <span class="n">model_init_args</span> <span class="o">=</span> <span class="n">model_init_attributes</span><span class="p">[</span><span class="s1">&#39;model_init_args&#39;</span><span class="p">]</span>
+        <span class="c1"># Update model directory</span>
+        <span class="n">model_init_args</span><span class="p">[</span><span class="s1">&#39;model_directory&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">model_directory</span>
+        <span class="c1"># Initialize model</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">GRURNNModel</span><span class="p">(</span><span class="o">**</span><span class="n">model_init_args</span><span class="p">,</span> <span class="n">is_save_model_init_file</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set model data scalers</span>
+        <span class="n">model_data_scalers</span> <span class="o">=</span> <span class="n">model_init_attributes</span><span class="p">[</span><span class="s1">&#39;model_data_scalers&#39;</span><span class="p">]</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">_data_scalers</span> <span class="o">=</span> <span class="n">model_data_scalers</span>
+        <span class="c1"># Set model data scalers device</span>
+        <span class="k">if</span> <span class="n">model</span><span class="o">.</span><span class="n">_data_scalers</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="c1"># Loop over model data scalers</span>
+            <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">data_scaler</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">_data_scalers</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="k">if</span> <span class="n">data_scaler</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">data_scaler</span><span class="o">.</span><span class="n">set_device</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">_device_type</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">model</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="GRURNNModel.set_device"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.fetorch.structure.structure_state.GRURNNModel.html#hookeai.model_architectures.rnn_base_model.predict.prediction.GRURNNModel.set_device">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">set_device</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device_type</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set device on which torch.Tensor is allocated.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        device_type : {&#39;cpu&#39;, &#39;cuda&#39;}</span>
+<span class="sd">            Type of device on which torch.Tensor is allocated.</span>
+<span class="sd">        device : torch.device</span>
+<span class="sd">            Device on which torch.Tensor is allocated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">device_type</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;cpu&#39;</span><span class="p">,</span> <span class="s1">&#39;cuda&#39;</span><span class="p">):</span>
+            <span class="k">if</span> <span class="n">device_type</span> <span class="o">==</span> <span class="s1">&#39;cuda&#39;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">cuda</span><span class="o">.</span><span class="n">is_available</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;PyTorch with CUDA is not available. &#39;</span>
+                                   <span class="s1">&#39;Please set the model device type as CPU &#39;</span>
+                                   <span class="s1">&#39;as:</span><span class="se">\n\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="s1">&#39;model.set_device(</span><span class="se">\&#39;</span><span class="s1">cpu</span><span class="se">\&#39;</span><span class="s1">).&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_device_type</span> <span class="o">=</span> <span class="n">device_type</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="n">device_type</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Consistent update of data scalers device</span>
+            <span class="k">if</span> <span class="p">(</span><span class="nb">hasattr</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="s1">&#39;_data_scalers&#39;</span><span class="p">)</span>
+                    <span class="ow">and</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data_scalers</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">):</span>
+                <span class="c1"># Loop over data scalers</span>
+                <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">data_scaler</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data_scalers</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                    <span class="c1"># Update data scaler device</span>
+                    <span class="k">if</span> <span class="n">data_scaler</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">data_scaler</span><span class="o">.</span><span class="n">set_device</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_device_type</span><span class="p">)</span> 
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Invalid device type.&#39;</span><span class="p">)</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="GRURNNModel.get_device"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.fetorch.structure.structure_state.GRURNNModel.html#hookeai.model_architectures.rnn_base_model.predict.prediction.GRURNNModel.get_device">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_device</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get device on which torch.Tensor is allocated.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        device_type : {&#39;cpu&#39;, &#39;cuda&#39;}</span>
+<span class="sd">            Type of device on which torch.Tensor is allocated.</span>
+<span class="sd">        device : torch.device</span>
+<span class="sd">            Device on which torch.Tensor is allocated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">device_type</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">device</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="GRURNNModel.forward"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.fetorch.structure.structure_state.GRURNNModel.html#hookeai.model_architectures.rnn_base_model.predict.prediction.GRURNNModel.forward">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">forward</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">features_in</span><span class="p">,</span> <span class="n">hidden_features_in</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Forward propagation.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        features_in : torch.Tensor</span>
+<span class="sd">            Tensor of input features stored as torch.Tensor(2d) of shape</span>
+<span class="sd">            (sequence_length, n_features_in) for unbatched input or</span>
+<span class="sd">            torch.Tensor(3d) of shape</span>
+<span class="sd">            (sequence_length, batch_size, n_features_in) for batched input.</span>
+<span class="sd">        hidden_features_in : torch.Tensor, default=None</span>
+<span class="sd">            Tensor of initial hidden state features stored as torch.Tensor(2d)</span>
+<span class="sd">            of shape (n_recurrent_layers, hidden_layer_size) for unbatched</span>
+<span class="sd">            input or torch.Tensor(3d) of shape</span>
+<span class="sd">            (n_recurrent_layers, batch_size, hidden_layer_size) for batched</span>
+<span class="sd">            input. If None, initial hidden state features are initialized to</span>
+<span class="sd">            zero.</span>
+<span class="sd">            </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        features_out : torch.Tensor</span>
+<span class="sd">            Tensor of output features stored as torch.Tensor(2d) of shape</span>
+<span class="sd">            (sequence_length, n_features_out) for unbatched input or</span>
+<span class="sd">            torch.Tensor(3d) of shape</span>
+<span class="sd">            (sequence_length, batch_size, n_features_out) for batched input.</span>
+<span class="sd">        hidden_features_out : torch.Tensor</span>
+<span class="sd">            Tensor of final multi-layer GRU hidden state features stored as</span>
+<span class="sd">            torch.Tensor(2d) of shape (n_recurrent_layers, hidden_layer_size)</span>
+<span class="sd">            for unbatched input or torch.Tensor(3d) of shape</span>
+<span class="sd">            (n_recurrent_layers, batch_size, hidden_layer_size) for batched</span>
+<span class="sd">            input.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check input state features</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">features_in</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Input features were not provided as &#39;</span>
+                               <span class="s1">&#39;torch.Tensor.&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize hidden state features</span>
+        <span class="k">if</span> <span class="n">hidden_features_in</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">features_in</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                <span class="n">hidden_features_in</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_recurrent_layers</span><span class="p">,</span>
+                                                  <span class="bp">self</span><span class="o">.</span><span class="n">_hidden_layer_size</span><span class="p">),</span>
+                                                 <span class="n">device</span><span class="o">=</span><span class="n">features_in</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">hidden_features_in</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_recurrent_layers</span><span class="p">,</span>
+                                                  <span class="n">features_in</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                                                  <span class="bp">self</span><span class="o">.</span><span class="n">_hidden_layer_size</span><span class="p">),</span>
+                                                 <span class="n">device</span><span class="o">=</span><span class="n">features_in</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="c1"># Check hidden state features</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">hidden_features_in</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Initial hidden state features were not &#39;</span>
+                               <span class="s1">&#39;provided as torch.Tensor.&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Forward propagation: Multi-layer GRU</span>
+        <span class="n">features_out</span><span class="p">,</span> <span class="n">hidden_features_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gru_rnn_model</span><span class="p">(</span>
+            <span class="n">features_in</span><span class="p">,</span> <span class="n">hidden_features_in</span><span class="p">)</span>
+        <span class="c1"># Forward propagation: Linear layer</span>
+        <span class="n">features_out</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_linear_layer</span><span class="p">(</span><span class="n">features_out</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">features_out</span><span class="p">,</span> <span class="n">hidden_features_out</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="GRURNNModel.save_model_init_file"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.fetorch.structure.structure_state.GRURNNModel.html#hookeai.model_architectures.rnn_base_model.predict.prediction.GRURNNModel.save_model_init_file">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">save_model_init_file</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Save model initialization file.</span>
+<span class="sd">        </span>
+<span class="sd">        Initialization file is stored in the model directory under the name</span>
+<span class="sd">        model_init_file.pkl.</span>
+<span class="sd">        </span>
+<span class="sd">        Initialization file contains a dictionary model_init_attributes that</span>
+<span class="sd">        includes:</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;model_init_args&#39; - Model initialization parameters</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;model_data_scalers&#39; - Model fitted data scalers</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check model directory</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_directory</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The model directory has not been found:</span><span class="se">\n\n</span><span class="s1">&#39;</span>
+                               <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_directory</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize model initialization attributes</span>
+        <span class="n">model_init_attributes</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Build initialization parameters</span>
+        <span class="n">model_init_args</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">model_init_args</span><span class="p">[</span><span class="s1">&#39;n_features_in&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_features_in</span>
+        <span class="n">model_init_args</span><span class="p">[</span><span class="s1">&#39;n_features_out&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_features_out</span>
+        <span class="n">model_init_args</span><span class="p">[</span><span class="s1">&#39;hidden_layer_size&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_hidden_layer_size</span>
+        <span class="n">model_init_args</span><span class="p">[</span><span class="s1">&#39;n_recurrent_layers&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_recurrent_layers</span>
+        <span class="n">model_init_args</span><span class="p">[</span><span class="s1">&#39;dropout&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dropout</span>
+        <span class="n">model_init_args</span><span class="p">[</span><span class="s1">&#39;model_directory&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_directory</span>
+        <span class="n">model_init_args</span><span class="p">[</span><span class="s1">&#39;model_name&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">model_name</span>
+        <span class="n">model_init_args</span><span class="p">[</span><span class="s1">&#39;is_model_in_normalized&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">is_model_in_normalized</span>
+        <span class="n">model_init_args</span><span class="p">[</span><span class="s1">&#39;is_model_out_normalized&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">is_model_out_normalized</span>
+        <span class="n">model_init_args</span><span class="p">[</span><span class="s1">&#39;gru_model_source&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_gru_model_source</span>
+        <span class="n">model_init_args</span><span class="p">[</span><span class="s1">&#39;device_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_device_type</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Assemble initialization parameters</span>
+        <span class="n">model_init_attributes</span><span class="p">[</span><span class="s1">&#39;model_init_args&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">model_init_args</span>
+        <span class="c1"># Assemble model data scalers</span>
+        <span class="n">model_init_attributes</span><span class="p">[</span><span class="s1">&#39;model_data_scalers&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_data_scalers</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set model initialization file path</span>
+        <span class="n">model_init_file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">model_directory</span><span class="p">,</span>
+                                            <span class="s1">&#39;model_init_file&#39;</span> <span class="o">+</span> <span class="s1">&#39;.pkl&#39;</span><span class="p">)</span>
+        <span class="c1"># Save model initialization file</span>
+        <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">model_init_file_path</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">init_file</span><span class="p">:</span>
+            <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">model_init_attributes</span><span class="p">,</span> <span class="n">init_file</span><span class="p">)</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

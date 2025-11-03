@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>HookeAI &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/doctools.js"></script>
+        <script src="_static/sphinx_highlight.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="Overview" href="rst_doc_files/getting_started/overview.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="#" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="_autosummary/hookeai.html">Code</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="#">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="#" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">HookeAI</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="hookeai">
+<h1>HookeAI<a class="headerlink" href="#hookeai" title="Permalink to this heading">¶</a></h1>
+<a class="reference internal image-reference" href="_images/hookeai_logo_horizontal_white.png"><img alt="_images/hookeai_logo_horizontal_white.png" class="align-center" src="_images/hookeai_logo_horizontal_white.png" style="width: 50%;" /></a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<section id="summary">
+<h2>Summary<a class="headerlink" href="#summary" title="Permalink to this heading">¶</a></h2>
+<p><strong>HookeAI</strong> is an open-source Python package built on <a class="reference external" href="https://pytorch.org/">PyTorch</a> to perform material model updating at the intersection of <strong>computational mechanics</strong>, <strong>machine learning</strong> and <strong>scientific computing</strong>. At its core lies the <a class="reference external" href="https://doi.org/10.1016/j.jmps.2025.106408">Automatically Differentiable Model Updating (ADiMU)</a> framework, which enables <strong>finding general history-dependent material models</strong> - conventional (physics-based), neural network (data-driven), or hybrid - from different data sources (e.g., strain-stress data, displacement-force data). It also includes numerous computational resources to support <strong>material modeling research</strong>, namely data generation methods, highly-customizable material model architectures, and data analysis and visualization tools.</p>
+<a class="reference internal image-reference" href="_images/adimu_global_discovery.png"><img alt="_images/adimu_global_discovery.png" class="align-center" src="_images/adimu_global_discovery.png" style="width: 70%;" /></a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="statement-of-need">
+<h2>Statement of Need<a class="headerlink" href="#statement-of-need" title="Permalink to this heading">¶</a></h2>
+<p>In an era where a multidisciplinary approach is increasingly essential for scientific and technological progress, <strong>HookeAI</strong> is a computational platform aiming to integrate three key domains: (1) <strong>computational solid mechanics</strong>, accounting for decades of well-grounded physics-based material modeling, (2) <strong>machine learning</strong>, where deep learning architectures are capable of learning complex material behavior from data, and (3) <strong>scientific computing software</strong>, leveraging modern automatic differentiation, optimization techniques and GPU vectorization to efficiently solve challenging inverse problems. By combining these three pillars in a unique highly-customizable and well-documented software platform, HookeAI addresses the needs and challenges in teaching, research and industry, where <strong>accurate material modeling</strong> is crucial for the design and analysis of engineering systems.</p>
+<p>In a <strong>teaching environment</strong>, HookeAI extensive documentation, pre-built material models, user-friendly interfaces, and data visualization tools make it an excellent resource for advanced courses in computational solid mechanics with machine learning, namely to enable hands-on learning and experience. In a <strong>research setting</strong>, HookeAI provides a comprehensive end-to-end platform for developing and testing new material model architectures, setting up reproducible benchmarks, comparing the performance of optimization algorithms, conducting rigorous analyses of material data sets, and much more. Its extensive out-of-the-box functionalities, combined with a modular and highly-customizable design, greatly reduce the time and effort needed to implement new ideas, allowing researchers to focus on scientific innovation. In an <strong>industrial context</strong>, HookeAI enables the discovery of a wide range of material models from numerical or experimental data, providing practical solutions to real-world material modeling challenges. Applications include designing novel material systems with disruptive properties, tailoring material performance for specific uses, improving the accuracy of product design and analysis simulations, supporting multi-objective topology optimization, and beyond.</p>
+<p>Consider <strong>leaving a star</strong> if you think HookeAI is useful for the community!</p>
+<a class="reference internal image-reference" href="_images/hookeai_workflow.png"><img alt="_images/hookeai_workflow.png" class="align-center" src="_images/hookeai_workflow.png" style="width: 90%;" /></a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="authorship-citation">
+<h2>Authorship &amp; Citation<a class="headerlink" href="#authorship-citation" title="Permalink to this heading">¶</a></h2>
+<p>HookeAI was originally developed by Bernardo P. Ferreira <a class="footnote-reference brackets" href="#id2" id="id1" role="doc-noteref"><span class="fn-bracket">[</span>1<span class="fn-bracket">]</span></a>.</p>
+<aside class="footnote-list brackets">
+<aside class="footnote brackets" id="id2" role="note">
+<span class="label"><span class="fn-bracket">[</span><a role="doc-backlink" href="#id1">1</a><span class="fn-bracket">]</span></span>
+<p><a class="reference external" href="https://www.linkedin.com/in/bpferreira/">LinkedIn</a> , <a class="reference external" href="https://orcid.org/0000-0001-5956-3877">ORCID</a>, <a class="reference external" href="https://www.researchgate.net/profile/Bernardo-Ferreira-11?ev=hdr_xprf">ResearchGate</a></p>
+</aside>
+</aside>
+<p>If you use HookeAI in your research or in a scientific publication, please cite:</p>
+<p><strong>Journal of the Mechanics and Physics of Solids</strong> (<a class="reference external" href="https://doi.org/10.1016/j.jmps.2025.106408">paper</a>):</p>
+<div class="highlight-default notranslate"><div class="highlight"><pre><span></span><span class="nd">@article</span><span class="p">{</span><span class="n">ferreira2025a</span><span class="p">,</span>
+  <span class="n">title</span> <span class="o">=</span> <span class="p">{</span><span class="n">Automatically</span> <span class="n">Differentiable</span> <span class="n">Model</span> <span class="n">Updating</span> <span class="p">(</span><span class="n">ADiMU</span><span class="p">):</span> <span class="n">Conventional</span><span class="p">,</span> <span class="n">hybrid</span><span class="p">,</span> <span class="ow">and</span> <span class="n">neural</span> <span class="n">network</span> <span class="n">material</span> <span class="n">model</span> <span class="n">discovery</span> <span class="n">including</span> <span class="n">history</span><span class="o">-</span><span class="n">dependency</span><span class="p">},</span>
+  <span class="n">journal</span> <span class="o">=</span> <span class="p">{</span><span class="n">Journal</span> <span class="n">of</span> <span class="n">the</span> <span class="n">Mechanics</span> <span class="ow">and</span> <span class="n">Physics</span> <span class="n">of</span> <span class="n">Solids</span><span class="p">},</span>
+  <span class="n">volume</span> <span class="o">=</span> <span class="p">{</span><span class="mi">206</span><span class="p">},</span>
+  <span class="n">pages</span> <span class="o">=</span> <span class="p">{</span><span class="mi">106408</span><span class="p">},</span>
+  <span class="n">year</span> <span class="o">=</span> <span class="p">{</span><span class="mi">2026</span><span class="p">},</span>
+  <span class="n">issn</span> <span class="o">=</span> <span class="p">{</span><span class="mi">0022</span><span class="o">-</span><span class="mi">5096</span><span class="p">},</span>
+  <span class="n">doi</span> <span class="o">=</span> <span class="p">{</span><span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">doi</span><span class="o">.</span><span class="n">org</span><span class="o">/</span><span class="mf">10.1016</span><span class="o">/</span><span class="n">j</span><span class="o">.</span><span class="n">jmps</span><span class="mf">.2025.106408</span><span class="p">},</span>
+  <span class="n">url</span> <span class="o">=</span> <span class="p">{</span><span class="n">https</span><span class="p">:</span><span class="o">//</span><span class="n">www</span><span class="o">.</span><span class="n">sciencedirect</span><span class="o">.</span><span class="n">com</span><span class="o">/</span><span class="n">science</span><span class="o">/</span><span class="n">article</span><span class="o">/</span><span class="n">pii</span><span class="o">/</span><span class="n">S0022509625003825</span><span class="p">},</span>
+  <span class="n">author</span> <span class="o">=</span> <span class="p">{</span><span class="n">Bernardo</span> <span class="n">P</span><span class="o">.</span> <span class="n">Ferreira</span> <span class="ow">and</span> <span class="n">Miguel</span> <span class="n">A</span><span class="o">.</span> <span class="n">Bessa</span><span class="p">},</span>
+  <span class="n">keywords</span> <span class="o">=</span> <span class="p">{</span><span class="n">Material</span> <span class="n">model</span><span class="p">,</span> <span class="n">Model</span> <span class="n">updating</span><span class="p">,</span> <span class="n">Automatic</span> <span class="n">differentiation</span><span class="p">,</span> <span class="n">History</span><span class="o">-</span><span class="n">dependency</span><span class="p">,</span> <span class="n">Recurrent</span> <span class="n">neural</span> <span class="n">network</span><span class="p">,</span> <span class="n">Hybrid</span> <span class="n">material</span> <span class="n">model</span><span class="p">,</span> <span class="n">ADiMU</span><span class="p">,</span> <span class="n">Open</span><span class="o">-</span><span class="n">source</span><span class="p">}</span>
+<span class="p">}</span>
+</pre></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="useful-links">
+<h2>Useful Links<a class="headerlink" href="#useful-links" title="Permalink to this heading">¶</a></h2>
+<ul class="simple">
+<li><p><a class="reference external" href="https://github.com/bessagroup/hookeai">GitHub repository</a> (source code);</p></li>
+</ul>
+</section>
+<hr class="docutils" />
+<section id="community-support">
+<h2>Community Support<a class="headerlink" href="#community-support" title="Permalink to this heading">¶</a></h2>
+<p>If you find any <strong>issues</strong>, <strong>bugs</strong> or <strong>problems</strong> with HookeAI, please use the <a class="reference external" href="https://github.com/bessagroup/hookeai/issues">GitHub issue tracker</a> to report them. Provide a clear description of the problem, as well as a complete report on the underlying details, so that it can be easily reproduced and (hopefully) fixed!</p>
+<p>You are also welcome to post any <strong>questions</strong>, <strong>comments</strong> or <strong>suggestions</strong> for improvement in the <a class="reference external" href="https://github.com/bessagroup/hookeai/discussions">GitHub discussions</a> space!</p>
+<p>Please refer to HookeAI’s <a class="reference external" href="https://github.com/bessagroup/hookeai/blob/main/CODE_OF_CONDUCT.md">Code of Conduct</a>.</p>
+</section>
+<hr class="docutils" />
+<section id="license">
+<h2>License<a class="headerlink" href="#license" title="Permalink to this heading">¶</a></h2>
+<p>Copyright 2025, Bernardo Ferreira</p>
+<p>All rights reserved.</p>
+<p>HookeAI is a free and open-source software published under a <a class="reference internal" href="license.html"><span class="doc">MIT License</span></a>.</p>
+<div class="toctree-wrapper compound" id="gettingstartedtoc">
+</div>
+<div class="toctree-wrapper compound" id="featurestoc">
+</div>
+<div class="toctree-wrapper compound" id="apitoc">
+</div>
+<div class="toctree-wrapper compound" id="licensetoc">
+</div>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="rst_doc_files/getting_started/overview.html" class="btn btn-neutral float-right" title="Overview" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>utilities.data_denoisers &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../_autosummary/hookeai.html">Code</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">utilities.data_denoisers</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for utilities.data_denoisers</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Data denoising methods.</span>
+
+<span class="sd">Classes</span>
+<span class="sd">-------</span>
+<span class="sd">Denoiser</span>
+<span class="sd">    Data denoiser.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#                                                                       Modules</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Third-party</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch.nn.functional</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">F</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">scipy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="c1"># Local</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ioput.plots</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_xy_data</span>
+<span class="c1">#</span>
+<span class="c1">#                                                          Authorship &amp; Credits</span>
+<span class="c1"># =============================================================================</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Bernardo Ferreira (bernardo_ferreira@brown.edu)&#39;</span>
+<span class="n">__credits__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Bernardo Ferreira&#39;</span><span class="p">,</span> <span class="p">]</span>
+<span class="n">__status__</span> <span class="o">=</span> <span class="s1">&#39;Stable&#39;</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="Denoiser"><a class="viewcode-back" href="../../_autosummary/hookeai.miscellaneous.noisy_data.denoise_strain_paths.Denoiser.html#hookeai.miscellaneous.noisy_data.denoise_disp_noise_csv.Denoiser">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">Denoiser</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Data denoiser.</span>
+
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    denoise(self, tensor, denoise_method, denoise_parameters={})</span>
+<span class="sd">        Denoise features tensor.</span>
+<span class="sd">    _dn_moving_average(self, tensor, window_size)</span>
+<span class="sd">        Denoising method: Moving Average.</span>
+<span class="sd">    _dn_savitzky_golay(self, tensor, window_size, poly_order)</span>
+<span class="sd">        Denoising method: Savitzky-Golay filter.</span>
+<span class="sd">    _dn_frequency_low_pass(self, tensor, cutoff_frequency, \</span>
+<span class="sd">                           is_plot_magnitude_spectrum=False)</span>
+<span class="sd">        Denoising method: Frequency low-pass filter.</span>
+<span class="sd">    _check_tensor(self, tensor)</span>
+<span class="sd">        Check features tensor to be denoised.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="Denoiser.__init__"><a class="viewcode-back" href="../../_autosummary/hookeai.miscellaneous.noisy_data.denoise_strain_paths.Denoiser.html#hookeai.miscellaneous.noisy_data.denoise_disp_noise_csv.Denoiser.__init__">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Constructor.&quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="Denoiser.denoise"><a class="viewcode-back" href="../../_autosummary/hookeai.miscellaneous.noisy_data.denoise_strain_paths.Denoiser.html#hookeai.miscellaneous.noisy_data.denoise_disp_noise_csv.Denoiser.denoise">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">denoise</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tensor</span><span class="p">,</span> <span class="n">denoise_method</span><span class="p">,</span> <span class="n">denoise_parameters</span><span class="o">=</span><span class="p">{},</span>
+                <span class="n">n_denoise_cycle</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Denoise features tensor.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tensor : torch.Tensor</span>
+<span class="sd">            Features PyTorch tensor stored as torch.Tensor with shape</span>
+<span class="sd">            (sequence_length, n_features).</span>
+<span class="sd">        denoise_method : str</span>
+<span class="sd">            Denoising method.</span>
+<span class="sd">        denoise_parameters : dict, default={}</span>
+<span class="sd">            Denoising method parameters.</span>
+<span class="sd">        n_denoise_cycle : int, default=1</span>
+<span class="sd">            Number of times that the denoise method is applied recurrently to</span>
+<span class="sd">            denoise the features tensor.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dn_tensor : torch.Tensor</span>
+<span class="sd">            Denoised features PyTorch tensor stored as torch.Tensor with shape</span>
+<span class="sd">            (sequence_length, n_features).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check features tensor</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_tensor</span><span class="p">(</span><span class="n">tensor</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize denoising method</span>
+        <span class="k">if</span> <span class="n">denoise_method</span> <span class="o">==</span> <span class="s1">&#39;moving_average&#39;</span><span class="p">:</span>
+            <span class="n">denoiser</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dn_moving_average</span>
+        <span class="k">elif</span> <span class="n">denoise_method</span> <span class="o">==</span> <span class="s1">&#39;savitzky_golay&#39;</span><span class="p">:</span>
+            <span class="n">denoiser</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dn_savitzky_golay</span>
+        <span class="k">elif</span> <span class="n">denoise_method</span> <span class="o">==</span> <span class="s1">&#39;frequency_low_pass&#39;</span><span class="p">:</span>
+            <span class="n">denoiser</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dn_frequency_low_pass</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Unknown denoising method.&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize denoised features tensor</span>
+        <span class="n">dn_tensor</span> <span class="o">=</span> <span class="n">tensor</span>
+        <span class="c1"># Denoise features tensor</span>
+        <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_denoise_cycle</span><span class="p">):</span>
+            <span class="n">dn_tensor</span> <span class="o">=</span> <span class="n">denoiser</span><span class="p">(</span><span class="n">dn_tensor</span><span class="p">,</span> <span class="o">**</span><span class="n">denoise_parameters</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">dn_tensor</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="Denoiser._dn_moving_average"><a class="viewcode-back" href="../../_autosummary/hookeai.miscellaneous.noisy_data.denoise_strain_paths.Denoiser.html#hookeai.miscellaneous.noisy_data.denoise_disp_noise_csv.Denoiser._dn_moving_average">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">_dn_moving_average</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tensor</span><span class="p">,</span> <span class="n">window_size</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Denoising method: Moving Average.</span>
+<span class="sd">        </span>
+<span class="sd">        Convolution is performed independently for each feature.</span>
+<span class="sd">        </span>
+<span class="sd">        Edge padding is performed to preserve input tensor shape.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tensor : torch.Tensor</span>
+<span class="sd">            Features PyTorch tensor stored as torch.Tensor with shape</span>
+<span class="sd">            (sequence_length, n_features).</span>
+<span class="sd">        window_size : int</span>
+<span class="sd">            Convolution kernel size.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dn_tensor : torch.Tensor</span>
+<span class="sd">            Denoised features PyTorch tensor stored as torch.Tensor with shape</span>
+<span class="sd">            (sequence_length, n_features).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get number of features</span>
+        <span class="n">n_features</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Reshape to (batch_size=1, n_features, sequence_length)</span>
+        <span class="n">tensor</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Compute required padding to preserve input tensor shape</span>
+        <span class="n">padding</span> <span class="o">=</span> <span class="p">(</span><span class="n">window_size</span><span class="o">//</span><span class="mi">2</span><span class="p">,</span> <span class="n">window_size</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">window_size</span><span class="o">//</span><span class="mi">2</span><span class="p">)</span>
+        <span class="c1"># Perform edge padding (replicate edge values of each feature)</span>
+        <span class="n">tensor</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">pad</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="p">(</span><span class="n">padding</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">padding</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;replicate&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set convolution kernel of shape (n_features, 1, window_size)</span>
+        <span class="c1"># (set independent kernel for each feature)</span>
+        <span class="n">kernel</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_features</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">window_size</span><span class="p">)</span><span class="o">/</span><span class="n">window_size</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Compute moving average (independent convolution of each feature)</span>
+        <span class="n">denoised_tensor</span> <span class="o">=</span> \
+            <span class="n">F</span><span class="o">.</span><span class="n">conv1d</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">kernel</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">groups</span><span class="o">=</span><span class="n">n_features</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Reshape back to (sequence_length, n_features)</span>
+        <span class="n">dn_tensor</span> <span class="o">=</span> <span class="n">denoised_tensor</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">dn_tensor</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="Denoiser._dn_savitzky_golay"><a class="viewcode-back" href="../../_autosummary/hookeai.miscellaneous.noisy_data.denoise_strain_paths.Denoiser.html#hookeai.miscellaneous.noisy_data.denoise_disp_noise_csv.Denoiser._dn_savitzky_golay">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">_dn_savitzky_golay</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tensor</span><span class="p">,</span> <span class="n">window_size</span><span class="p">,</span> <span class="n">poly_order</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Denoising method: Savitzky-Golay filter.</span>
+<span class="sd">        </span>
+<span class="sd">        Convolution is performed independently for each feature.</span>
+<span class="sd">        </span>
+<span class="sd">        Edge padding is performed to preserve input tensor shape.</span>
+<span class="sd">        </span>
+<span class="sd">        General thumb rules:</span>
+<span class="sd">        </span>
+<span class="sd">        1. Set an odd number for the window_size (ensures that there is a</span>
+<span class="sd">           central point around which the smoothing occurs)</span>
+<span class="sd">        </span>
+<span class="sd">        2. The window_size should be around 5% to 15% of the sequence length,</span>
+<span class="sd">           depending on the level of noise. Larger window_size smooths more</span>
+<span class="sd">           effectively but may remove important details, while a smaller</span>
+<span class="sd">           window preserves more detail but may not adequately smooth out noise</span>
+<span class="sd">           </span>
+<span class="sd">        3. The poly_order must be less than window_size (ensures that there are</span>
+<span class="sd">           enough points to fit the polynomial correctly)</span>
+<span class="sd">           </span>
+<span class="sd">        4. The poly_order is usually between 1 and 4. Lower poly_order is</span>
+<span class="sd">           effective when data has a simple trend or is relative smooth, while</span>
+<span class="sd">           larger poly_order is effective for data that is inherently more</span>
+<span class="sd">           complex. Higher polynomial orders may introduce undesired</span>
+<span class="sd">           oscillations!</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tensor : torch.Tensor</span>
+<span class="sd">            Features PyTorch tensor stored as torch.Tensor with shape</span>
+<span class="sd">            (sequence_length, n_features).</span>
+<span class="sd">        window_size : int</span>
+<span class="sd">            Convolution kernel size (number of Savitzky-Golay coefficients).</span>
+<span class="sd">        poly_order : int</span>
+<span class="sd">            Order of polynomial used to fit the samples in the window. Must</span>
+<span class="sd">            be less that window_size.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dn_tensor : torch.Tensor</span>
+<span class="sd">            Denoised features PyTorch tensor stored as torch.Tensor with shape</span>
+<span class="sd">            (sequence_length, n_features).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get number of features</span>
+        <span class="n">n_features</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Reshape to (batch_size=1, n_features, sequence_length)</span>
+        <span class="n">tensor</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">T</span><span class="o">.</span><span class="n">unsqueeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Compute required padding to preserve input tensor shape</span>
+        <span class="n">padding</span> <span class="o">=</span> <span class="p">(</span><span class="n">window_size</span><span class="o">//</span><span class="mi">2</span><span class="p">,</span> <span class="n">window_size</span> <span class="o">-</span> <span class="mi">1</span> <span class="o">-</span> <span class="n">window_size</span><span class="o">//</span><span class="mi">2</span><span class="p">)</span>
+        <span class="c1"># Perform edge padding (replicate edge values of each feature)</span>
+        <span class="n">tensor</span> <span class="o">=</span> <span class="n">F</span><span class="o">.</span><span class="n">pad</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="p">(</span><span class="n">padding</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">padding</span><span class="p">[</span><span class="mi">1</span><span class="p">]),</span> <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;replicate&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Compute the coefficients for 1D Savitzky-Golay filter</span>
+        <span class="n">coeffs</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">scipy</span><span class="o">.</span><span class="n">signal</span><span class="o">.</span><span class="n">savgol_coeffs</span><span class="p">(</span><span class="n">window_size</span><span class="p">,</span> <span class="n">poly_order</span><span class="p">)</span>
+                           <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_features</span><span class="p">)])</span>
+        <span class="c1"># Set convolution kernel of shape (n_features, 1, window_size)</span>
+        <span class="c1"># (set independent kernel for each feature)</span>
+        <span class="n">kernel</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">coeffs</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">n_features</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="n">window_size</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Compute moving average (independent convolution of each feature)</span>
+        <span class="n">denoised_tensor</span> <span class="o">=</span> \
+            <span class="n">F</span><span class="o">.</span><span class="n">conv1d</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">kernel</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="n">groups</span><span class="o">=</span><span class="n">n_features</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Reshape back to (sequence_length, n_features)</span>
+        <span class="n">dn_tensor</span> <span class="o">=</span> <span class="n">denoised_tensor</span><span class="o">.</span><span class="n">squeeze</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">T</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">dn_tensor</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="Denoiser._dn_frequency_low_pass"><a class="viewcode-back" href="../../_autosummary/hookeai.miscellaneous.noisy_data.denoise_strain_paths.Denoiser.html#hookeai.miscellaneous.noisy_data.denoise_disp_noise_csv.Denoiser._dn_frequency_low_pass">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">_dn_frequency_low_pass</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tensor</span><span class="p">,</span> <span class="n">cutoff_frequency</span><span class="p">,</span>
+                               <span class="n">is_plot_magnitude_spectrum</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Denoising method: Frequency low-pass filter.</span>
+<span class="sd">        </span>
+<span class="sd">        Filtering is performed independently for each feature.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tensor : torch.Tensor</span>
+<span class="sd">            Features PyTorch tensor stored as torch.Tensor with shape</span>
+<span class="sd">            (sequence_length, n_features).</span>
+<span class="sd">        cutoff_frequency : int</span>
+<span class="sd">            Cutoff frequency of the low-pass filter.</span>
+<span class="sd">        is_plot_magnitude_spectrum : bool, default=False</span>
+<span class="sd">            If True, then plot magnitude spectrum and cutoff frequency.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dn_tensor : torch.Tensor</span>
+<span class="sd">            Denoised features PyTorch tensor stored as torch.Tensor with shape</span>
+<span class="sd">            (sequence_length, n_features).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get sequence length</span>
+        <span class="n">n_time</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># Get number of features</span>
+        <span class="n">n_features</span> <span class="o">=</span> <span class="n">tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Perform Discrete Fourier Transform</span>
+        <span class="c1"># (independently for each feature)</span>
+        <span class="n">tensor_dft</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fft</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set sampling period</span>
+        <span class="n">sampling_period</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="c1"># Get discrete frequencies</span>
+        <span class="n">discrete_freqs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">fftfreq</span><span class="p">(</span><span class="n">n_time</span><span class="p">,</span> <span class="n">sampling_period</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Plot magnitude spectrum and cutoff frequency</span>
+        <span class="k">if</span> <span class="n">is_plot_magnitude_spectrum</span><span class="p">:</span>
+            <span class="c1"># Compute magnitude spectrum</span>
+            <span class="n">magnitude</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">tensor_dft</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Initialize data array</span>
+            <span class="n">data_xy</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_time</span><span class="o">//</span><span class="mi">2</span><span class="p">,</span> <span class="n">n_time</span><span class="o">//</span><span class="mi">2</span><span class="p">))</span>
+            <span class="c1"># Build data array</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_features</span><span class="p">):</span>
+                <span class="n">data_xy</span><span class="p">[:,</span> <span class="mi">2</span><span class="o">*</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">discrete_freqs</span><span class="p">[:</span><span class="n">n_time</span><span class="o">//</span><span class="mi">2</span><span class="p">]</span>
+                <span class="n">data_xy</span><span class="p">[:,</span> <span class="mi">2</span><span class="o">*</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">magnitude</span><span class="p">[:</span><span class="n">n_time</span><span class="o">//</span><span class="mi">2</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Plot only the first feature</span>
+            <span class="n">data_xy</span> <span class="o">=</span> <span class="n">data_xy</span><span class="p">[:,</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)]</span>
+            <span class="c1"># Set data labels</span>
+            <span class="n">data_labels</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;Feature 1&#39;</span><span class="p">,)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Set axes limits (limited by Nyquist frequency)</span>
+            <span class="n">x_lims</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="p">(</span><span class="n">sampling_period</span><span class="o">**-</span><span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span>
+            <span class="n">y_lims</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Set axes labels</span>
+            <span class="n">x_label</span> <span class="o">=</span> <span class="s1">&#39;Frequency (Hz)&#39;</span>
+            <span class="n">y_label</span> <span class="o">=</span> <span class="s1">&#39;Magnitude&#39;</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Plot parameter history</span>
+            <span class="n">_</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plot_xy_data</span><span class="p">(</span><span class="n">data_xy</span><span class="p">,</span> <span class="n">data_labels</span><span class="o">=</span><span class="n">data_labels</span><span class="p">,</span>
+                                   <span class="n">x_lims</span><span class="o">=</span><span class="n">x_lims</span><span class="p">,</span> <span class="n">y_lims</span><span class="o">=</span><span class="n">y_lims</span><span class="p">,</span>
+                                   <span class="n">x_label</span><span class="o">=</span><span class="n">x_label</span><span class="p">,</span> <span class="n">y_label</span><span class="o">=</span><span class="n">y_label</span><span class="p">,</span>
+                                   <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">is_latex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Plot cutoff frequency</span>
+            <span class="n">axes</span><span class="o">.</span><span class="n">axvline</span><span class="p">(</span><span class="n">cutoff_frequency</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;red&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;--&#39;</span><span class="p">,</span>
+                         <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Cutoff frequency&#39;</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Display legend</span>
+            <span class="n">axes</span><span class="o">.</span><span class="n">legend</span><span class="p">()</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Display figure</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Create low-pass filter</span>
+        <span class="n">low_pass_filter</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">discrete_freqs</span><span class="p">)</span> <span class="o">&lt;=</span> <span class="n">cutoff_frequency</span>
+        <span class="c1"># Expand low-pass filter for all features</span>
+        <span class="n">low_pass_filter</span> <span class="o">=</span> \
+            <span class="n">low_pass_filter</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span><span class="o">.</span><span class="n">expand</span><span class="p">(</span><span class="n">n_time</span><span class="p">,</span> <span class="n">n_features</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Apply low-pass filter</span>
+        <span class="n">tensor_dft</span> <span class="o">=</span> <span class="n">low_pass_filter</span><span class="o">*</span><span class="n">tensor_dft</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Perform Inverse Discrete Fourier Transform</span>
+        <span class="c1"># (independently for each feature)</span>
+        <span class="n">dn_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">fft</span><span class="o">.</span><span class="n">ifft</span><span class="p">(</span><span class="n">tensor_dft</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span><span class="o">.</span><span class="n">real</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">dn_tensor</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="Denoiser._check_tensor"><a class="viewcode-back" href="../../_autosummary/hookeai.miscellaneous.noisy_data.denoise_strain_paths.Denoiser.html#hookeai.miscellaneous.noisy_data.denoise_disp_noise_csv.Denoiser._check_tensor">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">_check_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">tensor</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check features tensor to be denoised.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        tensor : torch.Tensor</span>
+<span class="sd">            Features PyTorch tensor stored as torch.Tensor with shape</span>
+<span class="sd">            (sequence_length, n_features).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tensor</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Features tensor is not a torch.Tensor.&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">tensor</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Features tensor is not a torch.Tensor with &#39;</span>
+                               <span class="s1">&#39;shape (sequence_length, n_features).&#39;</span><span class="p">)</span></div></div>
+    
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

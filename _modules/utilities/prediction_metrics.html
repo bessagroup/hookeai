@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>utilities.prediction_metrics &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../_autosummary/hookeai.html">Code</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">utilities.prediction_metrics</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for utilities.prediction_metrics</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Prediction metrics computed from sample prediction file.</span>
+
+<span class="sd">Functions</span>
+<span class="sd">---------</span>
+<span class="sd">compute_prediction_metrics</span>
+<span class="sd">    Compute prediction metrics from sample prediction file path.</span>
+<span class="sd">get_sample_n_features</span>
+<span class="sd">    Get number of prediction features.</span>
+<span class="sd">get_feature_and_target</span>
+<span class="sd">    Get sample prediction and ground-truth for given feature.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#                                                                       Modules</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Standard</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
+<span class="c1"># Third-party</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="c1">#</span>
+<span class="c1">#                                                          Authorship &amp; Credits</span>
+<span class="c1"># =============================================================================</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Bernardo Ferreira (bernardo_ferreira@brown.edu)&#39;</span>
+<span class="n">__credits__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Bernardo Ferreira&#39;</span><span class="p">,</span> <span class="p">]</span>
+<span class="n">__status__</span> <span class="o">=</span> <span class="s1">&#39;Stable&#39;</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="compute_prediction_metrics"><a class="viewcode-back" href="../../_autosummary/hookeai.utilities.output_prediction_metrics.compute_prediction_metrics.html#hookeai.utilities.output_prediction_metrics.compute_prediction_metrics">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">compute_prediction_metrics</span><span class="p">(</span><span class="n">sample_prediction_path</span><span class="p">,</span> <span class="n">prediction_metrics</span><span class="o">=</span><span class="p">[]):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute prediction metrics from sample prediction file path.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sample_prediction_path : str</span>
+<span class="sd">        Sample prediction file path.</span>
+<span class="sd">    prediction_metrics : list[str]</span>
+<span class="sd">        Prediction metrics.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    prediction_metrics_results : dict</span>
+<span class="sd">        Prediction metrics results (item, torch.Tensor) for each prediction</span>
+<span class="sd">        metric (key, str).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check sample prediction file path</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">sample_prediction_path</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The sample prediction file has not been &#39;</span>
+                           <span class="sa">f</span><span class="s1">&#39;found:</span><span class="se">\n\n</span><span class="si">{</span><span class="n">sample_prediction_path</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Load sample prediction results</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">sample_prediction_path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">sample_prediction_file</span><span class="p">:</span>
+        <span class="n">sample_results</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">sample_prediction_file</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get number of prediction features</span>
+    <span class="n">n_features</span> <span class="o">=</span> <span class="n">get_sample_n_features</span><span class="p">(</span><span class="n">sample_results</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize prediction metrics results</span>
+    <span class="n">prediction_metrics_results</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Loop over prediction metrics</span>
+    <span class="k">for</span> <span class="n">metric_label</span> <span class="ow">in</span> <span class="n">prediction_metrics</span><span class="p">:</span>
+        <span class="c1"># Initialize metric results</span>
+        <span class="n">metric_results</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># Mean Squared Error (MSE) or Root Mean Squared Error (RMSE)</span>
+        <span class="k">if</span> <span class="n">metric_label</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;mse&#39;</span><span class="p">,</span> <span class="s1">&#39;rmse&#39;</span><span class="p">):</span>
+            <span class="c1"># Loop over prediction features</span>
+            <span class="k">for</span> <span class="n">feature_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_features</span><span class="p">):</span>
+                <span class="c1"># Get feature prediction and ground-truth</span>
+                <span class="n">feature_out</span><span class="p">,</span> <span class="n">target</span> <span class="o">=</span> <span class="n">get_feature_data</span><span class="p">(</span>
+                    <span class="n">sample_results</span><span class="p">,</span> <span class="n">feature_idx</span><span class="p">,</span> <span class="n">is_ground_truth</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Compute Mean Squared Error (MSE)</span>
+                <span class="n">metric_value</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">((</span><span class="n">feature_out</span> <span class="o">-</span> <span class="n">target</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+                <span class="c1"># Compute Root Mean Squared Error (RMSE)</span>
+                <span class="k">if</span> <span class="n">metric_label</span> <span class="o">==</span> <span class="s1">&#39;rmse&#39;</span><span class="p">:</span>
+                    <span class="n">metric_value</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">metric_value</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Store feature prediction metric</span>
+                <span class="n">metric_results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">metric_value</span><span class="p">))</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Mean Absolute Value (MAV)</span>
+        <span class="k">elif</span> <span class="n">metric_label</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;mav&#39;</span><span class="p">,</span> <span class="s1">&#39;mav_gt&#39;</span><span class="p">):</span>
+            <span class="c1"># Loop over prediction features</span>
+            <span class="k">for</span> <span class="n">feature_idx</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_features</span><span class="p">):</span>
+                <span class="c1"># Get feature prediction and ground-truth</span>
+                <span class="n">feature_out</span><span class="p">,</span> <span class="n">target</span> <span class="o">=</span> <span class="n">get_feature_data</span><span class="p">(</span>
+                    <span class="n">sample_results</span><span class="p">,</span> <span class="n">feature_idx</span><span class="p">,</span> <span class="n">is_ground_truth</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Compute Mean Absolute Value (MAV)</span>
+                <span class="k">if</span> <span class="n">metric_label</span> <span class="o">==</span> <span class="s1">&#39;mav_gt&#39;</span><span class="p">:</span>
+                    <span class="n">metric_value</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">target</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">metric_value</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">feature_out</span><span class="p">))</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Store feature prediction metric</span>
+                <span class="n">metric_results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">float</span><span class="p">(</span><span class="n">metric_value</span><span class="p">))</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Unknown prediction metric: &#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;</span><span class="se">\&#39;</span><span class="si">{</span><span class="n">metric_label</span><span class="si">}</span><span class="se">\&#39;</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Store prediction metric results</span>
+        <span class="n">prediction_metrics_results</span><span class="p">[</span><span class="n">metric_label</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">metric_results</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">prediction_metrics_results</span></div>
+<span class="c1"># =============================================================================</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_sample_n_features</span><span class="p">(</span><span class="n">sample_results</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get number of sample prediction features.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sample_results : dict</span>
+<span class="sd">        Sample prediction results. Features predictions (and ground-truth if</span>
+<span class="sd">        available) are stored as torch.Tensor(2d) of shape</span>
+<span class="sd">        (sequence_length, n_features).</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    n_features : int</span>
+<span class="sd">        Number of prediction features.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check sample prediction results</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sample_results</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Sample prediction results must be stored in a &#39;</span>
+                           <span class="s1">&#39;dictionary.&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="s1">&#39;features_out&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sample_results</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Sample prediction features must be stored as a &#39;</span>
+                           <span class="s1">&#39;torch.Tensor(2d) under the key </span><span class="se">\&#39;</span><span class="s1">features_out</span><span class="se">\&#39;</span><span class="s1">.&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">sample_results</span><span class="p">[</span><span class="s1">&#39;features_out&#39;</span><span class="p">],</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Sample prediction features must be stored as a &#39;</span>
+                           <span class="s1">&#39;torch.Tensor(2d) of shape &#39;</span>
+                           <span class="s1">&#39;(sequence_length, n_features) under the key &#39;</span>
+                           <span class="s1">&#39;</span><span class="se">\&#39;</span><span class="s1">features_out</span><span class="se">\&#39;</span><span class="s1">.&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get sample prediction features</span>
+    <span class="n">features_out</span> <span class="o">=</span> <span class="n">sample_results</span><span class="p">[</span><span class="s1">&#39;features_out&#39;</span><span class="p">]</span>
+    <span class="c1"># Get number of prediction features</span>
+    <span class="n">n_features</span> <span class="o">=</span> <span class="n">features_out</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">n_features</span>
+<span class="c1"># =============================================================================</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">get_feature_data</span><span class="p">(</span><span class="n">sample_results</span><span class="p">,</span> <span class="n">feature_idx</span><span class="p">,</span> <span class="n">is_ground_truth</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get sample prediction and ground-truth for given feature.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sample_results : dict</span>
+<span class="sd">        Sample prediction results. Features predictions (and ground-truth if</span>
+<span class="sd">        available) are each stored as torch.Tensor(2d) of shape</span>
+<span class="sd">        (sequence_length, n_features).</span>
+<span class="sd">    feature_idx : int</span>
+<span class="sd">        Feature index.</span>
+<span class="sd">    is_ground_truth : bool, default=False</span>
+<span class="sd">        If True, then output sample feature ground-truth.</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    feature_out : torch.Tensor</span>
+<span class="sd">        Tensor of feature prediction stored as torch.Tensor(1d) of shape</span>
+<span class="sd">        (sequence_length,).</span>
+<span class="sd">    target : {torch.Tensor, None}</span>
+<span class="sd">        Tensor of feature ground-truth stored as torch.Tensor(1d) of shape</span>
+<span class="sd">        (sequence_length,). Set to None if is_ground_truth=False.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get sample feature prediction </span>
+    <span class="n">features_out</span> <span class="o">=</span> <span class="n">sample_results</span><span class="p">[</span><span class="s1">&#39;features_out&#39;</span><span class="p">][:,</span> <span class="n">feature_idx</span><span class="p">]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize feature ground-truth</span>
+    <span class="n">target</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1"># Get sample feature ground-truth</span>
+    <span class="k">if</span> <span class="n">is_ground_truth</span><span class="p">:</span>
+        <span class="c1"># Check if ground-truth is available</span>
+        <span class="k">if</span> <span class="p">(</span><span class="s1">&#39;targets&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sample_results</span><span class="o">.</span><span class="n">keys</span><span class="p">()</span>
+                <span class="ow">or</span> <span class="n">sample_results</span><span class="p">[</span><span class="s1">&#39;targets&#39;</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Ground-truth is not available to compute &#39;</span>
+                               <span class="s1">&#39;prediction metrics. Ensure that </span><span class="se">\&#39;</span><span class="s1">targets</span><span class="se">\&#39;</span><span class="s1"> &#39;</span>
+                               <span class="s1">&#39;are stored in the sample prediction file &#39;</span>
+                               <span class="s1">&#39;results.&#39;</span><span class="p">)</span>
+        <span class="c1"># Get sample feature ground-truth</span>
+        <span class="n">target</span> <span class="o">=</span> <span class="n">sample_results</span><span class="p">[</span><span class="s1">&#39;targets&#39;</span><span class="p">][:,</span> <span class="n">feature_idx</span><span class="p">]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">features_out</span><span class="p">,</span> <span class="n">target</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

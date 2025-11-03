@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Data generation &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Material model architectures" href="material_models.html" />
+    <link rel="prev" title="Overview" href="overview.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul class="current">
+<li class="toctree-l1"><a class="reference internal" href="overview.html">Overview</a></li>
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Data generation</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#key-resources">Key resources</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#strain-loading-paths">Strain loading paths</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#material-patches">Material patches</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#pre-configured-user-scripts">Pre-configured user scripts</a></li>
+</ul>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../_autosummary/hookeai.html">Code</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Data generation</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="data-generation">
+<h1>Data generation<a class="headerlink" href="#data-generation" title="Permalink to this heading">¶</a></h1>
+<p>HookeAI includes tools to <strong>generate synthetic data sets</strong> for material modeling research.</p>
+<hr class="docutils" />
+<section id="key-resources">
+<h2>Key resources<a class="headerlink" href="#key-resources" title="Permalink to this heading">¶</a></h2>
+<table class="docutils align-default">
+<colgroup>
+<col style="width: 40%" />
+<col style="width: 60%" />
+</colgroup>
+<thead>
+<tr class="row-odd"><th class="head"><p><strong>Source file/directory</strong></p></th>
+<th class="head"><p><strong>Description</strong></p></th>
+</tr>
+</thead>
+<tbody>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">hookeai/data_generation/strain_paths</span></code></p></td>
+<td><p>Directory containing the implementation of different <strong>strain loading path generators</strong>.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">hookeai/data_generation/spdg</span></code></p></td>
+<td><p>Directory containing the <strong>Stochastic Patch Deformation Generator (SPDG)</strong> to generate material patches subject to random boundary deformations.</p></td>
+</tr>
+<tr class="row-even"><td><p><code class="docutils literal notranslate"><span class="pre">hookeai/user_scripts/synthetic_data/gen_response_dataset.py</span></code></p></td>
+<td><p><strong>Pre-configured user script</strong> to generate synthetic strain-stress data sets from given material model.</p></td>
+</tr>
+<tr class="row-odd"><td><p><code class="docutils literal notranslate"><span class="pre">hookeai/user_scripts/synthetic_data/gen_random_specimen.py</span></code></p></td>
+<td><p><strong>Pre-configured user script</strong> to generate data set of material patches undergoing random boundary deformations.</p></td>
+</tr>
+</tbody>
+</table>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+</section>
+<hr class="docutils" />
+<section id="strain-loading-paths">
+<h2>Strain loading paths<a class="headerlink" href="#strain-loading-paths" title="Permalink to this heading">¶</a></h2>
+<p>A <strong>diverse data set of strain loading paths</strong> is fundamental to ensure an effective material model updating process. In the case of conventional (physics-based) material models, it is essential to accurately identify the model parameters. In the case of neural network (data-driven) and hybrid material models, a rich data set is crucial to avoid overfitting and to ensure good generalization performance beyond the training data.</p>
+<p>HookeAI provides an interface (<code class="code docutils literal notranslate"><span class="pre">StrainPathGenerator</span></code>) to <strong>generate different types of strain loading paths</strong>. Two particular types are provided out-of-the-box: (i) Random (<strong>polynomial</strong>) strain loading paths (<code class="code docutils literal notranslate"><span class="pre">RandomStrainPathGenerator</span></code>), and (ii) Random (<strong>proportional</strong>) strain loading paths (<code class="code docutils literal notranslate"><span class="pre">ProportionalStrainPathGenerator</span></code>). Besides the different configuration options available for each type of generator, HookeAI also provides means to inject different types of <strong>artifical noise</strong> (<code class="code docutils literal notranslate"><span class="pre">NoiseGenerator</span></code>).</p>
+<p>The strain loading paths can then be coupled with an available material model to compute the corresponding stress response, thus creating a synthetic strain-stress data set (<code class="code docutils literal notranslate"><span class="pre">MaterialResponseDatasetGenerator</span></code>) suitable for local model updating. Alternatively, they can serve as input to perform numerical simulations over representative volume elements of the material microstructure, which requires an external multi-scale solver.</p>
+<a class="reference internal image-reference" href="../../_images/hookeai_strain_paths.png"><img alt="../../_images/hookeai_strain_paths.png" class="align-center" src="../../_images/hookeai_strain_paths.png" style="width: 90%;" /></a>
+</section>
+<hr class="docutils" />
+<section id="material-patches">
+<h2>Material patches<a class="headerlink" href="#material-patches" title="Permalink to this heading">¶</a></h2>
+<p>HookeAI includes a method called <a class="reference external" href="https://doi.org/10.1016/j.jmps.2025.106408">Stochastic Patch Deformation Generator (SPDG)</a> to generate <strong>synthetic data sets of material patches</strong> discretized in a finite element mesh and subject to <strong>random boundary deformations</strong> (<code class="code docutils literal notranslate"><span class="pre">FiniteElementPatch</span></code>, <code class="code docutils literal notranslate"><span class="pre">FiniteElementPatchGenerator</span></code>).</p>
+<p>These material patches can be directly translated into a finite element simulation with Dirichlet boundary conditions, which can be solved with an external solver to <strong>obtain structural level data</strong> (e.g., displacements, internal forces, reaction forces) as well as <strong>material level data</strong> (e.g., strains, stresses, internal variables from integration points). Hence, SPDG can be leveraged to generate a wide variety of synthetic data sets to support the development of <strong>data-driven material and/or structural models</strong>.</p>
+<a class="reference internal image-reference" href="../../_images/hookeai_material_patches.png"><img alt="../../_images/hookeai_material_patches.png" class="align-center" src="../../_images/hookeai_material_patches.png" style="width: 90%;" /></a>
+<div class="line-block">
+<div class="line"><br /></div>
+</div>
+<div class="admonition note">
+<p class="admonition-title">Note</p>
+<p>HookeAI <strong>does not</strong> include a built-in finite element solver to perform the simulations over the generated material patches with SPDG. The material patch object (<code class="code docutils literal notranslate"><span class="pre">FiniteElementPatch</span></code>) contains all the required information to set up the corresponding <strong>finite element simulation with Dirichlet boundary conditions</strong>, which must be performed with an <strong>external solver</strong>.</p>
+</div>
+</section>
+<hr class="docutils" />
+<section id="pre-configured-user-scripts">
+<h2>Pre-configured user scripts<a class="headerlink" href="#pre-configured-user-scripts" title="Permalink to this heading">¶</a></h2>
+<p>HookeAI provides a set of <strong>pre-configured user scripts</strong> to generate different types of synthetic data sets. These scripts can be readily used and demonstrate the typical workflow for <strong>generating synthetic data</strong>, including all pre- and post-processing steps such as configuring the generator parameters, setting up the material model, and exporting the generated data sets. These can also be <strong>easily adapted</strong> to suit specific user needs, without the need to implement the entire workflow from scratch.</p>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="overview.html" class="btn btn-neutral float-left" title="Overview" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="material_models.html" class="btn btn-neutral float-right" title="Material model architectures" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

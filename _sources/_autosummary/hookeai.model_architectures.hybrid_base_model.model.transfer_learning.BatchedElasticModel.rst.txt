@@ -1,0 +1,83 @@
+﻿hookeai.model\_architectures.hybrid\_base\_model.model.transfer\_learning.BatchedElasticModel
+=============================================================================================
+
+.. currentmodule:: hookeai.model_architectures.hybrid_base_model.model.transfer_learning
+
+.. autoclass:: BatchedElasticModel
+   :members:
+   :show-inheritance:
+   :inherited-members:
+   :special-members: __call__, __add__, __mul__
+
+   
+   
+   .. rubric:: List of Public Methods
+
+   .. autosummary::
+      :nosignatures:
+   
+      ~BatchedElasticModel.add_module
+      ~BatchedElasticModel.apply
+      ~BatchedElasticModel.bfloat16
+      ~BatchedElasticModel.buffers
+      ~BatchedElasticModel.children
+      ~BatchedElasticModel.compile
+      ~BatchedElasticModel.cpu
+      ~BatchedElasticModel.cuda
+      ~BatchedElasticModel.double
+      ~BatchedElasticModel.eval
+      ~BatchedElasticModel.extra_repr
+      ~BatchedElasticModel.float
+      ~BatchedElasticModel.forward
+      ~BatchedElasticModel.get_buffer
+      ~BatchedElasticModel.get_device
+      ~BatchedElasticModel.get_extra_state
+      ~BatchedElasticModel.get_parameter
+      ~BatchedElasticModel.get_submodule
+      ~BatchedElasticModel.half
+      ~BatchedElasticModel.ipu
+      ~BatchedElasticModel.load_state_dict
+      ~BatchedElasticModel.modules
+      ~BatchedElasticModel.named_buffers
+      ~BatchedElasticModel.named_children
+      ~BatchedElasticModel.named_modules
+      ~BatchedElasticModel.named_parameters
+      ~BatchedElasticModel.parameters
+      ~BatchedElasticModel.register_backward_hook
+      ~BatchedElasticModel.register_buffer
+      ~BatchedElasticModel.register_forward_hook
+      ~BatchedElasticModel.register_forward_pre_hook
+      ~BatchedElasticModel.register_full_backward_hook
+      ~BatchedElasticModel.register_full_backward_pre_hook
+      ~BatchedElasticModel.register_load_state_dict_post_hook
+      ~BatchedElasticModel.register_module
+      ~BatchedElasticModel.register_parameter
+      ~BatchedElasticModel.register_state_dict_pre_hook
+      ~BatchedElasticModel.requires_grad_
+      ~BatchedElasticModel.set_device
+      ~BatchedElasticModel.set_extra_state
+      ~BatchedElasticModel.share_memory
+      ~BatchedElasticModel.state_dict
+      ~BatchedElasticModel.to
+      ~BatchedElasticModel.to_empty
+      ~BatchedElasticModel.train
+      ~BatchedElasticModel.type
+      ~BatchedElasticModel.xpu
+      ~BatchedElasticModel.zero_grad
+   
+   
+
+   
+   
+   .. rubric:: Attributes
+
+   .. autosummary::
+   
+      ~BatchedElasticModel.T_destination
+      ~BatchedElasticModel.call_super_init
+      ~BatchedElasticModel.dump_patches
+      ~BatchedElasticModel.training
+   
+   
+
+   .. rubric:: Methods

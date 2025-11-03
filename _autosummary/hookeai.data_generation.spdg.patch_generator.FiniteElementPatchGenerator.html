@@ -1,0 +1,1116 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="hookeai.data_generation.strain_paths" href="hookeai.data_generation.strain_paths.html" />
+    <link rel="prev" title="hookeai.data_generation.spdg.patch_generator.FiniteElementPatch" href="hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="hookeai.html">Code</a><ul class="current">
+<li class="toctree-l2 current"><a class="reference internal" href="hookeai.data_generation.html">hookeai.data_generation</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="hookeai.data_generation.spdg.html">hookeai.data_generation.spdg</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="hookeai.data_generation.spdg.patch.html">hookeai.data_generation.spdg.patch</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="hookeai.data_generation.spdg.patch_generator.html">hookeai.data_generation.spdg.patch_generator</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="hookeai.data_generation.strain_paths.html">hookeai.data_generation.strain_paths</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.ioput.html">hookeai.ioput</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.material_model_finder.html">hookeai.material_model_finder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.miscellaneous.html">hookeai.miscellaneous</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.model_architectures.html">hookeai.model_architectures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.simulators.html">hookeai.simulators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.time_series_data.html">hookeai.time_series_data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.utilities.html">hookeai.utilities</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="hookeai.html">hookeai</a></li>
+          <li class="breadcrumb-item"><a href="hookeai.data_generation.html">hookeai.data_generation</a></li>
+          <li class="breadcrumb-item"><a href="hookeai.data_generation.spdg.html">hookeai.data_generation.spdg</a></li>
+          <li class="breadcrumb-item"><a href="hookeai.data_generation.spdg.patch_generator.html">hookeai.data_generation.spdg.patch_generator</a></li>
+      <li class="breadcrumb-item active">hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="hookeai-data-generation-spdg-patch-generator-finiteelementpatchgenerator">
+<h1>hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator<a class="headerlink" href="#hookeai-data-generation-spdg-patch-generator-finiteelementpatchgenerator" title="Permalink to this heading">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">FiniteElementPatchGenerator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">patch_dims</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Finite element material patch generator.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._n_dim">
+<span class="sig-name descname"><span class="pre">_n_dim</span></span><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._n_dim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of spatial dimensions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._patch_dims">
+<span class="sig-name descname"><span class="pre">_patch_dims</span></span><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._patch_dims" title="Permalink to this definition">¶</a></dt>
+<dd><p>Patch size in each dimension.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._n_corners">
+<span class="sig-name descname"><span class="pre">_n_corners</span></span><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._n_corners" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of corners of the patch.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._n_edges">
+<span class="sig-name descname"><span class="pre">_n_edges</span></span><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._n_edges" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of edges of the patch.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._corners_mapping">
+<span class="sig-name descname"><span class="pre">_corners_mapping</span></span><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._corners_mapping" title="Permalink to this definition">¶</a></dt>
+<dd><p>For each corner label (key, str[int]), store the corner internal index.
+Corners are labeled from 1 to number of corners.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._corners_coords_ref">
+<span class="sig-name descname"><span class="pre">_corners_coords_ref</span></span><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._corners_coords_ref" title="Permalink to this definition">¶</a></dt>
+<dd><p>Patch corners coordinates in the reference configuration
+(numpy.ndarray(n_corners, n_dim)).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)">numpy.ndarray</a>(2d)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._edges_per_dim">
+<span class="sig-name descname"><span class="pre">_edges_per_dim</span></span><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._edges_per_dim" title="Permalink to this definition">¶</a></dt>
+<dd><p>For each dimension (key, str[int]), store the edges
+(item, tuple[tuple]) oriented along that dimension in the reference
+configuration. Each edge is stored as tuple[int](2) containing the
+indexes of the two corresponding corners. Corners are stored such that
+edges nodes are sorted in asceding order of coordinate.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._edges_diag_per_dim">
+<span class="sig-name descname"><span class="pre">_edges_diag_per_dim</span></span><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._edges_diag_per_dim" title="Permalink to this definition">¶</a></dt>
+<dd><p>For each dimension (key, str[int]), store the edges reference diagonal
+(item, tuple[tuple]) for edges oriented along that dimension in the
+reference configuration. Each reference diagonal is stored as a
+tuple[int](2) containing the indexes of the two corresponding corners.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._edges_mapping">
+<span class="sig-name descname"><span class="pre">_edges_mapping</span></span><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._edges_mapping" title="Permalink to this definition">¶</a></dt>
+<dd><p>For each edge label (key, str[int]), store the edge orientation
+dimension and internal index consistent with <cite>_edges_per_dim</cite>
+(tuple(2)). Edges are labeled from 1 to number of edges.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator.generate_deformed_patch">
+<span class="sig-name descname"><span class="pre">generate_deformed_patch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elem_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_elems_per_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">corners_lab_bc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">corners_lab_disp_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edges_lab_def_order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edges_lab_disp_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">translation_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotation_angles_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deformation_noise</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_iter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator.generate_deformed_patch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator.generate_deformed_patch" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate finite element deformed patch.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._build_corners_bc">
+<span class="sig-name descname"><span class="pre">_build_corners_bc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">corners_lab_bc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator._build_corners_bc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._build_corners_bc" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build boundary conditions on patch corners.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._build_corners_disp_range">
+<span class="sig-name descname"><span class="pre">_build_corners_disp_range</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">corners_lab_disp_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">corners_bc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator._build_corners_disp_range"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._build_corners_disp_range" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build patch corners displacement range.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._build_edges_poly_orders">
+<span class="sig-name descname"><span class="pre">_build_edges_poly_orders</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edges_lab_def_order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator._build_edges_poly_orders"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._build_edges_poly_orders" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build patch edges deformation polynomials orders.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._build_edges_disp_range">
+<span class="sig-name descname"><span class="pre">_build_edges_disp_range</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edges_lab_disp_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator._build_edges_disp_range"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._build_edges_disp_range" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build patch edges displacements range.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._set_corners_attributes">
+<span class="sig-name descname"><span class="pre">_set_corners_attributes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator._set_corners_attributes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._set_corners_attributes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set patch corners attributes.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._set_corners_coords_ref">
+<span class="sig-name descname"><span class="pre">_set_corners_coords_ref</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator._set_corners_coords_ref"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._set_corners_coords_ref" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set patch corners coordinates (reference configuration).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._set_edges_attributes">
+<span class="sig-name descname"><span class="pre">_set_edges_attributes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator._set_edges_attributes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._set_edges_attributes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set patch edges attributes.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._get_matching_edges_idxs">
+<span class="sig-name descname"><span class="pre">_get_matching_edges_idxs</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator._get_matching_edges_idxs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._get_matching_edges_idxs" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get matching edges indexes along each dimension.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._get_n_edge_nodes_per_dim">
+<span class="sig-name descname"><span class="pre">_get_n_edge_nodes_per_dim</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elem_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_elems_per_dim</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator._get_n_edge_nodes_per_dim"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._get_n_edge_nodes_per_dim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get number of patch edge nodes along each dimension.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._get_elem_type_attributes">
+<span class="sig-name descname"><span class="pre">_get_elem_type_attributes</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elem_type</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._get_elem_type_attributes" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get finite element type attributes.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._get_corners_random_displacements">
+<span class="sig-name descname"><span class="pre">_get_corners_random_displacements</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">corners_disp_range</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edges_poly_orders</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator._get_corners_random_displacements"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._get_corners_random_displacements" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute patch corners random displacements.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">_get_deformed_boundary_edge(self,</span> <span class="pre">nodes_coords_ref,</span> <span class="pre">left_node_def,</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">right_node_def,</span> <span class="pre">poly_order,</span></span></dt>
+<dd><p>poly_bounds_range=None, is_plot=False)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._polynomial_sampler">
+<span class="sig-name descname"><span class="pre">_polynomial_sampler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">left_point</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">right_point</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lower_bound</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upper_bound</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator._polynomial_sampler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._polynomial_sampler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate random polynomial by sampling points within given bounds.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._get_patch_centroid">
+<span class="sig-name descname"><span class="pre">_get_patch_centroid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">corners_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edges_coords</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator._get_patch_centroid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._get_patch_centroid" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute patch centroid.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._build_boundary_coords_array">
+<span class="sig-name descname"><span class="pre">_build_boundary_coords_array</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edges_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_close_polygon</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator._build_boundary_coords_array"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._build_boundary_coords_array" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build patch boundary nodes coordinates array.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._is_admissible_simulation">
+<span class="sig-name descname"><span class="pre">_is_admissible_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edges_coords</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator._is_admissible_simulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._is_admissible_simulation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check whether simulation of patch is physically admissible.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._get_orthogonal_dims">
+<span class="sig-name descname"><span class="pre">_get_orthogonal_dims</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dim</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator._get_orthogonal_dims"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._get_orthogonal_dims" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get orthogonal dimensions to given dimension.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._rotation_tensor_deformed_edge">
+<span class="sig-name descname"><span class="pre">_rotation_tensor_deformed_edge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">corners_coords_def</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator._rotation_tensor_deformed_edge"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._rotation_tensor_deformed_edge" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set rotation tensor to deformed boundary edge local coordinates.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._transform_to_edge_local_coordinates">
+<span class="sig-name descname"><span class="pre">_transform_to_edge_local_coordinates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">init_node_def</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_node_def</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodes_coords_ref</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">translation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator._transform_to_edge_local_coordinates"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._transform_to_edge_local_coordinates" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transform from patch coordinates to deformed edge local coordinates.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._transform_from_edge_local_coordinates">
+<span class="sig-name descname"><span class="pre">_transform_from_edge_local_coordinates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">local_nodes_coords_def</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">translation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator._transform_from_edge_local_coordinates"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._transform_from_edge_local_coordinates" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transform from deformed edge local coordinates to patch coordinates.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._rotate_coords_array">
+<span class="sig-name descname"><span class="pre">_rotate_coords_array</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coords_array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator._rotate_coords_array"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._rotate_coords_array" title="Permalink to this definition">¶</a></dt>
+<dd><p>Rotate coordinates array.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._generate_finite_element_mesh">
+<span class="sig-name descname"><span class="pre">_generate_finite_element_mesh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elem_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_elems_per_dim</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator._generate_finite_element_mesh"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._generate_finite_element_mesh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate patch finite element mesh (reference configuration).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._get_elem_node_index">
+<span class="sig-name descname"><span class="pre">_get_elem_node_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elem_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_elems_per_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">global_index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator._get_elem_node_index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._get_elem_node_index" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get element node local index from global mesh index.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">_get_mesh_boundary_nodes_disps(self,</span> <span class="pre">edges_coords_ref,</span> <span class="pre">edges_coords_def,</span></span></dt>
+<dd><p>mesh_nodes_matrix, mesh_nodes_coords_ref,
+is_interp_face_disps=False)</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._get_node_label_from_coords">
+<span class="sig-name descname"><span class="pre">_get_node_label_from_coords</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh_nodes_coords_ref</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_coords</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator._get_node_label_from_coords"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._get_node_label_from_coords" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get finite element mesh node label from coordinates.</p>
+</dd></dl>
+
+<p>Constructor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_dim</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of spatial dimensions.</p></li>
+<li><p><strong>patch_dims</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>]</em>) – Patch size in each dimension.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">List of Public Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id22" title="hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator.generate_deformed_patch"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_deformed_patch</span></code></a></p></td>
+<td><p>Generate finite element deformed patch.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">patch_dims</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_dim</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of spatial dimensions.</p></li>
+<li><p><strong>patch_dims</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>]</em>) – Patch size in each dimension.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">_build_boundary_coords_array</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edges_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_close_polygon</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator._build_boundary_coords_array"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id0" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build patch boundary nodes coordinates array.</p>
+<p>In the two-dimensional case, boundary nodes are sorted in clockwise
+order. A closed polygon is obtained by setting is_close_polygon to
+True.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>edges_coords</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – For each dimension (key, str[int]), store the corresponding edges
+coordinates (item, list[numpy.ndarray(2d)]). Each edge coordinates
+are stored as a numpy.ndarray(n_edge_nodes, n_dim). Corner nodes
+are assumed part of the edge.</p></li>
+<li><p><strong>is_close_polygon</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – If True, then close the polygon by adding a copy of the first node
+to the end of the boundary nodes coordinates array.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>boundary_coords_array</strong> – Boundary nodes coordinates array (numpy.ndarray(n_points, n_dim)).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)">numpy.ndarray</a>(2d)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id1">
+<span class="sig-name descname"><span class="pre">_build_corners_bc</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">corners_lab_bc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_random_min</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator._build_corners_bc"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id1" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build boundary conditions on patch corners.</p>
+<p>If boundary conditions are not provided, then a random set of minimal
+constraints is prescribed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>corners_lab_bc</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em>, </em><em>default=None</em>) – Boundary conditions (item, tuple[int](n_dim)) for each patch
+corner label (key, str[int]). The tuple[int](n_dim)] prescribes 0
+(free) or 1 (fixed) for each degree of freedom. Unspecified corners
+are assumed free by default.</p></li>
+<li><p><strong>is_random_min</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>False</em>) – Prescribe a random set of minimal constraints. This option
+overrides any prescribed boundary conditions.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>corners_bc</strong> – Boundary conditions applied to the corners of the patch. For each
+node, a tuple(n_dim) prescribes 0 (free) or 1 (fixed) for each
+degree of freedom.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id2">
+<span class="sig-name descname"><span class="pre">_build_corners_disp_range</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">corners_lab_disp_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">corners_bc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator._build_corners_disp_range"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build patch corners displacement range.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>corners_lab_disp_range</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em>, </em><em>default=None</em>) – Displacement range along each dimension (item, tuple[tuple(2)]) for
+each corner label (key, str[int]). Corners are labeled from 1 to
+number of corners. Range is specified as tuple(min, max) for each
+dimension.  If None, a null displacement range is set by default.</p></li>
+<li><p><strong>corners_bc</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>]</em><em>, </em><em>default=None</em>) – Boundary conditions applied to the corners of the patch. For each
+node, a tuple(n_dim) prescribes 0 (free) or 1 (fixed) for each
+degree of freedom.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>corners_disp_range</strong> – Patch corners displacements range
+(numpy.ndarray(n_corners, n_dim, k), where k=0 (min) and k=1
+(max)).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)">numpy.ndarray</a>(3d)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id3">
+<span class="sig-name descname"><span class="pre">_build_edges_disp_range</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edges_lab_disp_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator._build_edges_disp_range"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id3" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build patch edges displacements range.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>edges_lab_disp_range</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em>, </em><em>default=None</em>) – Displacement range (item, tuple[float](2)) for each edge
+label (key, str[int]). Edges are labeled from 1 to number of edges.
+Range is specified as a tuple(min, max) where: (1) displacement
+range is orthogonal and relative to the edge (defined by limiting
+corner nodes in the deformed configuration), (2) positive/negative
+displacement corresponds to outward/inward direction with respect
+to the patch. Null displacement range is assumed for unspecified
+edges. If None, null displacement range is set by default.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>edge_disp_range</strong> – For each dimension (key, str[int]), store the corresponding edges
+displacement range (item, tuple[tuple(min, max)]).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id4">
+<span class="sig-name descname"><span class="pre">_build_edges_poly_orders</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edges_lab_def_order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator._build_edges_poly_orders"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id4" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build patch edges deformation polynomials orders.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>edges_lab_def_order</strong> (<em>{int</em><em>, </em><em>dict}</em><em>, </em><em>default=None</em>) – Deformation polynomial order (item, int) for each edge label
+(key, str[int]). Edges are labeled from 1 to number of edges.
+If a single order is provided, then it is assumed for all the
+edges. Zero order is assumed for unspecified edges. If None, zero
+order is assumed for all the edges.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>edges_poly_orders</strong> – For each dimension (key, str[int]), store the corresponding edges
+deformation polynomials orders (item, list[int]).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id5">
+<span class="sig-name descname"><span class="pre">_generate_finite_element_mesh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elem_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_elems_per_dim</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator._generate_finite_element_mesh"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id5" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate patch finite element mesh (reference configuration).</p>
+<p>The finite element mesh is regular and uniform, assuming a spatial
+discretization in quadrilateral (2D) / hexahedral (3D) elements.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>elem_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Finite element type.</p></li>
+<li><p><strong>n_elems_per_dim</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>]</em>) – Number of finite elements per dimension.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>mesh_nodes_matrix</strong> (<em>numpy.ndarray(2d or 3d)</em>) – Finite element mesh nodes matrix
+(numpy.ndarray[int](n_edge_nodes_per_dim) where each element
+corresponds to a given node position and whose value is set either
+as the global node label or zero (if the node does not exist).
+Nodes are labeled from 1 to n_nodes.</p></li>
+<li><p><strong>mesh_nodes_coords</strong> (<em>dict</em>) – Coordinates (item, numpy.ndarray(n_dim)) of each finite element
+mesh node (key, str[int]). Nodes are labeled from 1 to n_nodes.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id6">
+<span class="sig-name descname"><span class="pre">_get_corners_random_displacements</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">corners_disp_range</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edges_poly_orders</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator._get_corners_random_displacements"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id6" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute patch corners random displacements.</p>
+<p>Edges deformation polynomial order may be updated in-place to enforce
+a zero order deformation polynomial in all matching edges if at least
+one of them has been prescribed a zero order deformation polynomial.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>corners_disp_range</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>numpy.ndarray</em></a><em>(</em><em>3d</em><em>)</em>) – Patch corners displacements range
+(numpy.ndarray(n_corners, n_dim, k), where k=0 (min) and k=1
+(max)).</p></li>
+<li><p><strong>edges_poly_orders</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em>, </em><em>default=None</em>) – For each dimension (key, str[int]), store the corresponding edges
+deformation polynomials orders (item, tuple[int]).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>corners_disp</strong> (<em>numpy.ndarray(2d)</em>) – Patch corners displacements (numpy.ndarray(n_corners, n_dim)).</p></li>
+<li><p><strong>corners_disp_range</strong> (<em>numpy.ndarray(3d)</em>) – Patch corners displacements range
+(numpy.ndarray(n_corners, n_dim, k), where k=0 (min) and k=1
+(max)).</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._get_deformed_boundary_edge">
+<span class="sig-name descname"><span class="pre">_get_deformed_boundary_edge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nodes_coords_ref</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">left_node_def</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">right_node_def</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">poly_order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">poly_bounds_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">noise</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator._get_deformed_boundary_edge"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._get_deformed_boundary_edge" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get randomly deformed boundary edge node coordinates in 2D plane.</p>
+<p>The boundary edge nodes (reference configuration) must be sorted
+along the first dimension (either ascending or descending order).</p>
+<p>The deformed configuration of the boundary edge is computed by sampling
+a random polynomial along the second dimension of the deformed boundary
+edge local coordinates.</p>
+<p>The boundary edge nodes are then projected to the deformed
+configuration and the corresponding displacements are computed based on
+the reference coordinates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nodes_coords_ref</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>numpy.ndarray</em></a><em>(</em><em>2d</em><em>)</em>) – Boundary edge nodes coordinates in the reference configuration
+(numpy.ndarray(n_edge_nodes, 2)).</p></li>
+<li><p><strong>left_node_def</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>numpy.ndarray</em></a><em>(</em><em>1d</em><em>)</em>) – Boundary edge leftmost node coordinates in the deformed
+configuration (numpy.ndarray(2)).</p></li>
+<li><p><strong>right_node_def</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>numpy.ndarray</em></a><em>(</em><em>1d</em><em>)</em>) – Boundary edge rightmost node coordinates in the deformed
+configuration (numpy.ndarray(2)).</p></li>
+<li><p><strong>poly_order</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Order of random polynomial sampled to generate the deformed
+configuration of the boundary edge.</p></li>
+<li><p><strong>poly_bounds_range</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>]</em><em>, </em><em>default=None</em>) – Polynomial range along second dimension. Range is relative to
+midplane defined by both boundary edge nodes along the second
+dimension.</p></li>
+<li><p><strong>noise</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>default=0.0</em>) – Parameter that controls the normally distributed noise superimposed
+to the boundary edges interior nodes coordinates in the deformed
+configuration. Defines the noise standard deviation along given
+dimension after being multiplied by the corresponding patch size.</p></li>
+<li><p><strong>is_plot</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – If True, plot boundary edge reference and deformed configurations.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>nodes_coords_def</strong> (<em>numpy.ndarray(2d)</em>) – Boundary edge nodes coordinates in the deformed configuration
+(numpy.ndarray(n_edge_nodes, 2)).</p></li>
+<li><p><strong>nodes_disp</strong> (<em>numpy.ndarray(2d)</em>) – Boundary edge nodes displacements (numpy.ndarray(n_edge_nodes, 2)).</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id7">
+<span class="sig-name descname"><span class="pre">_get_elem_node_index</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elem_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_elems_per_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">global_index</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator._get_elem_node_index"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id7" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get element node local index from global mesh index.</p>
+<p>Shared nodes between adjacent elements are assumed to belong to the
+element from the lower coordinate side.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>elem_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Finite element type.</p></li>
+<li><p><strong>n_elems_per_dim</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>]</em>) – Number of finite elements per dimension.</p></li>
+<li><p><strong>global_index</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>]</em>) – Global mesh node index.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>local_index</strong> – Finite element node index.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id8">
+<span class="sig-name descname"><span class="pre">_get_matching_edges_idxs</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator._get_matching_edges_idxs"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id8" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get matching edges indexes along each dimension.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>matching_edges_idxs_per_dim</strong> – For each dimension (key, str[int]), store maching edges internal
+indexes (item, tuple[tuple]). Matching edges share the same
+connectivities with respect to corners.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._get_mesh_boundary_nodes_disps">
+<span class="sig-name descname"><span class="pre">_get_mesh_boundary_nodes_disps</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edges_coords_ref</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edges_coords_def</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh_nodes_matrix</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh_nodes_coords_ref</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_interp_face_disps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator._get_mesh_boundary_nodes_disps"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._get_mesh_boundary_nodes_disps" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute finite element patch boundary displacements.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>edges_coords_ref</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>numpy.ndarray</em></a><em>(</em><em>2d</em><em>)</em><em>]</em><em>]</em>) – For each dimension (key, str[int]), store the corresponding edges
+coordinates in the reference configuration
+(item, list[numpy.ndarray(2d)]). Each edge coordinates are stored
+as a numpy.ndarray(n_edge_nodes, n_dim). Corner nodes are assumed
+part of the edge.</p></li>
+<li><p><strong>edges_coords_def</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>numpy.ndarray</em></a><em>(</em><em>2d</em><em>)</em><em>]</em><em>]</em>) – For each dimension (key, str[int]), store the corresponding edges
+coordinates in the deformed configuration
+(item, list[numpy.ndarray(2d)]). Each edge coordinates are stored
+as a numpy.ndarray(n_edge_nodes, n_dim). Corner nodes are assumed
+part of the edge.</p></li>
+<li><p><strong>mesh_nodes_matrix</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>numpy.ndarray</em></a><em>(</em><em>2d</em><em> or </em><em>3d</em><em>)</em>) – Finite element mesh nodes matrix
+(numpy.ndarray[int](n_edge_nodes_per_dim) where each element
+corresponds to a given node position and whose value is set either
+as the global node label or zero (if the node does not exist).
+Nodes are labeled from 1 to n_nodes.</p></li>
+<li><p><strong>mesh_nodes_coords_ref</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Coordinates (item, numpy.ndarray(n_dim)) of each finite element
+mesh node (key, str[int]) in the reference configuration. Nodes are
+labeled from 1 to n_nodes.</p></li>
+<li><p><strong>is_interp_face_disps</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=True</em>) – If True, then faces nodes displacements are computed by
+interpolating the corresponding edges nodes displacements. If
+False, then faces nodes degrees of freedom are left free.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>mesh_boundary_nodes_disps</strong> – Displacements (item, numpy.ndarray(n_dim)) prescribed on each
+finite element mesh boundary node (key, str[int]). Free degrees of
+freedom must be set as None.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id9">
+<span class="sig-name descname"><span class="pre">_get_n_edge_nodes_per_dim</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elem_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_elems_per_dim</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator._get_n_edge_nodes_per_dim"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id9" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get number of patch edge nodes along each dimension.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>elem_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Finite element type.</p></li>
+<li><p><strong>n_elems_per_dim</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>]</em>) – Number of finite elements per dimension.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>n_edge_nodes_per_dim</strong> – Number of patch edge nodes along each dimension.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id10">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">_get_node_label_from_coords</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh_nodes_coords_ref</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_coords</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator._get_node_label_from_coords"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id10" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get finite element mesh node label from coordinates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mesh_nodes_coords_ref</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Coordinates (item, numpy.ndarray(n_dim)) of each finite element
+mesh node (key, str[int]) in the reference configuration. Nodes are
+labeled from 1 to n_nodes.</p></li>
+<li><p><strong>node_coords</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>numpy.ndarray</em></a><em>(</em><em>1d</em><em>)</em>) – Target node coordinates (numpy.ndarray(n_dim)).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>nodel_label</strong> – Target node label.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id11">
+<span class="sig-name descname"><span class="pre">_get_orthogonal_dims</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">dim</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator._get_orthogonal_dims"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id11" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get orthogonal dimensions to given dimension.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dim</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Dimension.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>orthogonal_dims</strong> – Orthogonal dimensions to given dimension.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id12">
+<span class="sig-name descname"><span class="pre">_get_patch_centroid</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">corners_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edges_coords</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator._get_patch_centroid"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id12" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute patch centroid.</p>
+<p>In the three-dimensional case, the patch (geometrical) centroid is
+approximated by the average of the corners coordinates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>corners_coords</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>numpy.ndarray</em></a><em>(</em><em>2d</em><em>)</em>) – Patch corners coordinates (numpy.ndarray(n_corners, n_dim)).</p></li>
+<li><p><strong>edges_coords</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>numpy.ndarray</em></a><em>(</em><em>2d</em><em>)</em><em>]</em><em>]</em>) – For each dimension (key, str[int]), store the corresponding edges
+coordinates (item, list[numpy.ndarray(2d)]). Each edge coordinates
+are stored as a numpy.ndarray(n_edge_nodes, n_dim). Corner nodes
+are assumed part of the edge.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>centroid</strong> – Patch centroid.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)">numpy.ndarray</a>(2d)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._get_random_rigid_motions">
+<span class="sig-name descname"><span class="pre">_get_random_rigid_motions</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">translation_range</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotation_angles_range</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator._get_random_rigid_motions"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.data_generation.spdg.patch_generator.FiniteElementPatchGenerator._get_random_rigid_motions" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get random rigid body motion tensors (translation and rotation).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>translation_range</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em>, </em><em>default=None</em>) – Translational displacement range (item, tuple[float](2)) along each
+dimension (key, str[int]). Range is specified as tuple(min, max)
+for each dimension. Null range is assumed for unspecified
+dimensions. If None, then there is no translational motion.</p></li>
+<li><p><strong>rotation_angles_range</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em>, </em><em>default=None</em>) – Rotational angle (degrees) range (item, tuple[float](2)) for each
+Euler angle (key, str). Euler angles follow Bunge convention
+(Z1-X2-Z3) and are labeled (‘alpha’, ‘beta’, ‘gamma’),
+respectively. Null range is assumed for unspecified angles. If
+None, then there is no rotational motion.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>translation</strong> (<em>numpy.ndarray(1d)</em>) – Translation array (numpy.ndarray(n_dim)).</p></li>
+<li><p><strong>rotation</strong> (<em>numpy.ndarray(2d)</em>) – Rotation tensor (for given rotation angle theta, active
+transformation (+ theta) and passive transformation (- theta)).</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id13">
+<span class="sig-name descname"><span class="pre">_is_admissible_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edges_coords_def</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator._is_admissible_simulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id13" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check whether simulation of patch is physically admissible.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>edges_coords_def</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>numpy.ndarray</em></a><em>(</em><em>2d</em><em>)</em><em>]</em><em>]</em>) – For each dimension (key, str[int]), store the corresponding edges
+coordinates (item, list[numpy.ndarray(2d)]) (deformed
+configuration). Each edge coordinates are stored as a
+numpy.ndarray(n_edge_nodes, n_dim). Corner nodes are assumed part
+of the edge.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>is_admissible</strong> – If True, the patch simulation is physically admissible.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id14">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">_polynomial_sampler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">left_point</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">right_point</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">lower_bound</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">upper_bound</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_plot</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator._polynomial_sampler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id14" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate random polynomial by sampling points within given bounds.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>order</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Order of polynomial.</p></li>
+<li><p><strong>left_point</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>]</em>) – Leftmost control point of polynomial. Sets sampling lower bound
+along first dimension.</p></li>
+<li><p><strong>right_point</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>]</em>) – Rightmost control point of polynomial. Sets sampling upper bound
+along first dimension.</p></li>
+<li><p><strong>lower_bound</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>default=None</em>) – Sampling lower bound along second dimension. If None, lower bound
+is set from limit control points.</p></li>
+<li><p><strong>upper_bound</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>default=None</em>) – Sampling upper bound along second dimension. If None, upper bound
+is set from limit control points.</p></li>
+<li><p><strong>is_plot</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – If True, plot randomly generated polynomial.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>coefficients</strong> – Polynomial coefficients sorted by increasing order terms.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)">float</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id15">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">_rotate_coords_array</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">coords_array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator._rotate_coords_array"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id15" title="Permalink to this definition">¶</a></dt>
+<dd><p>Rotate coordinates array.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>coords_array</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>numpy.ndarray</em></a><em>(</em><em>2d</em><em>)</em>) – Coordinates array (numpy.ndarray(n_points, n_dim)).</p></li>
+<li><p><strong>r</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>numpy.ndarray</em></a><em> (</em><em>2d</em><em>)</em>) – Rotation tensor (for given rotation angle theta, active
+transformation (+ theta) and passive transformation (- theta)).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>rot_coords_array</strong> – Coordinates array (numpy.ndarray(n_points, n_dim)).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)">numpy.ndarray</a>(2d)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id16">
+<span class="sig-name descname"><span class="pre">_rotation_tensor_deformed_edge</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">edge_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edge_index</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">corners_coords_def</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator._rotation_tensor_deformed_edge"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id16" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set rotation tensor to deformed boundary edge local coordinates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>edge_dim</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Dimension along which edge is oriented in the reference
+configuration.</p></li>
+<li><p><strong>edge_index</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Edge index with respect to edges oriented along the corresponding
+dimension.</p></li>
+<li><p><strong>corners_coords_def</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>numpy.ndarray</em></a><em>(</em><em>2d</em><em>)</em>) – Patch corners coordinates in the deformed configuration
+(numpy.ndarray(n_corners, n_dim)).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>rotation</strong> – Rotation tensor (for given rotation angle theta, active
+transformation (- theta) and passive transformation (+ theta)).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)">numpy.ndarray</a>(2d)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id17">
+<span class="sig-name descname"><span class="pre">_set_corners_attributes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator._set_corners_attributes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id17" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set patch corners attributes.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id18">
+<span class="sig-name descname"><span class="pre">_set_corners_coords_ref</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator._set_corners_coords_ref"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id18" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set patch corners coordinates (reference configuration).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id19">
+<span class="sig-name descname"><span class="pre">_set_edges_attributes</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator._set_edges_attributes"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id19" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set patch edges attributes.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id20">
+<span class="sig-name descname"><span class="pre">_transform_from_edge_local_coordinates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">local_nodes_coords_def</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">translation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator._transform_from_edge_local_coordinates"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id20" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transform from deformed edge local coordinates to patch coordinates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>local_nodes_coords_def</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>numpy.ndarray</em></a><em>(</em><em>2d</em><em>)</em>) – Boundary edge nodes coordinates (deformed configuration) in
+deformed boundary edge local coordinates and stored as
+numpy.ndarray(n_edge_nodes, n_dim).</p></li>
+<li><p><strong>translation</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>numpy.ndarray</em></a><em>(</em><em>1d</em><em>)</em><em>, </em><em>default=None</em>) – Translation from deformed boundary edge local coordinates to patch
+coordinates stored as numpy.ndarray(n_dim).</p></li>
+<li><p><strong>rotation</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>numpy.ndarray</em></a><em>(</em><em>2d</em><em>)</em><em>, </em><em>default=None</em>) – Rotation tensor from deformed boundary edge local coordinates to
+patch coordinates stored as numpy.ndarray(n_dim, n_dim).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>nodes_coords_def</strong> – Boundary edge nodes coordinates (deformed configuration) stored as
+numpy.ndarray(n_edge_nodes, n_dim).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)">numpy.ndarray</a>(2d)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id21">
+<span class="sig-name descname"><span class="pre">_transform_to_edge_local_coordinates</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">init_node_def</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">end_node_def</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodes_coords_ref</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">translation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotation</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator._transform_to_edge_local_coordinates"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id21" title="Permalink to this definition">¶</a></dt>
+<dd><p>Transform from patch coordinates to deformed edge local coordinates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>init_node_def</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>numpy.ndarray</em></a><em>(</em><em>2d</em><em>)</em>) – Boundary edge initial corner node coordinates (deformed
+configuration) stored as numpy.ndarray(n_dim).</p></li>
+<li><p><strong>end_node_def</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>numpy.ndarray</em></a><em>(</em><em>2d</em><em>)</em>) – Boundary edge ending corner node coordinates (deformed
+configuration) stored as numpy.ndarray(n_dim).</p></li>
+<li><p><strong>nodes_coords_ref</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>numpy.ndarray</em></a><em>(</em><em>2d</em><em>)</em>) – Boundary edge nodes coordinates (reference configuration) stored as
+numpy.ndarray(n_edge_nodes, n_dim).</p></li>
+<li><p><strong>translation</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>numpy.ndarray</em></a><em>(</em><em>1d</em><em>)</em><em>, </em><em>default=None</em>) – Translation from patch coordinates to deformed boundary edge local
+coordinates stored as numpy.ndarray(n_dim).</p></li>
+<li><p><strong>rotation</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>numpy.ndarray</em></a><em>(</em><em>2d</em><em>)</em><em>, </em><em>default=None</em>) – Rotation tensor from patch coordinates to deformed boundary edge
+local coordinates stored as numpy.ndarray(n_dim, n_dim).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>local_init_node_def</strong> (<em>numpy.ndarray(1d)</em>) – Boundary edge initial corner node coordinates (deformed
+configuration) in deformed boundary edge local coordinates stored
+as numpy.ndarray(n_dim).</p></li>
+<li><p><strong>local_end_node_def</strong> (<em>numpy.ndarray(1d)</em>) – Boundary edge ending corner node coordinates (deformed
+configuration) in deformed boundary edge local coordinates stored
+as numpy.ndarray(n_dim).</p></li>
+<li><p><strong>local_nodes_coords_ref</strong> (<em>numpy.ndarray(2d)</em>) – Boundary edge nodes coordinates (reference configuration) in
+deformed boundary edge local coordinates stored as
+numpy.ndarray(n_edge_nodes, n_dim).</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id22">
+<span class="sig-name descname"><span class="pre">generate_deformed_patch</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elem_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_elems_per_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">corners_lab_bc</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">corners_lab_disp_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edges_lab_def_order</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">edges_lab_disp_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">translation_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rotation_angles_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">deformation_noise</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">max_iter</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">10</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/data_generation/spdg/patch_generator.html#FiniteElementPatchGenerator.generate_deformed_patch"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id22" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate finite element deformed patch.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>elem_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Finite element type.</p></li>
+<li><p><strong>n_elems_per_dim</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>]</em>) – Number of finite elements per dimension.</p></li>
+<li><p><strong>corners_lab_bc</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em>, </em><em>default=None</em>) – Boundary conditions (item, tuple[int](n_dim)) for each patch
+corner label (key, str[int]). Corners are labeled from 1 to number
+of corners. The tuple[int](n_dim) prescribes 0 (free) or 1 (fixed)
+for each degree of freedom. Corners are labeled from 1 to number of
+corners. Unspecified corners are assumed free by default.</p></li>
+<li><p><strong>corners_lab_disp_range</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em>, </em><em>default=None</em>) – Displacement range along each dimension (item, tuple[tuple(2)]) for
+each corner label (key, str[int]). Corners are labeled from 1 to
+number of corners. Range is specified as tuple(min, max) for each
+dimension. If None, a null displacement range is set by default.</p></li>
+<li><p><strong>edges_lab_def_order</strong> (<em>{int</em><em>, </em><em>dict}</em><em>, </em><em>default=None</em>) – Deformation polynomial order (item, int) for each edge label
+(key, str[int]). Edges are labeled from 1 to number of edges.
+If a single order is provided, then it is assumed for all the
+edges. Zero order is assumed for unspecified edges. If None, zero
+order is assumed for all the edges.</p></li>
+<li><p><strong>edges_lab_disp_range</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em>, </em><em>default=None</em>) – Displacement range (item, tuple[float](2)) for each edge
+label (key, str[int]). Edges are labeled from 1 to number of edges.
+Range is specified as a tuple(min, max) where: (1) displacement
+range is orthogonal and relative to the edge (defined by limiting
+corner nodes in the deformed configuration), (2) positive/negative
+displacement corresponds to outward/inward direction with respect
+to the patch. Null displacement range is assumed for unspecified
+edges. If None, null displacement range is set by default.</p></li>
+<li><p><strong>translation_range</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em>, </em><em>default=None</em>) – Translational displacement range (item, tuple[float](2)) along each
+dimension (key, str[int]). Range is specified as tuple(min, max)
+for each dimension. Null range is assumed for unspecified
+dimensions. If None, then there is no translational motion.</p></li>
+<li><p><strong>rotation_angles_range</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em>, </em><em>default=None</em>) – Rotational angle (degrees) range (item, tuple[float](2)) for each
+Euler angle (key, str). Euler angles follow Bunge convention
+(Z1-X2-Z3) and are labeled (‘alpha’, ‘beta’, ‘gamma’),
+respectively. Null range is assumed for unspecified angles. If
+None, then there is no rotational motion.</p></li>
+<li><p><strong>deformation_noise</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>default=0.0</em>) – Parameter that controls the normally distributed noise superimposed
+to the boundary edges interior nodes coordinates in the deformed
+configuration. Defines the noise standard deviation along given
+dimension after being multiplied by the corresponding patch size.</p></li>
+<li><p><strong>max_iter</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>default=10</em>) – Maximum number of iterations to get a geometrically admissible
+deformed patch configuration.</p></li>
+<li><p><strong>is_verbose</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – If True, enable verbose output.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>is_admissible</strong> (<em>bool</em>) – If True, the patch is geometrically admissible.</p></li>
+<li><p><strong>patch</strong> (<em>FiniteElementPatch</em>) – Finite element patch. If <cite>is_admissible</cite> is False, then returns
+None.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="hookeai.data_generation.spdg.patch_generator.FiniteElementPatch.html" class="btn btn-neutral float-left" title="hookeai.data_generation.spdg.patch_generator.FiniteElementPatch" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="hookeai.data_generation.strain_paths.html" class="btn btn-neutral float-right" title="hookeai.data_generation.strain_paths" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

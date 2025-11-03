@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>model_architectures.hybrid_base_model.predict.prediction &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../_autosummary/hookeai.html">Code</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">model_architectures.hybrid_base_model.predict.prediction</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for model_architectures.hybrid_base_model.predict.prediction</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Prediction of hybrid model.</span>
+
+<span class="sd">Functions</span>
+<span class="sd">---------</span>
+<span class="sd">predict</span>
+<span class="sd">    Make predictions with recurrent constitutive model for given dataset.</span>
+<span class="sd">compute_sample_prediction_loss</span>
+<span class="sd">    Compute loss of sample output features prediction.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#                                                                       Modules</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Standard</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
+<span class="c1"># Third-party</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">tqdm</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="c1"># Local</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">time_series_data.time_dataset</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_time_series_data_loader</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">model_architectures.hybrid_base_model.model.hybrid_model</span><span class="w"> </span><span class="kn">import</span> \
+    <span class="n">HybridModel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">model_architectures.procedures.model_prediction</span><span class="w"> </span><span class="kn">import</span> \
+    <span class="n">make_predictions_subdir</span><span class="p">,</span> <span class="n">save_sample_predictions</span><span class="p">,</span> \
+    <span class="n">write_prediction_summary_file</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">model_architectures.procedures.model_data_scaling</span><span class="w"> </span><span class="kn">import</span> \
+    <span class="n">data_scaler_transform</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">model_architectures.procedures.model_state_files</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_model_state</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utilities.loss_functions</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_pytorch_loss</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utilities.data_loaders</span><span class="w"> </span><span class="kn">import</span> <span class="n">seed_worker</span>
+<span class="c1">#</span>
+<span class="c1">#                                                          Authorship &amp; Credits</span>
+<span class="c1"># =============================================================================</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Bernardo Ferreira (bernardo_ferreira@brown.edu)&#39;</span>
+<span class="n">__credits__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Bernardo Ferreira&#39;</span><span class="p">,</span> <span class="p">]</span>
+<span class="n">__status__</span> <span class="o">=</span> <span class="s1">&#39;Stable&#39;</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="predict"><a class="viewcode-back" href="../../../../_autosummary/hookeai.model_architectures.hybrid_base_model.train.training.predict.html#hookeai.model_architectures.hybrid_base_model.train.training.predict">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">predict</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">model_directory</span><span class="p">,</span> <span class="n">model</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">predict_directory</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">model_load_state</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">loss_nature</span><span class="o">=</span><span class="s1">&#39;features_out&#39;</span><span class="p">,</span>
+            <span class="n">loss_type</span><span class="o">=</span><span class="s1">&#39;mse&#39;</span><span class="p">,</span> <span class="n">loss_kwargs</span><span class="o">=</span><span class="p">{},</span> <span class="n">is_normalized_loss</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+            <span class="n">batch_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">dataset_file_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">device_type</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+            <span class="n">is_verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Make predictions with hybrid model for given dataset.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dataset : torch.utils.data.Dataset</span>
+<span class="sd">        Time series data set. Each sample is stored as a dictionary where</span>
+<span class="sd">        each feature (key, str) data is a torch.Tensor(2d) of shape</span>
+<span class="sd">        (sequence_length, n_features).</span>
+<span class="sd">    model_directory : str</span>
+<span class="sd">        Directory where model is stored.</span>
+<span class="sd">    model : HybridModel, default=None</span>
+<span class="sd">        Hybrid model. If None, then model is initialized</span>
+<span class="sd">        from the initialization file and the state is loaded from the state</span>
+<span class="sd">        file. In both cases the model is set to evaluation mode.</span>
+<span class="sd">    predict_directory : str, default=None</span>
+<span class="sd">        Directory where model predictions results are stored. If None, then</span>
+<span class="sd">        all output files are supressed.</span>
+<span class="sd">    model_load_state : {&#39;default&#39;, &#39;init&#39;, int, &#39;best&#39;, &#39;last&#39;},</span>
+<span class="sd">                       default=&#39;default&#39;</span>
+<span class="sd">        Available model state to be loaded from the model directory.</span>
+<span class="sd">        Options:</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;default&#39;   : Model default state file</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;init&#39;      : Model initial state</span>
+<span class="sd">        </span>
+<span class="sd">        int         : Model state of given training epoch</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;best&#39;      : Model state of best performance</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;last&#39;      : Model state of latest training epoch</span>
+
+<span class="sd">    loss_nature : {&#39;features_out&#39;,}, default=&#39;features_out&#39;</span>
+<span class="sd">        Loss nature:</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;features_out&#39; : Based on output features</span>
+
+<span class="sd">    loss_type : {&#39;mse&#39;,}, default=&#39;mse&#39;</span>
+<span class="sd">        Loss function type:</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;mse&#39;  : MSE (torch.nn.MSELoss)</span>
+<span class="sd">        </span>
+<span class="sd">    loss_kwargs : dict, default={}</span>
+<span class="sd">        Arguments of torch.nn._Loss initializer.</span>
+<span class="sd">    is_normalized_loss : bool, default=False</span>
+<span class="sd">        If True, then samples prediction loss are computed from normalized</span>
+<span class="sd">        output data, False otherwise. Normalization of output data requires</span>
+<span class="sd">        that model data scalers are available.</span>
+<span class="sd">    batch_size : int, default=1</span>
+<span class="sd">        Number of samples loaded per batch.</span>
+<span class="sd">    dataset_file_path : str, default=None</span>
+<span class="sd">        Time series data set file path if such file exists. Only used for</span>
+<span class="sd">        output purposes.</span>
+<span class="sd">    device_type : {&#39;cpu&#39;, &#39;cuda&#39;}, default=&#39;cpu&#39;</span>
+<span class="sd">        Type of device on which torch.Tensor is allocated.</span>
+<span class="sd">    seed : int, default=None</span>
+<span class="sd">        Seed used to initialize the random number generators of Python and</span>
+<span class="sd">        other libraries (e.g., NumPy, PyTorch) for all devices to preserve</span>
+<span class="sd">        reproducibility. Does also set workers seed in PyTorch data loaders.</span>
+<span class="sd">    is_verbose : bool, default=False</span>
+<span class="sd">        If True, enable verbose output.</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    predict_subdir : str</span>
+<span class="sd">        Subdirectory where samples predictions results files are stored.</span>
+<span class="sd">    avg_predict_loss : float</span>
+<span class="sd">        Average prediction loss per sample. Defaults to None if ground-truth is</span>
+<span class="sd">        not available for all data set samples.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Set random number generators initialization for reproducibility</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">seed</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+        <span class="n">generator</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">Generator</span><span class="p">()</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set device</span>
+    <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="n">device_type</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="n">start_time_sec</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Hybrid model prediction&#39;</span>
+              <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">-----------------------&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Check model directory</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">model_directory</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The model directory has not been found:</span><span class="se">\n\n</span><span class="s1">&#39;</span>
+                           <span class="o">+</span> <span class="n">model_directory</span><span class="p">)</span>
+    <span class="c1"># Check prediction directory</span>
+    <span class="k">if</span> <span class="n">predict_directory</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">predict_directory</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The model prediction directory has not been &#39;</span>
+                           <span class="s1">&#39;found:</span><span class="se">\n\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">predict_directory</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize model and load model state if not provided</span>
+    <span class="k">if</span> <span class="n">model</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&gt; Loading hybrid model...&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize hybrid model</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">HybridModel</span><span class="o">.</span><span class="n">init_model_from_file</span><span class="p">(</span><span class="n">model_directory</span><span class="p">)</span>
+        <span class="c1"># Set model device</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">set_device</span><span class="p">(</span><span class="n">device_type</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Load hybrid model state</span>
+        <span class="n">_</span> <span class="o">=</span> <span class="n">load_model_state</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">model_load_state</span><span class="o">=</span><span class="n">model_load_state</span><span class="p">,</span>
+                             <span class="n">is_remove_posterior</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get model input and output features normalization</span>
+    <span class="n">is_model_in_normalized</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">is_model_in_normalized</span>
+    <span class="n">is_model_out_normalized</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">is_model_out_normalized</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Move model to device</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+    <span class="c1"># Set model in evaluation mode</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">eval</span><span class="p">()</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Create model predictions subdirectory for current prediction process</span>
+    <span class="n">predict_subdir</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">predict_directory</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">predict_subdir</span> <span class="o">=</span> <span class="n">make_predictions_subdir</span><span class="p">(</span><span class="n">predict_directory</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set data loader</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">seed</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="n">data_loader</span> <span class="o">=</span> <span class="n">get_time_series_data_loader</span><span class="p">(</span>
+            <span class="n">dataset</span><span class="o">=</span><span class="n">dataset</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>
+            <span class="n">kwargs</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;worker_init_fn&#39;</span><span class="p">:</span> <span class="n">seed_worker</span><span class="p">,</span> <span class="s1">&#39;generator&#39;</span><span class="p">:</span> <span class="n">generator</span><span class="p">})</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">data_loader</span> <span class="o">=</span> <span class="n">get_time_series_data_loader</span><span class="p">(</span>
+            <span class="n">dataset</span><span class="o">=</span><span class="n">dataset</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize loss function</span>
+    <span class="n">loss_function</span> <span class="o">=</span> <span class="n">get_pytorch_loss</span><span class="p">(</span><span class="n">loss_type</span><span class="p">,</span> <span class="o">**</span><span class="n">loss_kwargs</span><span class="p">)</span>
+    <span class="c1"># Initialize samples prediction loss</span>
+    <span class="n">loss_samples</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># Initialize sample ID</span>
+    <span class="n">sample_id</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">&gt; Starting prediction process...</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set context manager to avoid creation of computation graphs during the</span>
+    <span class="c1"># model evaluation (forward propagation)</span>
+    <span class="k">with</span> <span class="n">torch</span><span class="o">.</span><span class="n">no_grad</span><span class="p">():</span>
+        <span class="c1"># Loop over samples</span>
+        <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">batch</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">tqdm</span><span class="o">.</span><span class="n">tqdm</span><span class="p">(</span><span class="n">data_loader</span><span class="p">,</span>
+                                            <span class="n">desc</span><span class="o">=</span><span class="s1">&#39;&gt; Predictions (batches): &#39;</span><span class="p">,</span>
+                                            <span class="n">disable</span><span class="o">=</span><span class="ow">not</span> <span class="n">is_verbose</span><span class="p">)):</span>
+            <span class="c1"># Move batch to device</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">batch</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">batch</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Get input features</span>
+            <span class="k">if</span> <span class="n">is_model_in_normalized</span><span class="p">:</span>
+                <span class="c1"># Normalize features ground-truth</span>
+                <span class="n">features_in</span> <span class="o">=</span> \
+                    <span class="n">data_scaler_transform</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">tensor</span><span class="o">=</span><span class="n">batch</span><span class="p">[</span><span class="s1">&#39;features_in&#39;</span><span class="p">],</span>
+                                          <span class="n">features_type</span><span class="o">=</span><span class="s1">&#39;features_in&#39;</span><span class="p">,</span>
+                                          <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;normalize&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">features_in</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;features_in&#39;</span><span class="p">]</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Get output features ground-truth (None if not available)</span>
+            <span class="n">targets</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;features_out&#39;</span><span class="p">]</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Get number of batched samples</span>
+            <span class="n">batch_n_sample</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;features_in&#39;</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Initialize batched samples results</span>
+            <span class="n">samples_results</span> <span class="o">=</span> <span class="p">[]</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Compute output features predictions (forward propagation)</span>
+            <span class="k">if</span> <span class="n">loss_nature</span> <span class="o">==</span> <span class="s1">&#39;features_out&#39;</span><span class="p">:</span>
+                <span class="c1"># Compute output features</span>
+                <span class="n">features_out</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">features_in</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Denormalize output features data</span>
+                <span class="k">if</span> <span class="n">is_model_out_normalized</span><span class="p">:</span>
+                    <span class="n">features_out</span> <span class="o">=</span> \
+                        <span class="n">data_scaler_transform</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">tensor</span><span class="o">=</span><span class="n">features_out</span><span class="p">,</span>
+                                              <span class="n">features_type</span><span class="o">=</span><span class="s1">&#39;features_out&#39;</span><span class="p">,</span>
+                                              <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;denormalize&#39;</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Loop over batched samples</span>
+                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">batch_n_sample</span><span class="p">):</span>
+                    <span class="c1"># Initialize sample results</span>
+                    <span class="n">sample_results</span> <span class="o">=</span> <span class="p">{}</span>
+                    <span class="c1"># Build sample results (removing batch dimension)</span>
+                    <span class="n">sample_results</span><span class="p">[</span><span class="s1">&#39;features_out&#39;</span><span class="p">]</span> <span class="o">=</span> \
+                        <span class="n">features_out</span><span class="p">[:,</span> <span class="n">j</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span>
+                    <span class="n">sample_results</span><span class="p">[</span><span class="s1">&#39;targets&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+                    <span class="k">if</span> <span class="n">targets</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                        <span class="n">sample_results</span><span class="p">[</span><span class="s1">&#39;targets&#39;</span><span class="p">]</span> <span class="o">=</span> \
+                            <span class="n">targets</span><span class="p">[:,</span> <span class="n">j</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">()</span>
+                    <span class="c1"># Store sample results</span>
+                    <span class="n">samples_results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sample_results</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Unknown loss nature.&#39;</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Loop over batched samples</span>
+            <span class="k">for</span> <span class="n">sample_results</span> <span class="ow">in</span> <span class="n">samples_results</span><span class="p">:</span>
+                <span class="c1"># Compute sample output features prediction loss</span>
+                <span class="n">loss</span> <span class="o">=</span> <span class="n">compute_sample_prediction_loss</span><span class="p">(</span>
+                    <span class="n">model</span><span class="p">,</span> <span class="n">loss_function</span><span class="p">,</span> <span class="n">sample_results</span><span class="p">[</span><span class="s1">&#39;features_out&#39;</span><span class="p">],</span>
+                    <span class="n">sample_results</span><span class="p">[</span><span class="s1">&#39;targets&#39;</span><span class="p">],</span>
+                    <span class="n">is_normalized_loss</span><span class="o">=</span><span class="n">is_normalized_loss</span><span class="p">)</span>
+                <span class="c1"># Store prediction loss data</span>
+                <span class="n">sample_results</span><span class="p">[</span><span class="s1">&#39;prediction_loss_data&#39;</span><span class="p">]</span> <span class="o">=</span> \
+                    <span class="p">(</span><span class="n">loss_nature</span><span class="p">,</span> <span class="n">loss_type</span><span class="p">,</span> <span class="n">loss</span><span class="p">,</span> <span class="n">is_normalized_loss</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Assemble sample prediction loss if ground-truth is available</span>
+                <span class="k">if</span> <span class="n">loss</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">loss_samples</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">loss</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">())</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Save sample predictions results</span>
+                <span class="k">if</span> <span class="n">predict_directory</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="n">save_sample_predictions</span><span class="p">(</span><span class="n">predictions_dir</span><span class="o">=</span><span class="n">predict_subdir</span><span class="p">,</span>
+                                            <span class="n">sample_id</span><span class="o">=</span><span class="n">sample_id</span><span class="p">,</span>
+                                            <span class="n">sample_results</span><span class="o">=</span><span class="n">sample_results</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Increment sample ID</span>
+                <span class="n">sample_id</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&gt; Finished prediction process!</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Compute average prediction loss per sample</span>
+    <span class="n">avg_predict_loss</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">loss_samples</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">loss_samples</span><span class="p">)</span> <span class="o">==</span> <span class="nb">len</span><span class="p">(</span><span class="n">dataset</span><span class="p">):</span>
+        <span class="n">avg_predict_loss</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">loss_samples</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+        <span class="c1"># Set average prediction loss output format</span>
+        <span class="k">if</span> <span class="n">avg_predict_loss</span><span class="p">:</span>
+            <span class="n">loss_str</span> <span class="o">=</span> <span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">avg_predict_loss</span><span class="si">:</span><span class="s1">.8e</span><span class="si">}</span><span class="s1"> | </span><span class="si">{</span><span class="n">loss_type</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="k">if</span> <span class="n">is_normalized_loss</span><span class="p">:</span>
+                <span class="n">loss_str</span> <span class="o">+=</span> <span class="s1">&#39;, normalized&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">loss_str</span> <span class="o">=</span> <span class="s1">&#39;Ground-truth not available&#39;</span>  
+        <span class="c1"># Display average loss</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&gt; Avg. prediction loss per sample: &#39;</span>
+              <span class="o">+</span> <span class="n">loss_str</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Compute total prediction time and average prediction time per sample</span>
+    <span class="n">total_time_sec</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time_sec</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+        <span class="n">avg_time_sample</span> <span class="o">=</span> <span class="n">total_time_sec</span><span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">avg_time_sample</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="s1">&#39;nan&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&gt; Prediction results directory: </span><span class="si">{</span><span class="n">predict_subdir</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&gt; Total prediction time: &#39;</span>
+              <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">total_time_sec</span><span class="p">)))</span><span class="si">}</span><span class="s1"> | &#39;</span>
+              <span class="sa">f</span><span class="s1">&#39;Avg. prediction time per sample: &#39;</span>
+              <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">avg_time_sample</span><span class="p">)))</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Write summary data file for model prediction process</span>
+    <span class="k">if</span> <span class="n">predict_directory</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">write_prediction_summary_file</span><span class="p">(</span>
+            <span class="n">predict_subdir</span><span class="p">,</span> <span class="n">device_type</span><span class="p">,</span> <span class="n">seed</span><span class="p">,</span> <span class="n">model_directory</span><span class="p">,</span>
+            <span class="n">model_load_state</span><span class="p">,</span> <span class="n">loss_type</span><span class="p">,</span> <span class="n">loss_kwargs</span><span class="p">,</span> <span class="n">is_normalized_loss</span><span class="p">,</span>
+            <span class="n">dataset_file_path</span><span class="p">,</span> <span class="n">dataset</span><span class="p">,</span> <span class="n">avg_predict_loss</span><span class="p">,</span> <span class="n">total_time_sec</span><span class="p">,</span>
+            <span class="n">avg_time_sample</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">predict_subdir</span><span class="p">,</span> <span class="n">avg_predict_loss</span></div>
+<span class="c1"># =============================================================================</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">compute_sample_prediction_loss</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">loss_function</span><span class="p">,</span> <span class="n">features_out</span><span class="p">,</span> <span class="n">targets</span><span class="p">,</span>
+                                   <span class="n">is_normalized_loss</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute loss of sample output features prediction.</span>
+<span class="sd">    </span>
+<span class="sd">    Assumes that provided output features and targets are denormalized.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    model : torch.nn.Module</span>
+<span class="sd">        Recurrent neural network model.</span>
+<span class="sd">    loss_function : torch.nn._Loss</span>
+<span class="sd">        PyTorch loss function.</span>
+<span class="sd">    features_out : torch.Tensor</span>
+<span class="sd">        Predicted output features stored as a torch.Tensor(2d).</span>
+<span class="sd">    targets : {torch.Tensor, None}</span>
+<span class="sd">        Output features ground-truth stored as a torch.Tensor(2d).</span>
+<span class="sd">    is_normalized_loss : bool, default=False</span>
+<span class="sd">        If True, then samples prediction loss are computed from normalized</span>
+<span class="sd">        output data, False otherwise. Normalization of output data requires</span>
+<span class="sd">        that model data scalers are available.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    loss : {float, None}</span>
+<span class="sd">        Loss of sample output features prediction. Set to None if output</span>
+<span class="sd">        features ground-truth is not available.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check if output features ground-truth is available</span>
+    <span class="n">is_ground_truth_available</span> <span class="o">=</span> <span class="n">targets</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Compute sample loss</span>
+    <span class="k">if</span> <span class="n">is_ground_truth_available</span><span class="p">:</span>
+        <span class="c1"># Normalize output features</span>
+        <span class="k">if</span> <span class="n">is_normalized_loss</span><span class="p">:</span>
+            <span class="c1"># Normalize output features predictions</span>
+            <span class="n">features_out</span> <span class="o">=</span> \
+                <span class="n">data_scaler_transform</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">tensor</span><span class="o">=</span><span class="n">features_out</span><span class="p">,</span>
+                                      <span class="n">features_type</span><span class="o">=</span><span class="s1">&#39;features_out&#39;</span><span class="p">,</span>
+                                      <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;normalize&#39;</span><span class="p">)</span>
+            <span class="c1"># Normalize output features ground-truth</span>
+            <span class="n">targets</span> <span class="o">=</span> \
+                <span class="n">data_scaler_transform</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">tensor</span><span class="o">=</span><span class="n">targets</span><span class="p">,</span>
+                                      <span class="n">features_type</span><span class="o">=</span><span class="s1">&#39;features_out&#39;</span><span class="p">,</span>
+                                      <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;normalize&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Compute sample loss</span>
+        <span class="n">loss</span> <span class="o">=</span> <span class="n">loss_function</span><span class="p">(</span><span class="n">features_out</span><span class="p">,</span> <span class="n">targets</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Set sample loss to None if ground-truth is not available</span>
+        <span class="n">loss</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">loss</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

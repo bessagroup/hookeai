@@ -1,0 +1,629 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>model_architectures.materials.process_predictions &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../_autosummary/hookeai.html">Code</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">model_architectures.materials.process_predictions</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for model_architectures.materials.process_predictions</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Post-process of RNN-based model predictions.</span>
+
+<span class="sd">Functions</span>
+<span class="sd">---------</span>
+<span class="sd">build_prediction_data_arrays</span>
+<span class="sd">    Build samples predictions data arrays with predictions and ground-truth.</span>
+<span class="sd">build_time_series_predictions_data</span>
+<span class="sd">    Build times series prediction and ground-truth data arrays.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#                                                                       Modules</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Standard</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="c1"># Third-party</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="c1"># Local</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">time_series_data.time_dataset</span><span class="w"> </span><span class="kn">import</span> <span class="n">load_dataset</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">model_architectures.procedures.model_prediction</span><span class="w"> </span><span class="kn">import</span> \
+    <span class="n">load_sample_predictions</span>
+<span class="c1">#</span>
+<span class="c1">#                                                          Authorship &amp; Credits</span>
+<span class="c1"># =============================================================================</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Bernardo Ferreira (bernardo_ferreira@brown.edu)&#39;</span>
+<span class="n">__credits__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Bernardo Ferreira&#39;</span><span class="p">,</span> <span class="p">]</span>
+<span class="n">__status__</span> <span class="o">=</span> <span class="s1">&#39;Stable&#39;</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="build_prediction_data_arrays"><a class="viewcode-back" href="../../../_autosummary/hookeai.model_architectures.procedures.convergence_plots.build_prediction_data_arrays.html#hookeai.model_architectures.procedures.convergence_plots.build_prediction_data_arrays">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">build_prediction_data_arrays</span><span class="p">(</span><span class="n">predictions_dir</span><span class="p">,</span> <span class="n">prediction_type</span><span class="p">,</span>
+                                 <span class="n">prediction_labels</span><span class="p">,</span> <span class="n">samples_ids</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build samples predictions data arrays with predictions and ground-truth.</span>
+<span class="sd">    </span>
+<span class="sd">    Specific output features indexes cannot be automatically inferred and must</span>
+<span class="sd">    be set according with the particular output features of the model for</span>
+<span class="sd">    suitable extraction.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    predictions_dir : str</span>
+<span class="sd">        Directory where samples predictions results files are stored.</span>
+<span class="sd">    prediction_type : {&#39;stress_comps&#39;, &#39;acc_p_strain&#39;, &#39;p_strain_comps&#39;}</span>
+<span class="sd">        Type of prediction data arrays:</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;stress_comps&#39; : Stress components paths</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;acc_p_strain&#39; : Accumulated plastic strain</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;p_strain_comps&#39; : Plastic strain components paths</span>
+
+<span class="sd">    prediction_labels : tuple[str]</span>
+<span class="sd">        Labels of prediction data arrays.</span>
+<span class="sd">    samples_ids : {&#39;all&#39;, list[int]}, default=&#39;all&#39;</span>
+<span class="sd">        Samples IDs whose prediction results are collated in each prediction</span>
+<span class="sd">        data array.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    prediction_data_arrays : list[numpy.ndarray(2d)]</span>
+<span class="sd">        Prediction components data arrays. Each data array collates data from</span>
+<span class="sd">        all specified samples and is stored as a numpy.ndarray(2d) of shape</span>
+<span class="sd">        (n_points, 2), where data_array[:, 0] stores the ground-truth</span>
+<span class="sd">        and data_array[:, 1] stores the predictions.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check sample predictions directory</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">predictions_dir</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The samples predictions directory has not been &#39;</span>
+                           <span class="s1">&#39;found:</span><span class="se">\n\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">predictions_dir</span><span class="p">)</span>
+    <span class="c1"># Check samples IDs</span>
+    <span class="k">if</span> <span class="n">samples_ids</span> <span class="o">!=</span> <span class="s1">&#39;all&#39;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">samples_ids</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Samples IDs must be specified as &quot;all&quot; or as &#39;</span>
+                           <span class="s1">&#39;list[int].&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~ </span>
+    <span class="c1"># Get files in samples predictions results directory</span>
+    <span class="n">directory_list</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">predictions_dir</span><span class="p">)</span>
+    <span class="c1"># Check directory</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">directory_list</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;No files have been found in directory where &#39;</span>
+                           <span class="s1">&#39;samples predictions results files are stored.&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get prediction files samples IDs</span>
+    <span class="n">prediction_files_ids</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">directory_list</span><span class="p">:</span>
+        <span class="c1"># Check if file is sample results file</span>
+        <span class="nb">id</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^prediction_sample_([0-9]+).pkl$&#39;</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+        <span class="c1"># Assemble sample ID</span>
+        <span class="k">if</span> <span class="nb">id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">prediction_files_ids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="nb">id</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="mi">0</span><span class="p">]))</span>
+    <span class="c1"># Check prediction files</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">prediction_files_ids</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;No sample results files have been found in &#39;</span>
+                           <span class="s1">&#39;directory where samples predictions results files &#39;</span>
+                           <span class="s1">&#39;are stored.&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set all available samples</span>
+    <span class="k">if</span> <span class="n">samples_ids</span> <span class="o">==</span> <span class="s1">&#39;all&#39;</span><span class="p">:</span>
+        <span class="n">samples_ids</span> <span class="o">=</span> <span class="n">prediction_files_ids</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set number of prediction components</span>
+    <span class="k">if</span> <span class="n">prediction_type</span> <span class="o">==</span> <span class="s1">&#39;stress_comps&#39;</span><span class="p">:</span>
+        <span class="c1"># Set number of stress components</span>
+        <span class="n">n_stress_comps</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">prediction_labels</span><span class="p">)</span>
+        <span class="c1"># Set number of prediction components</span>
+        <span class="n">n_data_arrays</span> <span class="o">=</span> <span class="n">n_stress_comps</span>
+    <span class="k">elif</span> <span class="n">prediction_type</span> <span class="o">==</span> <span class="s1">&#39;acc_p_strain&#39;</span><span class="p">:</span>
+        <span class="c1"># Set number of prediction components</span>
+        <span class="n">n_data_arrays</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">elif</span> <span class="n">prediction_type</span> <span class="o">==</span> <span class="s1">&#39;p_strain_comps&#39;</span><span class="p">:</span>
+        <span class="c1"># Set number of plastic strain components</span>
+        <span class="n">n_strain_comps</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">prediction_labels</span><span class="p">)</span>
+        <span class="c1"># Set number of prediction components</span>
+        <span class="n">n_data_arrays</span> <span class="o">=</span> <span class="n">n_strain_comps</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Unknown prediction data array type.&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize prediction components</span>
+    <span class="n">prediction_data_arrays</span> <span class="o">=</span> <span class="n">n_data_arrays</span><span class="o">*</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">)),]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Loop over samples</span>
+    <span class="k">for</span> <span class="n">sample_id</span> <span class="ow">in</span> <span class="n">samples_ids</span><span class="p">:</span>
+        <span class="c1"># Check if sample ID prediction results file is available</span>
+        <span class="k">if</span> <span class="n">sample_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">prediction_files_ids</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The prediction results file for sample &#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">sample_id</span><span class="si">}</span><span class="s1"> has not been found in directory: &#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n\n</span><span class="si">{</span><span class="n">predictions_dir</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set sample predictions file path</span>
+        <span class="n">sample_prediction_path</span> <span class="o">=</span> \
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">predictions_dir</span><span class="p">),</span>
+                         <span class="sa">f</span><span class="s1">&#39;prediction_sample_</span><span class="si">{</span><span class="n">sample_id</span><span class="si">}</span><span class="s1">.pkl&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Load sample predictions</span>
+        <span class="n">sample_results</span> <span class="o">=</span> <span class="n">load_sample_predictions</span><span class="p">(</span><span class="n">sample_prediction_path</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Loop over prediction components</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_data_arrays</span><span class="p">):</span>
+            <span class="c1"># Build sample data array</span>
+            <span class="k">if</span> <span class="n">prediction_type</span> <span class="o">==</span> <span class="s1">&#39;stress_comps&#39;</span><span class="p">:</span>
+                <span class="c1"># Set stress components features indexes</span>
+                <span class="n">feature_idx</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_stress_comps</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Get stress components predictions</span>
+                <span class="n">stress_path</span> <span class="o">=</span> <span class="n">sample_results</span><span class="p">[</span><span class="s1">&#39;features_out&#39;</span><span class="p">][:,</span> <span class="n">feature_idx</span><span class="p">]</span>
+                <span class="c1"># Get stress components ground-truth</span>
+                <span class="n">stress_path_target</span> <span class="o">=</span> <span class="n">sample_results</span><span class="p">[</span><span class="s1">&#39;targets&#39;</span><span class="p">][:,</span> <span class="n">feature_idx</span><span class="p">]</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Check availability of ground-truth</span>
+                <span class="k">if</span> <span class="n">stress_path_target</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Stress components path ground-truth &#39;</span>
+                                       <span class="sa">f</span><span class="s1">&#39;is not available for sample &#39;</span>
+                                       <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">sample_id</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Build sample data array</span>
+                <span class="n">data_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+                    <span class="p">(</span><span class="n">stress_path_target</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
+                     <span class="n">stress_path</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="k">elif</span> <span class="n">prediction_type</span> <span class="o">==</span> <span class="s1">&#39;acc_p_strain&#39;</span><span class="p">:</span>
+                <span class="c1"># Set accumulated plastic strain feature index</span>
+                <span class="n">feature_idx</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sample_results</span><span class="p">[</span><span class="s1">&#39;stress_comps_order&#39;</span><span class="p">])</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Get accumulated plastic strain prediction</span>
+                <span class="n">acc_p_strain_path</span> <span class="o">=</span> \
+                    <span class="n">sample_results</span><span class="p">[</span><span class="s1">&#39;features_out&#39;</span><span class="p">][:,</span> <span class="n">feature_idx</span><span class="p">]</span>
+                <span class="c1"># Get accumulated plastic strain ground-truth</span>
+                <span class="n">acc_p_strain_path_target</span> <span class="o">=</span> \
+                    <span class="n">sample_results</span><span class="p">[</span><span class="s1">&#39;targets&#39;</span><span class="p">][:,</span> <span class="n">feature_idx</span><span class="p">]</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Check availability of ground-truth</span>
+                <span class="k">if</span> <span class="n">acc_p_strain_path_target</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Accumulated plastic strain path &#39;</span>
+                                       <span class="sa">f</span><span class="s1">&#39;ground-truth is not available for &#39;</span>
+                                       <span class="sa">f</span><span class="s1">&#39;sample </span><span class="si">{</span><span class="n">sample_id</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Build sample data array</span>
+                <span class="n">data_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+                    <span class="p">(</span><span class="n">acc_p_strain_path_target</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
+                     <span class="n">acc_p_strain_path</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="k">elif</span> <span class="n">prediction_type</span> <span class="o">==</span> <span class="s1">&#39;p_strain_comps&#39;</span><span class="p">:</span>
+                <span class="c1"># Set plastic components features indexes</span>
+                <span class="n">feature_idx</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_strain_comps</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Get plastic components predictions</span>
+                <span class="n">p_strain_path</span> <span class="o">=</span> <span class="n">sample_results</span><span class="p">[</span><span class="s1">&#39;features_out&#39;</span><span class="p">][:,</span> <span class="n">feature_idx</span><span class="p">]</span>
+                <span class="c1"># Get plastic components ground-truth</span>
+                <span class="n">p_strain_path_target</span> <span class="o">=</span> \
+                    <span class="n">sample_results</span><span class="p">[</span><span class="s1">&#39;targets&#39;</span><span class="p">][:,</span> <span class="n">feature_idx</span><span class="p">]</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Check availability of ground-truth</span>
+                <span class="k">if</span> <span class="n">p_strain_path_target</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Plastic strain components path &#39;</span>
+                                       <span class="sa">f</span><span class="s1">&#39;ground-truth is not available for &#39;</span>
+                                       <span class="sa">f</span><span class="s1">&#39;sample </span><span class="si">{</span><span class="n">sample_id</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Build sample data array</span>
+                <span class="n">data_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+                    <span class="p">(</span><span class="n">p_strain_path_target</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)),</span>
+                     <span class="n">p_strain_path</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Assemble sample prediction data</span>
+            <span class="n">prediction_data_arrays</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> \
+                <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">prediction_data_arrays</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">data_array</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">prediction_data_arrays</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="build_time_series_predictions_data"><a class="viewcode-back" href="../../../_autosummary/hookeai.model_architectures.procedures.convergence_plots.build_time_series_predictions_data.html#hookeai.model_architectures.procedures.convergence_plots.build_time_series_predictions_data">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">build_time_series_predictions_data</span><span class="p">(</span><span class="n">dataset_file_path</span><span class="p">,</span> <span class="n">predictions_dir</span><span class="p">,</span>
+                                       <span class="n">prediction_type</span><span class="p">,</span> <span class="n">prediction_labels</span><span class="p">,</span>
+                                       <span class="n">samples_ids</span><span class="o">=</span><span class="s1">&#39;all&#39;</span><span class="p">,</span>
+                                       <span class="n">is_uncertainty_quantification</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build times series prediction and ground-truth data arrays.</span>
+
+<span class="sd">    Specific output features indexes cannot be automatically inferred and must</span>
+<span class="sd">    be set according with the particular output features of the model for</span>
+<span class="sd">    suitable extraction.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dataset_file_path : str</span>
+<span class="sd">        Time series testing data set file path.</span>
+<span class="sd">    predictions_dir : str</span>
+<span class="sd">        Directory where samples predictions results files are stored.</span>
+<span class="sd">    prediction_type : {&#39;stress_comps&#39;, &#39;acc_p_strain&#39;}</span>
+<span class="sd">        Type of prediction data arrays:</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;stress_comps&#39; : Stress components paths</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;acc_p_strain&#39; : Accumulated plastic strain</span>
+
+<span class="sd">        &#39;p_strain_comps&#39; : Plastic strain components paths</span>
+
+<span class="sd">    prediction_labels : tuple[str]</span>
+<span class="sd">        Labels of prediction data arrays.</span>
+<span class="sd">    samples_ids : {&#39;all&#39;, list[int]}, default=&#39;all&#39;</span>
+<span class="sd">        Samples for which the data arrays with the time series prediction</span>
+<span class="sd">        and ground-truth are built.</span>
+<span class="sd">    is_uncertainty_quantification : bool, default=False</span>
+<span class="sd">        If True, then build the prediction data arrays for each sample</span>
+<span class="sd">        accounting for one or more model samples. Each model sample prediction</span>
+<span class="sd">        directory is inferred from the provided prediction directory (assumed</span>
+<span class="sd">        existing in base model directory). Uncertainty quantification data</span>
+<span class="sd">        accounting for different model samples predictions is required.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    prediction_data_arrays : list[dict]</span>
+<span class="sd">        Prediction components data arrays for each sample. Each prediction</span>
+<span class="sd">        component is stored as a dictionary, where the data array</span>
+<span class="sd">        (item, np.ndarray(2d)) of each sample (key, str) is stored as a</span>
+<span class="sd">        numpy.ndarray(2d) of shape (sequence_length, 2 + n_predictions), where</span>
+<span class="sd">        data_array[:, 0] stores the time series discrete time, data_array[:, 1]</span>
+<span class="sd">        stores the time series ground-truth and data_array[:, 2:] stores the</span>
+<span class="sd">        time series predictions.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get model base directory</span>
+    <span class="n">model_base_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">dataset_file_path</span><span class="p">))</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get model samples to process uncertainty quantification</span>
+    <span class="k">if</span> <span class="n">is_uncertainty_quantification</span><span class="p">:</span>
+        <span class="c1"># Set model uncertainty quantification directory</span>
+        <span class="n">uq_directory</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">model_base_dir</span><span class="p">),</span>
+                                    <span class="s1">&#39;uncertainty_quantification&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize model samples directories</span>
+        <span class="n">model_sample_dirs</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get files and directories in uncertainty quantification directory</span>
+        <span class="n">directory_list</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">uq_directory</span><span class="p">)</span>
+        <span class="c1"># Loop over files and directories</span>
+        <span class="k">for</span> <span class="n">dirname</span> <span class="ow">in</span> <span class="n">directory_list</span><span class="p">:</span>
+            <span class="c1"># Check if model sample directory</span>
+            <span class="n">is_sample_model</span><span class="o">=</span> \
+                <span class="nb">bool</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^&#39;</span> <span class="o">+</span> <span class="s1">&#39;model&#39;</span> <span class="o">+</span> <span class="sa">r</span><span class="s1">&#39;_[0-9]+&#39;</span><span class="p">,</span> <span class="n">dirname</span><span class="p">))</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Append model sample directory</span>
+            <span class="k">if</span> <span class="n">is_sample_model</span><span class="p">:</span>
+                <span class="n">model_sample_dirs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">uq_directory</span><span class="p">),</span> <span class="n">dirname</span><span class="p">))</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Sort model samples directories</span>
+        <span class="n">model_sample_dirs</span> <span class="o">=</span> \
+            <span class="nb">sorted</span><span class="p">(</span><span class="n">model_sample_dirs</span><span class="p">,</span>
+                   <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;(\d+)\D*$&#39;</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+        <span class="c1"># Get number of model samples</span>
+        <span class="n">n_model_sample</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">model_sample_dirs</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Extract testing type from prediction subdirectory</span>
+        <span class="n">testing_type</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">predictions_dir</span><span class="p">))</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Load testing data set</span>
+    <span class="n">test_dataset</span> <span class="o">=</span> <span class="n">load_dataset</span><span class="p">(</span><span class="n">dataset_file_path</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Check sample predictions directory</span>
+    <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="n">is_uncertainty_quantification</span>
+            <span class="ow">and</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">predictions_dir</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The samples predictions directory has not been &#39;</span>
+                           <span class="s1">&#39;found:</span><span class="se">\n\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">predictions_dir</span><span class="p">)</span>
+    <span class="c1"># Check samples IDs</span>
+    <span class="k">if</span> <span class="n">samples_ids</span> <span class="o">!=</span> <span class="s1">&#39;all&#39;</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">samples_ids</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Samples IDs must be specified as &quot;all&quot; or as &#39;</span>
+                           <span class="s1">&#39;list[int].&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">samples_ids</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
+          <span class="ow">and</span> <span class="nb">max</span><span class="p">(</span><span class="n">samples_ids</span><span class="p">)</span> <span class="o">&gt;=</span> <span class="nb">len</span><span class="p">(</span><span class="n">test_dataset</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Sample ID (</span><span class="si">{</span><span class="nb">max</span><span class="p">(</span><span class="n">samples_ids</span><span class="p">)</span><span class="si">}</span><span class="s1">) is outside of the &#39;</span>
+                           <span class="sa">f</span><span class="s1">&#39;data set of size </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">test_dataset</span><span class="p">)</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get files in samples predictions results directory</span>
+    <span class="k">if</span> <span class="n">is_uncertainty_quantification</span><span class="p">:</span>
+        <span class="c1"># Probe first model sample directory</span>
+        <span class="n">directory_list</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">model_sample_dirs</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span>
+                         <span class="s1">&#39;7_prediction&#39;</span><span class="p">,</span> <span class="n">testing_type</span><span class="p">))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">directory_list</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">predictions_dir</span><span class="p">)</span>
+    <span class="c1"># Check directory</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">directory_list</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;No files have been found in directory where &#39;</span>
+                           <span class="s1">&#39;samples predictions results files are stored.&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get prediction files samples IDs</span>
+    <span class="n">prediction_files_ids</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">directory_list</span><span class="p">:</span>
+        <span class="c1"># Check if file is sample results file</span>
+        <span class="n">file_id</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^prediction_sample_([0-9]+).pkl$&#39;</span><span class="p">,</span> <span class="n">filename</span><span class="p">)</span>
+        <span class="c1"># Assemble sample ID</span>
+        <span class="k">if</span> <span class="n">file_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="n">prediction_files_ids</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">file_id</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="mi">0</span><span class="p">]))</span>
+    <span class="c1"># Check prediction files</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">prediction_files_ids</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;No sample results files have been found in &#39;</span>
+                           <span class="s1">&#39;directory where samples predictions results files &#39;</span>
+                           <span class="s1">&#39;are stored.&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set all available samples</span>
+    <span class="k">if</span> <span class="n">samples_ids</span> <span class="o">==</span> <span class="s1">&#39;all&#39;</span><span class="p">:</span>
+        <span class="n">samples_ids</span> <span class="o">=</span> <span class="n">prediction_files_ids</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set number of prediction components</span>
+    <span class="k">if</span> <span class="n">prediction_type</span> <span class="o">==</span> <span class="s1">&#39;stress_comps&#39;</span><span class="p">:</span>
+        <span class="c1"># Set number of stress components</span>
+        <span class="n">n_stress_comps</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">prediction_labels</span><span class="p">)</span>
+        <span class="c1"># Set number of prediction components</span>
+        <span class="n">n_pred_comps</span> <span class="o">=</span> <span class="n">n_stress_comps</span>
+    <span class="k">elif</span> <span class="n">prediction_type</span> <span class="o">==</span> <span class="s1">&#39;acc_p_strain&#39;</span><span class="p">:</span>   
+        <span class="c1"># Set number of prediction components</span>
+        <span class="n">n_pred_comps</span> <span class="o">=</span> <span class="mi">1</span>
+    <span class="k">elif</span> <span class="n">prediction_type</span> <span class="o">==</span> <span class="s1">&#39;p_strain_comps&#39;</span><span class="p">:</span>
+        <span class="c1"># Set number of plastic strain components</span>
+        <span class="n">n_strain_comps</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">prediction_labels</span><span class="p">)</span>
+        <span class="c1"># Set number of prediction components</span>
+        <span class="n">n_pred_comps</span> <span class="o">=</span> <span class="n">n_strain_comps</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Unknown prediction data array type.&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize prediction components data</span>
+    <span class="n">prediction_data_arrays</span> <span class="o">=</span> <span class="p">[{}</span> <span class="k">for</span> <span class="n">_</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_pred_comps</span><span class="p">)]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Loop over samples</span>
+    <span class="k">for</span> <span class="n">sample_id</span> <span class="ow">in</span> <span class="n">samples_ids</span><span class="p">:</span>
+        <span class="c1"># Get time series discrete time</span>
+        <span class="n">time_path</span> <span class="o">=</span> <span class="n">test_dataset</span><span class="p">[</span><span class="n">sample_id</span><span class="p">][</span><span class="s1">&#39;time_hist&#39;</span><span class="p">]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Check if sample prediction results file is available</span>
+        <span class="k">if</span> <span class="n">sample_id</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">prediction_files_ids</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The prediction results file for sample &#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">sample_id</span><span class="si">}</span><span class="s1"> has not been found in directory: &#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n\n</span><span class="si">{</span><span class="n">predictions_dir</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize model samples prediction results</span>
+        <span class="n">models_sample_results</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># Get sample predictions</span>
+        <span class="k">if</span> <span class="n">is_uncertainty_quantification</span><span class="p">:</span>
+            <span class="c1"># Loop over model samples</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_model_sample</span><span class="p">):</span>
+                <span class="c1"># Get model sample directory</span>
+                <span class="n">sample_dir</span> <span class="o">=</span> <span class="n">model_sample_dirs</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Set model sample prediction directory</span>
+                <span class="n">sample_pred_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">sample_dir</span><span class="p">),</span>
+                                               <span class="s1">&#39;7_prediction&#39;</span><span class="p">,</span> <span class="n">testing_type</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Set sample predictions file path</span>
+                <span class="n">sample_prediction_path</span> <span class="o">=</span> \
+                    <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">sample_pred_dir</span><span class="p">),</span>
+                                 <span class="sa">f</span><span class="s1">&#39;prediction_sample_</span><span class="si">{</span><span class="n">sample_id</span><span class="si">}</span><span class="s1">.pkl&#39;</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Load sample predictions</span>
+                <span class="n">sample_results</span> <span class="o">=</span> \
+                    <span class="n">load_sample_predictions</span><span class="p">(</span><span class="n">sample_prediction_path</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Assemble sample predictions</span>
+                <span class="n">models_sample_results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sample_results</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Set sample predictions file path</span>
+            <span class="n">sample_prediction_path</span> <span class="o">=</span> \
+                <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">predictions_dir</span><span class="p">),</span>
+                             <span class="sa">f</span><span class="s1">&#39;prediction_sample_</span><span class="si">{</span><span class="n">sample_id</span><span class="si">}</span><span class="s1">.pkl&#39;</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Load sample predictions</span>
+            <span class="n">sample_results</span> <span class="o">=</span> <span class="n">load_sample_predictions</span><span class="p">(</span><span class="n">sample_prediction_path</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Assemble sample predictions</span>
+            <span class="n">models_sample_results</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">sample_results</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Loop over prediction components</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_pred_comps</span><span class="p">):</span>
+            <span class="c1"># Initialize sample data array</span>
+            <span class="n">data_array</span> <span class="o">=</span> <span class="n">time_path</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Build sample data array</span>
+            <span class="k">if</span> <span class="n">prediction_type</span> <span class="o">==</span> <span class="s1">&#39;stress_comps&#39;</span><span class="p">:</span>
+                <span class="c1"># Loop over sample predictions</span>
+                <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">sample_results</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">models_sample_results</span><span class="p">):</span>
+                    <span class="c1"># Set stress components features indexes</span>
+                    <span class="n">feature_idx</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_stress_comps</span><span class="p">)</span>
+                    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                    <span class="c1"># Get stress component predictions</span>
+                    <span class="n">stress_path</span> <span class="o">=</span> \
+                        <span class="n">sample_results</span><span class="p">[</span><span class="s1">&#39;features_out&#39;</span><span class="p">][:,</span> <span class="n">feature_idx</span><span class="p">]</span>
+                    <span class="c1"># Get stress components ground-truth</span>
+                    <span class="n">stress_path_target</span> <span class="o">=</span> \
+                        <span class="n">sample_results</span><span class="p">[</span><span class="s1">&#39;targets&#39;</span><span class="p">][:,</span> <span class="n">feature_idx</span><span class="p">]</span>
+                    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                    <span class="c1"># Assemble sample ground-truth data</span>
+                    <span class="k">if</span> <span class="n">j</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">stress_path_target</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                                <span class="sa">f</span><span class="s1">&#39;Stress component path ground-truth is not &#39;</span>
+                                <span class="sa">f</span><span class="s1">&#39;available for sample </span><span class="si">{</span><span class="n">sample_id</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">data_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+                                <span class="p">(</span><span class="n">data_array</span><span class="p">,</span>
+                                 <span class="n">stress_path_target</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))),</span>
+                                <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                    <span class="c1"># Concatenate sample prediction data</span>
+                    <span class="n">data_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+                        <span class="p">(</span><span class="n">data_array</span><span class="p">,</span>
+                         <span class="n">stress_path</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="k">elif</span> <span class="n">prediction_type</span> <span class="o">==</span> <span class="s1">&#39;acc_p_strain&#39;</span><span class="p">:</span>
+                <span class="c1"># Set accumulated plastic strain feature index</span>
+                <span class="n">feature_idx</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">sample_results</span><span class="p">[</span><span class="s1">&#39;stress_comps_order&#39;</span><span class="p">])</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Loop over sample predictions</span>
+                <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">sample_results</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">models_sample_results</span><span class="p">):</span>
+                    <span class="c1"># Get accumulated plastic strain prediction</span>
+                    <span class="n">acc_p_strain_path</span> <span class="o">=</span> \
+                        <span class="n">sample_results</span><span class="p">[</span><span class="s1">&#39;features_out&#39;</span><span class="p">][:,</span> <span class="n">feature_idx</span><span class="p">]</span>
+                    <span class="c1"># Get accumulated plastic strain ground-truth</span>
+                    <span class="n">acc_p_strain_path_target</span> <span class="o">=</span> \
+                        <span class="n">sample_results</span><span class="p">[</span><span class="s1">&#39;targets&#39;</span><span class="p">][:,</span> <span class="n">feature_idx</span><span class="p">]</span>
+                    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                    <span class="c1"># Check availability of ground-truth</span>
+                    <span class="k">if</span> <span class="n">j</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">acc_p_strain_path_target</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                                <span class="sa">f</span><span class="s1">&#39;Accumulated plastic strain path &#39;</span>
+                                <span class="sa">f</span><span class="s1">&#39;ground-truth is not available for sample &#39;</span>
+                                <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">sample_id</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">data_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+                                <span class="p">(</span><span class="n">data_array</span><span class="p">,</span>
+                                 <span class="n">acc_p_strain_path_target</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))),</span>
+                                <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                    <span class="c1"># Build sample data array</span>
+                    <span class="n">data_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+                        <span class="p">(</span><span class="n">data_array</span><span class="p">,</span>
+                         <span class="n">acc_p_strain_path</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="k">elif</span> <span class="n">prediction_type</span> <span class="o">==</span> <span class="s1">&#39;p_strain_comps&#39;</span><span class="p">:</span>
+                <span class="c1"># Loop over sample predictions</span>
+                <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">sample_results</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">models_sample_results</span><span class="p">):</span>
+                    <span class="c1"># Set stress components features indexes</span>
+                    <span class="n">feature_idx</span> <span class="o">=</span> <span class="nb">slice</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_strain_comps</span><span class="p">)</span>
+                    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                    <span class="c1"># Get stress component predictions</span>
+                    <span class="n">p_strain_path</span> <span class="o">=</span> \
+                        <span class="n">sample_results</span><span class="p">[</span><span class="s1">&#39;features_out&#39;</span><span class="p">][:,</span> <span class="n">feature_idx</span><span class="p">]</span>
+                    <span class="c1"># Get stress components ground-truth</span>
+                    <span class="n">p_strain_path_target</span> <span class="o">=</span> \
+                        <span class="n">sample_results</span><span class="p">[</span><span class="s1">&#39;targets&#39;</span><span class="p">][:,</span> <span class="n">feature_idx</span><span class="p">]</span>
+                    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                    <span class="c1"># Assemble sample ground-truth data</span>
+                    <span class="k">if</span> <span class="n">j</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+                        <span class="k">if</span> <span class="n">p_strain_path_target</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                                <span class="sa">f</span><span class="s1">&#39;Plastic strain component path ground-truth &#39;</span>
+                                <span class="sa">f</span><span class="s1">&#39;is not available for sample </span><span class="si">{</span><span class="n">sample_id</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
+                        <span class="k">else</span><span class="p">:</span>
+                            <span class="n">data_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+                                <span class="p">(</span><span class="n">data_array</span><span class="p">,</span>
+                                 <span class="n">p_strain_path_target</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))),</span>
+                                <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                    <span class="c1"># Concatenate sample prediction data</span>
+                    <span class="n">data_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+                        <span class="p">(</span><span class="n">data_array</span><span class="p">,</span>
+                         <span class="n">p_strain_path</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">((</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">))),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Assemble prediction component sample data</span>
+            <span class="n">prediction_data_arrays</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="nb">str</span><span class="p">(</span><span class="n">sample_id</span><span class="p">)]</span> <span class="o">=</span> <span class="n">data_array</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">prediction_data_arrays</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

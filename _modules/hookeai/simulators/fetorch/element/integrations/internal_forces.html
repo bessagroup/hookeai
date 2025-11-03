@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>hookeai.simulators.fetorch.element.integrations.internal_forces &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../../../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../../../" id="documentation_options" src="../../../../../../_static/documentation_options.js"></script>
+        <script src="../../../../../../_static/doctools.js"></script>
+        <script src="../../../../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../../../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../_autosummary/hookeai.html">Code</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../../../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">hookeai.simulators.fetorch.element.integrations.internal_forces</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for hookeai.simulators.fetorch.element.integrations.internal_forces</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;FETorch: Finite Element Internal Forces.</span>
+
+<span class="sd">Functions</span>
+<span class="sd">---------</span>
+<span class="sd">compute_element_internal_forces</span>
+<span class="sd">    Compute finite element internal forces.</span>
+<span class="sd">compute_infinitesimal_inc_strain</span>
+<span class="sd">    Compute incremental infinitesimal strain tensor.</span>
+<span class="sd">compute_infinitesimal_strain</span>
+<span class="sd">    Compute infinitesimal strain tensor.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#                                                                       Modules</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Standard</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="c1"># Third-party</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="c1"># Local</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">simulators.fetorch.element.derivatives.gradients</span><span class="w"> </span><span class="kn">import</span> \
+    <span class="n">eval_shapefun_deriv</span><span class="p">,</span> <span class="n">vbuild_discrete_sym_gradient</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">simulators.fetorch.material.material_su</span><span class="w"> </span><span class="kn">import</span> <span class="n">material_state_update</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">simulators.fetorch.math.matrixops</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_problem_type_parameters</span><span class="p">,</span> \
+    <span class="n">vget_tensor_from_mf</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">simulators.fetorch.math.voigt_notation</span><span class="w"> </span><span class="kn">import</span> <span class="n">vget_strain_from_vmf</span><span class="p">,</span> \
+    <span class="n">vget_stress_vmf</span>
+<span class="c1">#</span>
+<span class="c1">#                                                          Authorship &amp; Credits</span>
+<span class="c1"># =============================================================================</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Bernardo Ferreira (bernardo_ferreira@brown.edu)&#39;</span>
+<span class="n">__credits__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Bernardo Ferreira&#39;</span><span class="p">,</span> <span class="p">]</span>
+<span class="n">__status__</span> <span class="o">=</span> <span class="s1">&#39;Stable&#39;</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="compute_element_internal_forces"><a class="viewcode-back" href="../../../../../../_autosummary/hookeai.simulators.fetorch.element.integrations.internal_forces.compute_element_internal_forces.html#hookeai.simulators.fetorch.element.integrations.internal_forces.compute_element_internal_forces">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">compute_element_internal_forces</span><span class="p">(</span><span class="n">strain_formulation</span><span class="p">,</span> <span class="n">problem_type</span><span class="p">,</span>
+                                    <span class="n">element_type</span><span class="p">,</span> <span class="n">element_material</span><span class="p">,</span>
+                                    <span class="n">element_state_old</span><span class="p">,</span> <span class="n">nodes_coords</span><span class="p">,</span>
+                                    <span class="n">nodes_disps</span><span class="p">,</span> <span class="n">nodes_inc_disps</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute finite element internal forces.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    strain_formulation: {&#39;infinitesimal&#39;, &#39;finite&#39;}</span>
+<span class="sd">        Strain formulation.</span>
+<span class="sd">    problem_type : int</span>
+<span class="sd">        Problem type: 2D plane strain (1), 2D plane stress (2),</span>
+<span class="sd">        2D axisymmetric (3) and 3D (4).</span>
+<span class="sd">    element_type : Element</span>
+<span class="sd">        FETorch finite element.</span>
+<span class="sd">    element_material : ConstitutiveModel</span>
+<span class="sd">        FETorch material constitutive model.</span>
+<span class="sd">    element_state_old : dict</span>
+<span class="sd">        Last converged material constitutive model state variables (item, dict)</span>
+<span class="sd">        for each Gauss integration point (key, str[int]).</span>
+<span class="sd">    nodes_coords : torch.Tensor(2d)</span>
+<span class="sd">        Nodes coordinates stored as torch.Tensor(2d) of shape</span>
+<span class="sd">        (n_node, n_dof_node).</span>
+<span class="sd">    nodes_disps : torch.Tensor(2d)</span>
+<span class="sd">        Nodes displacements stored as torch.Tensor(2d) of shape</span>
+<span class="sd">        (n_node, n_dof_node).</span>
+<span class="sd">    nodes_inc_disps : torch.Tensor(2d)</span>
+<span class="sd">        Nodes incremental displacements stored as torch.Tensor(2d) of shape</span>
+<span class="sd">        (n_node, n_dof_node).</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    internal_forces : torch.Tensor(1d)</span>
+<span class="sd">        Element internal forces.</span>
+<span class="sd">    element_state : dict</span>
+<span class="sd">        Material constitutive model state variables (item, dict) for each Gauss</span>
+<span class="sd">        integration point (key, str[int]).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get problem type parameters</span>
+    <span class="n">n_dim</span><span class="p">,</span> <span class="n">comp_order_sym</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> \
+        <span class="n">get_problem_type_parameters</span><span class="p">(</span><span class="n">problem_type</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get element number of nodes</span>
+    <span class="n">n_node</span> <span class="o">=</span> <span class="n">element_type</span><span class="o">.</span><span class="n">get_n_node</span><span class="p">()</span>
+    <span class="c1"># Get element number of degrees of freedom per node</span>
+    <span class="n">n_dof_node</span> <span class="o">=</span> <span class="n">element_type</span><span class="o">.</span><span class="n">get_n_dof_node</span><span class="p">()</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get element number of Gauss quadrature integration points</span>
+    <span class="n">n_gauss</span> <span class="o">=</span> <span class="n">element_type</span><span class="o">.</span><span class="n">get_n_gauss</span><span class="p">()</span>
+    <span class="c1"># Get element Gauss quadrature integration points local coordinates and</span>
+    <span class="c1"># weights</span>
+    <span class="n">gp_coords</span><span class="p">,</span> <span class="n">gp_weights</span> <span class="o">=</span> <span class="n">element_type</span><span class="o">.</span><span class="n">get_gauss_integration_points</span><span class="p">()</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize element internal forces</span>
+    <span class="n">internal_forces</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_node</span><span class="o">*</span><span class="n">n_dof_node</span><span class="p">))</span>
+    <span class="c1"># Initialize element material constitutive model state variables</span>
+    <span class="n">element_state</span> <span class="o">=</span> <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">element_state_old</span><span class="o">.</span><span class="n">keys</span><span class="p">()}</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Loop over Gauss integration points</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_gauss</span><span class="p">):</span>
+        <span class="c1"># Get Gauss integration point local coordinates and weight</span>
+        <span class="n">local_coords</span> <span class="o">=</span> <span class="n">gp_coords</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
+        <span class="n">weight</span> <span class="o">=</span> <span class="n">gp_weights</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Evaluate shape functions derivates and Jacobian</span>
+        <span class="n">shape_fun_deriv</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">jacobian_det</span> <span class="o">=</span> \
+            <span class="n">eval_shapefun_deriv</span><span class="p">(</span><span class="n">element_type</span><span class="p">,</span> <span class="n">nodes_coords</span><span class="p">,</span> <span class="n">local_coords</span><span class="p">)</span>
+        <span class="c1"># Build discrete symmetric gradient operator</span>
+        <span class="n">grad_operator_sym</span> <span class="o">=</span> \
+            <span class="n">vbuild_discrete_sym_gradient</span><span class="p">(</span><span class="n">shape_fun_deriv</span><span class="p">,</span> <span class="n">comp_order_sym</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Compute incremental strain tensor</span>
+        <span class="k">if</span> <span class="n">strain_formulation</span> <span class="o">==</span> <span class="s1">&#39;infinitesimal&#39;</span><span class="p">:</span>
+            <span class="c1"># Compute incremental infinitesimal strain tensor (Voigt matricial</span>
+            <span class="c1"># form)</span>
+            <span class="n">inc_strain_vmf</span> <span class="o">=</span> <span class="n">compute_infinitesimal_inc_strain</span><span class="p">(</span>
+                <span class="n">grad_operator_sym</span><span class="p">,</span> <span class="n">nodes_inc_disps</span><span class="p">)</span>
+            <span class="c1"># Get incremental strain tensor</span>
+            <span class="n">inc_strain</span> <span class="o">=</span> <span class="n">vget_strain_from_vmf</span><span class="p">(</span>
+                <span class="n">inc_strain_vmf</span><span class="p">,</span> <span class="n">n_dim</span><span class="p">,</span> <span class="n">comp_order_sym</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Not implemented.&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get Gauss integration point last converged material constitutive</span>
+        <span class="c1"># model state variables</span>
+        <span class="n">state_variables_old</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">element_state_old</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)])</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Material state update</span>
+        <span class="n">state_variables</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">material_state_update</span><span class="p">(</span>
+            <span class="n">strain_formulation</span><span class="p">,</span> <span class="n">problem_type</span><span class="p">,</span> <span class="n">element_material</span><span class="p">,</span> <span class="n">inc_strain</span><span class="p">,</span>
+            <span class="n">state_variables_old</span><span class="p">,</span> <span class="n">def_gradient_old</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Store Gauss integration point material constitutive model state</span>
+        <span class="c1"># variables</span>
+        <span class="n">element_state</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span> <span class="o">=</span> <span class="n">state_variables</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get stress tensor</span>
+        <span class="k">if</span> <span class="n">strain_formulation</span> <span class="o">==</span> <span class="s1">&#39;infinitesimal&#39;</span><span class="p">:</span>
+            <span class="c1"># Get Cauchy stress tensor</span>
+            <span class="n">stress</span> <span class="o">=</span> <span class="n">vget_tensor_from_mf</span><span class="p">(</span><span class="n">state_variables</span><span class="p">[</span><span class="s1">&#39;stress_mf&#39;</span><span class="p">],</span>
+                                         <span class="n">n_dim</span><span class="p">,</span> <span class="n">comp_order_sym</span><span class="p">)</span>
+            <span class="c1"># Get Cauchy stress tensor (Voigt matricial form)</span>
+            <span class="n">stress_vmf</span> <span class="o">=</span> <span class="n">vget_stress_vmf</span><span class="p">(</span><span class="n">stress</span><span class="p">,</span> <span class="n">n_dim</span><span class="p">,</span> <span class="n">comp_order_sym</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Not implemented.&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Add Gauss integration point contribution to element internal forces</span>
+        <span class="n">internal_forces</span> <span class="o">+=</span> \
+            <span class="n">weight</span><span class="o">*</span><span class="n">torch</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">grad_operator_sym</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">stress_vmf</span><span class="p">)</span><span class="o">*</span><span class="n">jacobian_det</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">internal_forces</span><span class="p">,</span> <span class="n">element_state</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="compute_infinitesimal_inc_strain"><a class="viewcode-back" href="../../../../../../_autosummary/hookeai.simulators.fetorch.element.integrations.internal_forces.compute_infinitesimal_inc_strain.html#hookeai.simulators.fetorch.element.integrations.internal_forces.compute_infinitesimal_inc_strain">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">compute_infinitesimal_inc_strain</span><span class="p">(</span><span class="n">grad_operator_sym</span><span class="p">,</span> <span class="n">nodes_inc_disps</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute incremental infinitesimal strain tensor.</span>
+<span class="sd">    </span>
+<span class="sd">    Strain components order is set by discrete symmetric gradient operator.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    grad_operator_sym : torch.Tensor(2d)</span>
+<span class="sd">        Discrete symmetric gradient operator evaluated at given local</span>
+<span class="sd">        coordinates.</span>
+<span class="sd">    nodes_inc_disps : torch.Tensor(2d)</span>
+<span class="sd">        Nodes incremental displacements stored as torch.Tensor(2d) of shape</span>
+<span class="sd">        (n_node, n_dof_node).</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    inc_strain_vmf : torch.Tensor(1d)</span>
+<span class="sd">        Incremental infinitesimal strain tensor (Voigt matricial form).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Compute incremental infinitesimal strain tensor (Voigt matricial form)</span>
+    <span class="n">inc_strain_vmf</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">grad_operator_sym</span><span class="p">,</span> <span class="n">nodes_inc_disps</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">inc_strain_vmf</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="compute_infinitesimal_strain"><a class="viewcode-back" href="../../../../../../_autosummary/hookeai.simulators.fetorch.element.integrations.internal_forces.compute_infinitesimal_strain.html#hookeai.simulators.fetorch.element.integrations.internal_forces.compute_infinitesimal_strain">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">compute_infinitesimal_strain</span><span class="p">(</span><span class="n">grad_operator_sym</span><span class="p">,</span> <span class="n">nodes_disps</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute infinitesimal strain tensor.</span>
+<span class="sd">    </span>
+<span class="sd">    Strain components order is set by discrete symmetric gradient operator.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    grad_operator_sym : torch.Tensor(2d)</span>
+<span class="sd">        Discrete symmetric gradient operator evaluated at given local</span>
+<span class="sd">        coordinates.</span>
+<span class="sd">    nodes_disps : torch.Tensor(2d)</span>
+<span class="sd">        Nodes displacements stored as torch.Tensor(2d) of shape</span>
+<span class="sd">        (n_node, n_dof_node).</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    strain_vmf : torch.Tensor(1d)</span>
+<span class="sd">        Infinitesimal strain tensor (Voigt matricial form).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Compute infinitesimal strain tensor (Voigt matricial form)</span>
+    <span class="n">strain_vmf</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">grad_operator_sym</span><span class="p">,</span> <span class="n">nodes_disps</span><span class="o">.</span><span class="n">flatten</span><span class="p">())</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">strain_vmf</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

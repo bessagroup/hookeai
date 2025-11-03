@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>hookeai.simulators.links.utilities.links_specimen_dirichlet &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../../" id="documentation_options" src="../../../../../_static/documentation_options.js"></script>
+        <script src="../../../../../_static/doctools.js"></script>
+        <script src="../../../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../_autosummary/hookeai.html">Code</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">hookeai.simulators.links.utilities.links_specimen_dirichlet</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for hookeai.simulators.links.utilities.links_specimen_dirichlet</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Generate specimen Dirichlet boundary conditions from Links mesh.</span>
+
+<span class="sd">Functions</span>
+<span class="sd">---------</span>
+<span class="sd">build_specimen_dbc</span>
+<span class="sd">    Build specimen Dirichlet boundary conditions.</span>
+<span class="sd">get_specimen_node_dbc</span>
+<span class="sd">    Get node Dirichlet boundary conditions for given uniaxial specimen.</span>
+<span class="sd">build_node_disps</span>
+<span class="sd">    Build node displacements array.</span>
+<span class="sd">write_links_dirichlet_bc_file</span>
+<span class="sd">    Write Dirichlet boundary conditions file (Links format).</span>
+<span class="sd">read_links_nodes_coords_mesh</span>
+<span class="sd">    Read finite element mesh nodes coordinates from Links input data file.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#                                                                       Modules</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Standard</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="c1"># Third-party</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="c1">#</span>
+<span class="c1">#                                                          Authorship &amp; Credits</span>
+<span class="c1"># =============================================================================</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Bernardo Ferreira (bernardo_ferreira@brown.edu)&#39;</span>
+<span class="n">__credits__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Bernardo Ferreira&#39;</span><span class="p">,</span> <span class="p">]</span>
+<span class="n">__status__</span> <span class="o">=</span> <span class="s1">&#39;Stable&#39;</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="build_specimen_dbc"><a class="viewcode-back" href="../../../../../_autosummary/hookeai.simulators.links.utilities.links_specimen_dirichlet.build_specimen_dbc.html#hookeai.simulators.links.utilities.links_specimen_dirichlet.build_specimen_dbc">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">build_specimen_dbc</span><span class="p">(</span><span class="n">specimen_label</span><span class="p">,</span> <span class="n">specimen_top_coord</span><span class="p">,</span> <span class="n">specimen_top_disp</span><span class="p">,</span>
+                       <span class="n">nodes_coords_mesh</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build specimen Dirichlet boundary conditions.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    specimen_label : str</span>
+<span class="sd">        Specimen name.</span>
+<span class="sd">    specimen_top_coord : float</span>
+<span class="sd">        Coordinate of the specimen top along uniaxial loading dimension.</span>
+<span class="sd">    specimen_top_disp : float</span>
+<span class="sd">        Prescribed displacement applied to the top of the specimen along</span>
+<span class="sd">        uniaxial loading dimension.</span>
+<span class="sd">    nodes_coords_mesh : np.ndarray(2d)</span>
+<span class="sd">        Coordinates of finite element mesh nodes stored as numpy.ndarray(2d) of</span>
+<span class="sd">        shape (n_node_mesh, n_dim).</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dbc_array : np.ndarray(2d)</span>
+<span class="sd">        Finite element mesh nodes Dirichlet boundary conditions stored as</span>
+<span class="sd">        numpy.ndarray(2d) of shape (n_node_dbc, 7), where n_node_dbc is the</span>
+<span class="sd">        number of nodes with Dirichlet boundary conditions, array[:, 0] is the</span>
+<span class="sd">        node label, array[:, 1:4] is the Dirichlet boundary conditions</span>
+<span class="sd">        prescription code, and array[:, 5:8] are the Dirichlet boundary</span>
+<span class="sd">        conditions prescribed displacements.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get number of nodes</span>
+    <span class="n">n_node</span> <span class="o">=</span> <span class="n">nodes_coords_mesh</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize Dirichlet boundary conditions</span>
+    <span class="n">dbc_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Loop over nodes</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_node</span><span class="p">):</span>
+        <span class="c1"># Set node label</span>
+        <span class="n">node_label</span> <span class="o">=</span> <span class="n">i</span> <span class="o">+</span> <span class="mi">1</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get node Dirichlet boundary conditions</span>
+        <span class="n">node_dbc_code</span><span class="p">,</span> <span class="n">node_dbc_disps</span> <span class="o">=</span> <span class="n">get_specimen_node_dbc</span><span class="p">(</span>
+            <span class="n">specimen_label</span><span class="p">,</span> <span class="n">specimen_top_coord</span><span class="p">,</span> <span class="n">specimen_top_disp</span><span class="p">,</span>
+            <span class="n">nodes_coords_mesh</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:])</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Skip if node without Dirichlet boundary conditions</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">node_dbc_code</span> <span class="o">==</span> <span class="mi">0</span><span class="p">):</span>
+            <span class="k">continue</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Store node Dirichlet boundary conditions</span>
+        <span class="n">dbc_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">node_label</span><span class="p">)</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">),</span> <span class="n">node_dbc_code</span><span class="p">,</span> <span class="n">node_dbc_disps</span><span class="p">)))</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Build Dirichlet boundary conditions array</span>
+    <span class="n">dbc_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">dbc_list</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">dbc_array</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="get_specimen_node_dbc"><a class="viewcode-back" href="../../../../../_autosummary/hookeai.simulators.links.utilities.links_specimen_dirichlet.get_specimen_node_dbc.html#hookeai.simulators.links.utilities.links_specimen_dirichlet.get_specimen_node_dbc">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">get_specimen_node_dbc</span><span class="p">(</span><span class="n">specimen_label</span><span class="p">,</span> <span class="n">top_coord</span><span class="p">,</span> <span class="n">top_disp</span><span class="p">,</span> <span class="n">coords</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get node Dirichlet boundary conditions for given uniaxial specimen.</span>
+<span class="sd">    </span>
+<span class="sd">    This function is highly specific for particular specimens models and</span>
+<span class="sd">    uniaxial loading by means of Dirichlet boundary conditions.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    specimen_label : str</span>
+<span class="sd">        Specimen name.</span>
+<span class="sd">    coords : np.ndarray(1d)</span>
+<span class="sd">        Node coordinates.</span>
+<span class="sd">    top_coord : float</span>
+<span class="sd">        Coordinate of the specimen top along uniaxial loading dimension.</span>
+<span class="sd">    top_disp : float</span>
+<span class="sd">        Prescribed uniaxial displacement applied to the top of the specimen.</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    node_dbc_code : np.ndarray(1d)</span>
+<span class="sd">        Node Dirichlet boundary conditions prescription code stored as</span>
+<span class="sd">        numpy.ndarray[int](1d) with shape (3,).</span>
+<span class="sd">    node_dbc_disps : np.ndarray(1d)</span>
+<span class="sd">        Node Dirichlet boundary conditions prescribed displacements stored as</span>
+<span class="sd">        numpy.ndarray[float](1d) with shape (3,).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Set minimum threshold to handle values close or equal to zero</span>
+    <span class="n">small</span> <span class="o">=</span> <span class="mf">1e-8</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set available specimens</span>
+    <span class="n">available_specimens</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;3d_tensile_double_notched&#39;</span><span class="p">,</span>
+                           <span class="s1">&#39;3d_tensile_dogbone&#39;</span><span class="p">)</span>
+    <span class="c1"># Check specimen</span>
+    <span class="k">if</span> <span class="n">specimen_label</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">available_specimens</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Unknown specimen.&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Check number of dimensions</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">coords</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">len</span><span class="p">(</span><span class="n">coords</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Invalid node coordinates array.&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize node Dirichlet boundary conditions</span>
+    <span class="n">node_dbc_code</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+    <span class="n">node_dbc_disps</span> <span class="o">=</span> <span class="n">build_node_disps</span><span class="p">()</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Build node Dirichlet boundary conditions</span>
+    <span class="k">if</span> <span class="n">specimen_label</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;3d_tensile_double_notched&#39;</span><span class="p">,</span> <span class="s1">&#39;3d_tensile_dogbone&#39;</span><span class="p">):</span>
+        <span class="c1"># Set loading dimension</span>
+        <span class="n">loading_dim</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="c1"># Get node Dirichlet boundary conditions from coordinates:</span>
+        <span class="c1"># Corners (2)</span>
+        <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">coords</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">small</span><span class="p">):</span>
+            <span class="n">node_dbc_code</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+            <span class="n">node_dbc_disps</span> <span class="o">=</span> <span class="n">build_node_disps</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&lt;</span> <span class="n">small</span>
+              <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">top_coord</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">small</span>
+              <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">&lt;</span> <span class="n">small</span><span class="p">):</span>
+            <span class="n">node_dbc_code</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+            <span class="n">node_dbc_disps</span> <span class="o">=</span> <span class="n">build_node_disps</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">top_disp</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="n">loading_dim</span><span class="p">)</span>
+        <span class="c1"># Edges (5)</span>
+        <span class="k">elif</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">coords</span><span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]])</span> <span class="o">&lt;</span> <span class="n">small</span><span class="p">):</span>
+            <span class="n">node_dbc_code</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+            <span class="n">node_dbc_disps</span> <span class="o">=</span> <span class="n">build_node_disps</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">coords</span><span class="p">[[</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">]])</span> <span class="o">&lt;</span> <span class="n">small</span><span class="p">):</span>
+            <span class="n">node_dbc_code</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+            <span class="n">node_dbc_disps</span> <span class="o">=</span> <span class="n">build_node_disps</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">coords</span><span class="p">[[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">]])</span> <span class="o">&lt;</span> <span class="n">small</span><span class="p">):</span>
+            <span class="n">node_dbc_code</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+            <span class="n">node_dbc_disps</span> <span class="o">=</span> <span class="n">build_node_disps</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&lt;</span> <span class="n">small</span>
+              <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">top_coord</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">small</span><span class="p">):</span>
+            <span class="n">node_dbc_code</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+            <span class="n">node_dbc_disps</span> <span class="o">=</span> <span class="n">build_node_disps</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">top_disp</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="n">loading_dim</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">top_coord</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">small</span>
+              <span class="ow">and</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">&lt;</span> <span class="n">small</span><span class="p">):</span>
+            <span class="n">node_dbc_code</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+            <span class="n">node_dbc_disps</span> <span class="o">=</span> <span class="n">build_node_disps</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">top_disp</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="n">loading_dim</span><span class="p">)</span>
+        <span class="c1"># Faces (4)</span>
+        <span class="k">elif</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span> <span class="o">&lt;</span> <span class="n">small</span><span class="p">:</span>
+            <span class="n">node_dbc_code</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+            <span class="n">node_dbc_disps</span> <span class="o">=</span> <span class="n">build_node_disps</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span> <span class="o">&lt;</span> <span class="n">small</span><span class="p">:</span>
+            <span class="n">node_dbc_code</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+            <span class="n">node_dbc_disps</span> <span class="o">=</span> <span class="n">build_node_disps</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span> <span class="o">&lt;</span> <span class="n">small</span><span class="p">:</span>
+            <span class="n">node_dbc_code</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">])</span>
+            <span class="n">node_dbc_disps</span> <span class="o">=</span> <span class="n">build_node_disps</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">coords</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">top_coord</span><span class="p">)</span> <span class="o">&lt;</span> <span class="n">small</span><span class="p">:</span>
+            <span class="n">node_dbc_code</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">0</span><span class="p">])</span>
+            <span class="n">node_dbc_disps</span> <span class="o">=</span> <span class="n">build_node_disps</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="n">top_disp</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="n">loading_dim</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">node_dbc_code</span><span class="p">,</span> <span class="n">node_dbc_disps</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="build_node_disps"><a class="viewcode-back" href="../../../../../_autosummary/hookeai.simulators.links.utilities.links_specimen_dirichlet.build_node_disps.html#hookeai.simulators.links.utilities.links_specimen_dirichlet.build_node_disps">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">build_node_disps</span><span class="p">(</span><span class="n">value</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build node displacements array.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    value : float, default=None</span>
+<span class="sd">        Prescribed displacement along loading dimension. If None, then defaults</span>
+<span class="sd">        to null displacement.</span>
+<span class="sd">    dim : int, default=1</span>
+<span class="sd">        Dimension where prescribed displacement is applied.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    node_disps : np.ndarray(1d)</span>
+<span class="sd">        Node displacements stored as numpy.ndarray(1d) of shape(3,).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Initialize node displacements</span>
+    <span class="n">node_dbc_disps</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span>
+    <span class="c1"># Enforce non-null prescribed displacement along loading dimension</span>
+    <span class="k">if</span> <span class="n">value</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">node_dbc_disps</span><span class="p">[</span><span class="n">dim</span><span class="p">]</span> <span class="o">=</span> <span class="n">value</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">node_dbc_disps</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="write_links_dirichlet_bc_file"><a class="viewcode-back" href="../../../../../_autosummary/hookeai.simulators.links.utilities.links_specimen_dirichlet.write_links_dirichlet_bc_file.html#hookeai.simulators.links.utilities.links_specimen_dirichlet.write_links_dirichlet_bc_file">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">write_links_dirichlet_bc_file</span><span class="p">(</span><span class="n">dbc_file_dir</span><span class="p">,</span> <span class="n">dbc_array</span><span class="p">,</span>
+                                  <span class="n">is_reaction_group</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Write Dirichlet boundary conditions file (Links format).</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dbc_file_dir : str</span>
+<span class="sd">        Directory where Dirichlet boundary conditions file is stored.</span>
+<span class="sd">    dbc_array : np.ndarray(2d)</span>
+<span class="sd">        Finite element mesh nodes Dirichlet boundary conditions stored as</span>
+<span class="sd">        numpy.ndarray(2d) of shape (n_node_dbc, 7), where n_node_dbc is the</span>
+<span class="sd">        number of nodes with Dirichlet boundary conditions, array[:, 0] is the</span>
+<span class="sd">        node label, array[:, 1:4] is the Dirichlet boundary conditions</span>
+<span class="sd">        prescription code, and array[:, 5:8] are the Dirichlet boundary</span>
+<span class="sd">        conditions prescribed displacements.</span>
+<span class="sd">    is_reaction_group : bool, default=True</span>
+<span class="sd">        If True, then write reaction node group with prescribed non-null</span>
+<span class="sd">        Dirichlet boundary conditions.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check directory</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">dbc_file_dir</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The directory where the Dirichlet boundary &#39;</span>
+                           <span class="s1">&#39;conditions file is to be stored has not been &#39;</span>
+                           <span class="s1">&#39;found:</span><span class="se">\n\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">dbc_file_dir</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get number of nodes with Dirichlet boundary conditions</span>
+    <span class="n">n_node_dbc</span> <span class="o">=</span> <span class="n">dbc_array</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize file data</span>
+    <span class="n">write_lines</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;NODES_WITH_PRESCRIBED_DISPLACEMENTS </span><span class="si">{</span><span class="n">n_node_dbc</span><span class="si">}</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">]</span>
+    <span class="c1"># Loop over Dirichlet boundary conditions nodes</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_node_dbc</span><span class="p">):</span>
+        <span class="c1"># Get node label, prescription code and prescribed displacements</span>
+        <span class="n">node_label</span> <span class="o">=</span> <span class="s1">&#39;</span><span class="si">{:&gt;4d}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">dbc_array</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">]))</span>
+        <span class="n">node_dbc_code</span> <span class="o">=</span> \
+            <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">&#39;</span><span class="si">{:&gt;1d}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">))</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">dbc_array</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">:</span><span class="mi">4</span><span class="p">]])</span>
+        <span class="n">node_dbc_disps</span> <span class="o">=</span> \
+            <span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">([</span><span class="s1">&#39;</span><span class="si">{:11.4e}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">dbc_array</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">4</span><span class="p">:</span><span class="mi">7</span><span class="p">]])</span>
+        <span class="c1"># Append node to file data</span>
+        <span class="n">write_lines</span> <span class="o">+=</span> \
+            <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;  </span><span class="si">{</span><span class="n">node_label</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">node_dbc_code</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">node_dbc_disps</span><span class="si">}</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set reaction node group associated with prescribed non-null Dirichlet</span>
+    <span class="c1"># boundary conditions</span>
+    <span class="k">if</span> <span class="n">is_reaction_group</span><span class="p">:</span>
+        <span class="c1"># Set minimum threshold to handle values close or equal to zero</span>
+        <span class="n">small</span> <span class="o">=</span> <span class="mf">1e-8</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize reaction node group</span>
+        <span class="n">reaction_nodes</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># Loop over Dirichlet boundary conditions nodes</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_node_dbc</span><span class="p">):</span>
+            <span class="c1"># Collect node label if non-null Dirichlet boundary condition</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">any</span><span class="p">(</span><span class="n">dbc_array</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">4</span><span class="p">:</span><span class="mi">7</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">small</span><span class="p">):</span>
+                <span class="n">reaction_nodes</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">dbc_array</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">0</span><span class="p">]))</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Append reaction node group to file data</span>
+        <span class="n">write_lines</span> <span class="o">+=</span> <span class="p">([</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">NODE_GROUPS 1&#39;</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">,</span>
+                         <span class="sa">f</span><span class="s1">&#39;1 </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">reaction_nodes</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">]</span>
+                        <span class="o">+</span> <span class="p">[</span><span class="s1">&#39;</span><span class="si">{:d}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">reaction_nodes</span><span class="p">])</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set Dirichlet boundary conditions file path</span>
+    <span class="n">dbc_file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dbc_file_dir</span><span class="p">,</span> <span class="s1">&#39;specimen_dirichlet_bc.dat&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Write Dirichlet boundary conditions data file</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">dbc_file_path</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">dbc_file</span><span class="p">:</span>
+        <span class="c1"># Write Dirichlet boundary conditions data file</span>
+        <span class="n">dbc_file</span><span class="o">.</span><span class="n">writelines</span><span class="p">(</span><span class="n">write_lines</span><span class="p">)</span>
+        <span class="c1"># Close data file</span>
+        <span class="n">dbc_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">dbc_file</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="read_links_nodes_coords_mesh"><a class="viewcode-back" href="../../../../../_autosummary/hookeai.simulators.links.utilities.links_specimen_dirichlet.read_links_nodes_coords_mesh.html#hookeai.simulators.links.utilities.links_specimen_dirichlet.read_links_nodes_coords_mesh">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">read_links_nodes_coords_mesh</span><span class="p">(</span><span class="n">links_input_file_path</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Read finite element mesh nodes coordinates from Links input data file.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    links_input_file_path : str</span>
+<span class="sd">        Links input data file path.</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    nodes_coords_mesh : np.ndarray(2d)</span>
+<span class="sd">        Coordinates of finite element mesh nodes stored as numpy.ndarray(2d) of</span>
+<span class="sd">        shape (n_node_mesh, n_dim).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check if Links simulation input data file exists</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">links_input_file_path</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Links simulation input data file has not been &#39;</span>
+                           <span class="sa">f</span><span class="s1">&#39;found:</span><span class="se">\n\n</span><span class="si">{</span><span class="n">links_input_file_path</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Open Links simulation input data file</span>
+    <span class="n">links_input_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">links_input_file_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
+    <span class="c1"># Reset file position</span>
+    <span class="n">links_input_file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="c1"># Initialize search flag</span>
+    <span class="n">is_keyword_found</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Search for NODE_COORDINATES keyword and collect nodes coordinates</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">links_input_file</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">bool</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;NODE_COORDINATES\b&#39;</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)):</span>
+            <span class="c1"># Start processing NODE_COORDINATES section</span>
+            <span class="n">is_keyword_found</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="c1"># Initialize list of nodes coordinates</span>
+            <span class="n">nodes_coords_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">elif</span> <span class="n">is_keyword_found</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">bool</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^&#39;</span> <span class="o">+</span> <span class="sa">r</span><span class="s1">&#39;[*][A-Z]+&#39;</span><span class="p">,</span> <span class="n">line</span><span class="p">))</span>
+                                   <span class="ow">or</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">):</span>
+            <span class="c1"># Finished processing NODE_COORDINATES section</span>
+            <span class="k">break</span>
+        <span class="k">elif</span> <span class="n">is_keyword_found</span><span class="p">:</span>
+            <span class="c1"># Get node coordinates</span>
+            <span class="n">node_coords</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="nb">float</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">:]])</span>
+            <span class="c1"># Append node coordinates</span>
+            <span class="n">nodes_coords_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">node_coords</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Build finite element mesh nodes coordinates</span>
+    <span class="n">nodes_coords_mesh</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">nodes_coords_list</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">nodes_coords_mesh</span></div>
+<span class="c1"># =============================================================================</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="c1"># Set specimen label</span>
+    <span class="n">specimen_label</span> <span class="o">=</span> <span class="s1">&#39;3d_tensile_dogbone&#39;</span>
+    <span class="c1"># Set storage directory</span>
+    <span class="n">save_dir</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;/home/username/Documents/brown/projects/&#39;</span>
+                <span class="s1">&#39;darpa_paper_examples/global/specimens/tensile_dogbone/&#39;</span>
+                <span class="s1">&#39;meshes/hexa8_n6493_e1200/0_links_simulation&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set specimen parameters</span>
+    <span class="k">if</span> <span class="n">specimen_label</span> <span class="o">==</span> <span class="s1">&#39;3d_tensile_double_notched&#39;</span><span class="p">:</span>
+        <span class="c1"># Set specimen Links input data file</span>
+        <span class="n">specimen_links_data_file</span> <span class="o">=</span> \
+            <span class="p">(</span><span class="s1">&#39;/home/username/Documents/brown/projects/&#39;</span>
+             <span class="s1">&#39;darpa_paper_examples/global/specimens/tensile_double_notched/&#39;</span>
+             <span class="s1">&#39;meshes/hexa8_n760_e504/0_links_simulation/&#39;</span>
+             <span class="s1">&#39;tensile_double_notched.dat&#39;</span><span class="p">)</span>
+        <span class="c1"># Set specimen top coordinate</span>
+        <span class="n">specimen_top_coord</span> <span class="o">=</span> <span class="mf">12.0</span>
+        <span class="c1"># Set prescribed displacement</span>
+        <span class="n">specimen_top_disp</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="k">elif</span> <span class="n">specimen_label</span> <span class="o">==</span> <span class="s1">&#39;3d_tensile_dogbone&#39;</span><span class="p">:</span>
+        <span class="c1"># Set specimen Links input data file</span>
+        <span class="n">specimen_links_data_file</span> <span class="o">=</span> \
+            <span class="p">(</span><span class="s1">&#39;/home/username/Documents/brown/projects/&#39;</span>
+             <span class="s1">&#39;darpa_paper_examples/global/specimens/tensile_dogbone/meshes/&#39;</span>
+             <span class="s1">&#39;hexa8_n6493_e1200/0_links_simulation/tensile_dogbone.dat&#39;</span><span class="p">)</span>
+        <span class="c1"># Set specimen top coordinate</span>
+        <span class="n">specimen_top_coord</span> <span class="o">=</span> <span class="mf">40.0</span>
+        <span class="c1"># Set prescribed displacement</span>
+        <span class="n">specimen_top_disp</span> <span class="o">=</span> <span class="mf">10.0</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Unknown specimen.&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Read specimen finite element mesh nodes coordinates</span>
+    <span class="n">nodes_coords_mesh</span> <span class="o">=</span> <span class="n">read_links_nodes_coords_mesh</span><span class="p">(</span><span class="n">specimen_links_data_file</span><span class="p">)</span>
+    <span class="c1"># Build specimen Dirichlet boundary conditions</span>
+    <span class="n">dbc_array</span> <span class="o">=</span> <span class="n">build_specimen_dbc</span><span class="p">(</span><span class="n">specimen_label</span><span class="p">,</span> <span class="n">specimen_top_coord</span><span class="p">,</span>
+                                   <span class="n">specimen_top_disp</span><span class="p">,</span> <span class="n">nodes_coords_mesh</span><span class="p">)</span>
+    <span class="c1"># Write Dirichlet boundary conditions file</span>
+    <span class="n">write_links_dirichlet_bc_file</span><span class="p">(</span><span class="n">save_dir</span><span class="p">,</span> <span class="n">dbc_array</span><span class="p">,</span> <span class="n">is_reaction_group</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

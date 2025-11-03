@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+        <script async="async" src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="hookeai.miscellaneous.materials.plot_yield_surface" href="hookeai.miscellaneous.materials.plot_yield_surface.html" />
+    <link rel="prev" title="hookeai.miscellaneous.materials.lou_convexity.make_directory" href="hookeai.miscellaneous.materials.lou_convexity.make_directory.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="hookeai.html">Code</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="hookeai.data_generation.html">hookeai.data_generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.ioput.html">hookeai.ioput</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.material_model_finder.html">hookeai.material_model_finder</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="hookeai.miscellaneous.html">hookeai.miscellaneous</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="hookeai.miscellaneous.dataset_processing.html">hookeai.miscellaneous.dataset_processing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hookeai.miscellaneous.file_processing.html">hookeai.miscellaneous.file_processing</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="hookeai.miscellaneous.materials.html">hookeai.miscellaneous.materials</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="hookeai.miscellaneous.materials.compare_hardening_laws.html">hookeai.miscellaneous.materials.compare_hardening_laws</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hookeai.miscellaneous.materials.compare_material_models.html">hookeai.miscellaneous.materials.compare_material_models</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="hookeai.miscellaneous.materials.lou_convexity.html">hookeai.miscellaneous.materials.lou_convexity</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hookeai.miscellaneous.materials.plot_yield_surface.html">hookeai.miscellaneous.materials.plot_yield_surface</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="hookeai.miscellaneous.noisy_data.html">hookeai.miscellaneous.noisy_data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hookeai.miscellaneous.other.html">hookeai.miscellaneous.other</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hookeai.miscellaneous.pruning.html">hookeai.miscellaneous.pruning</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.model_architectures.html">hookeai.model_architectures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.simulators.html">hookeai.simulators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.time_series_data.html">hookeai.time_series_data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.utilities.html">hookeai.utilities</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="hookeai.html">hookeai</a></li>
+          <li class="breadcrumb-item"><a href="hookeai.miscellaneous.html">hookeai.miscellaneous</a></li>
+          <li class="breadcrumb-item"><a href="hookeai.miscellaneous.materials.html">hookeai.miscellaneous.materials</a></li>
+          <li class="breadcrumb-item"><a href="hookeai.miscellaneous.materials.lou_convexity.html">hookeai.miscellaneous.materials.lou_convexity</a></li>
+      <li class="breadcrumb-item active">hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="hookeai-miscellaneous-materials-lou-convexity-louzhangyoon">
+<h1>hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon<a class="headerlink" href="#hookeai-miscellaneous-materials-lou-convexity-louzhangyoon" title="Permalink to this heading">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">LouZhangYoon</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">strain_formulation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">problem_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_su_float64</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'cpu'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/material/models/standard/lou.html#LouZhangYoon"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="hookeai.simulators.fetorch.material.models.vmap.von_mises_mixed.ConstitutiveModel.html#hookeai.simulators.fetorch.material.models.vmap.von_mises_mixed.ConstitutiveModel" title="simulators.fetorch.material.models.interface.ConstitutiveModel"><code class="xref py py-class docutils literal notranslate"><span class="pre">ConstitutiveModel</span></code></a></p>
+<p>Lou-Zhang-Yoon model with general differentiable yield function.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon._name">
+<span class="sig-name descname"><span class="pre">_name</span></span><a class="headerlink" href="#hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon._name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constitutive model name.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon._strain_type">
+<span class="sig-name descname"><span class="pre">_strain_type</span></span><a class="headerlink" href="#hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon._strain_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Material constitutive model strain formulation: infinitesimal strain
+formulation (‘infinitesimal’), finite strain formulation (‘finite’) or
+finite strain formulation through kinematic extension
+(‘finite-kinext’).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>{‘infinitesimal’, ‘finite’, ‘finite-kinext’}</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon._model_parameters">
+<span class="sig-name descname"><span class="pre">_model_parameters</span></span><a class="headerlink" href="#hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon._model_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Material constitutive model parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon._n_dim">
+<span class="sig-name descname"><span class="pre">_n_dim</span></span><a class="headerlink" href="#hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon._n_dim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Problem number of spatial dimensions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon._comp_order_sym">
+<span class="sig-name descname"><span class="pre">_comp_order_sym</span></span><a class="headerlink" href="#hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon._comp_order_sym" title="Permalink to this definition">¶</a></dt>
+<dd><p>Strain/Stress components symmetric order.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon._comp_order_nsym">
+<span class="sig-name descname"><span class="pre">_comp_order_nsym</span></span><a class="headerlink" href="#hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon._comp_order_nsym" title="Permalink to this definition">¶</a></dt>
+<dd><p>Strain/Stress components nonsymmetric order.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon._is_su_float64">
+<span class="sig-name descname"><span class="pre">_is_su_float64</span></span><a class="headerlink" href="#hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon._is_su_float64" title="Permalink to this definition">¶</a></dt>
+<dd><p>If True, then state update is locally computed in floating-point
+double precision. If False, then default floating-point precision
+is assumed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon._device_type">
+<span class="sig-name descname"><span class="pre">_device_type</span></span><a class="headerlink" href="#hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon._device_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Type of device on which torch.Tensor is allocated.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>{‘cpu’, ‘cuda’}</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon._device">
+<span class="sig-name descname"><span class="pre">_device</span></span><a class="headerlink" href="#hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon._device" title="Permalink to this definition">¶</a></dt>
+<dd><p>Device on which torch.Tensor is allocated.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.device</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.get_required_model_parameters">
+<span class="sig-name descname"><span class="pre">get_required_model_parameters</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/material/models/standard/lou.html#LouZhangYoon.get_required_model_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.get_required_model_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get required material constitutive model parameters.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.state_init">
+<span class="sig-name descname"><span class="pre">state_init</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/material/models/standard/lou.html#LouZhangYoon.state_init"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.state_init" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get initialized material constitutive model state variables.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.state_update">
+<span class="sig-name descname"><span class="pre">state_update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inc_strain</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state_variables_old</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/material/models/standard/lou.html#LouZhangYoon.state_update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.state_update" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform material constitutive model state update.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.get_stress_invariants">
+<span class="sig-name descname"><span class="pre">get_stress_invariants</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stress</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/material/models/standard/lou.html#LouZhangYoon.get_stress_invariants"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.get_stress_invariants" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute invariants of stress and deviatoric stress.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.get_stress_invariants_and_derivatives">
+<span class="sig-name descname"><span class="pre">get_stress_invariants_and_derivatives</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stress</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/material/models/standard/lou.html#LouZhangYoon.get_stress_invariants_and_derivatives"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.get_stress_invariants_and_derivatives" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute stress invariants and derivatives w.r.t. stress.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.get_effective_stress">
+<span class="sig-name descname"><span class="pre">get_effective_stress</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stress</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yield_a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yield_b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yield_c</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yield_d</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/material/models/standard/lou.html#LouZhangYoon.get_effective_stress"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.get_effective_stress" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute effective stress.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.get_residual_and_jacobian">
+<span class="sig-name descname"><span class="pre">get_residual_and_jacobian</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comp_order_sym</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_strain</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_trial_strain</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">acc_p_strain</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">acc_p_strain_old</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inc_p_mult</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_consistent_tangent</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">init_yield_stress</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hardening_law</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hardening_parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a_hardening_law</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a_hardening_parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b_hardening_law</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b_hardening_parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c_hardening_law</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c_hardening_parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d_hardening_law</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d_hardening_parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_associative_hardening</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/material/models/standard/lou.html#LouZhangYoon.get_residual_and_jacobian"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.get_residual_and_jacobian" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute state update residuals and Jacobian matrix.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">get_numerical_jacobian(self,</span> <span class="pre">n_dim,</span> <span class="pre">comp_order_sym,</span> <span class="pre">e_strain,</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">e_trial_strain,</span> <span class="pre">acc_p_strain,</span> <span class="pre">acc_p_strain_old,</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">inc_p_mult,</span> <span class="pre">e_consistent_tangent,</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">init_yield_stress,</span>&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160;&#160; <span class="pre">hardening_law,</span> <span class="pre">hardening_parameters,</span></span></dt>
+<dd><blockquote>
+<div><p>a_hardening_law, a_hardening_parameters,
+b_hardening_law, b_hardening_parameters,
+c_hardening_law, c_hardening_parameters,
+d_hardening_law, d_hardening_parameters,
+is_associative_hardening=False, is_verbose=False)</p>
+</div></blockquote>
+<p>Compute state update Jacobian matrix with finite differences.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">compute_num_derivatives(self,</span> <span class="pre">n_dim,</span> <span class="pre">comp_order_sym,</span> <span class="pre">e_strain,</span></span></dt>
+<dd><blockquote>
+<div><p>e_consistent_tangent)</p>
+</div></blockquote>
+<p>Compute numerical derivatives by finite differences.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.convexity_return_mapping">
+<span class="sig-name descname"><span class="pre">convexity_return_mapping</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yield_c</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yield_d</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/material/models/standard/lou.html#LouZhangYoon.convexity_return_mapping"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.convexity_return_mapping" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform convexity return-mapping.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.compute_convex_boundary">
+<span class="sig-name descname"><span class="pre">compute_convex_boundary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_theta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">360</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/material/models/standard/lou.html#LouZhangYoon.compute_convex_boundary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.compute_convex_boundary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute convexity domain boundary.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.directional_convex_boundary">
+<span class="sig-name descname"><span class="pre">directional_convex_boundary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">theta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_lower</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_upper</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">4.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">search_tol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-6</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/material/models/standard/lou.html#LouZhangYoon.directional_convex_boundary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.directional_convex_boundary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute convexity domain boundary along given angular direction.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.check_yield_surface_convexity">
+<span class="sig-name descname"><span class="pre">check_yield_surface_convexity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yield_c</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yield_d</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/material/models/standard/lou.html#LouZhangYoon.check_yield_surface_convexity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.check_yield_surface_convexity" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check yield surface convexity.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.plot_convexity_boundary">
+<span class="sig-name descname"><span class="pre">plot_convexity_boundary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">convex_boundary</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parameters_paths</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_plot_legend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_save_fig</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_stdout_display</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_latex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/material/models/standard/lou.html#LouZhangYoon.plot_convexity_boundary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.plot_convexity_boundary" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot convexity domain boundary.</p>
+</dd></dl>
+
+<p>Constitutive model constructor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>strain_formulation</strong> (<em>{'infinitesimal'</em><em>, </em><em>'finite'}</em>) – Problem strain formulation.</p></li>
+<li><p><strong>problem_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Problem type: 2D plane strain (1), 2D plane stress (2),
+2D axisymmetric (3) and 3D (4).</p></li>
+<li><p><strong>model_parameters</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Material constitutive model parameters.</p></li>
+<li><p><strong>is_su_float64</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=True</em>) – If True, then state update is locally computed in floating-point
+double precision. If False, then default floating-point precision
+is assumed.</p></li>
+<li><p><strong>device_type</strong> (<em>{'cpu'</em><em>, </em><em>'cuda'}</em><em>, </em><em>default='cpu'</em>) – Type of device on which torch.Tensor is allocated.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">List of Public Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id0" title="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.check_yield_surface_convexity"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_yield_surface_convexity</span></code></a></p></td>
+<td><p>Check yield surface convexity.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#id1" title="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.compute_convex_boundary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_convex_boundary</span></code></a></p></td>
+<td><p>Compute convexity domain boundary.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.compute_num_derivatives" title="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.compute_num_derivatives"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_num_derivatives</span></code></a></p></td>
+<td><p>Compute numerical derivatives by finite differences.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#id2" title="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.convexity_return_mapping"><code class="xref py py-obj docutils literal notranslate"><span class="pre">convexity_return_mapping</span></code></a></p></td>
+<td><p>Perform convexity return-mapping.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id3" title="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.directional_convex_boundary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">directional_convex_boundary</span></code></a></p></td>
+<td><p>Compute convexity domain boundary along given angular direction.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.get_device" title="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.get_device"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_device</span></code></a></p></td>
+<td><p>Get device on which torch.Tensor is allocated.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id4" title="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.get_effective_stress"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_effective_stress</span></code></a></p></td>
+<td><p>Compute effective stress.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.get_model_parameters" title="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.get_model_parameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_model_parameters</span></code></a></p></td>
+<td><p>Get material constitutive model parameters.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.get_name" title="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.get_name"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_name</span></code></a></p></td>
+<td><p>Get material constitutive model name.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.get_numerical_jacobian" title="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.get_numerical_jacobian"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_numerical_jacobian</span></code></a></p></td>
+<td><p>Compute state update Jacobian matrix with finite differences.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id5" title="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.get_required_model_parameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_required_model_parameters</span></code></a></p></td>
+<td><p>Get required material constitutive model parameters.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#id6" title="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.get_residual_and_jacobian"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_residual_and_jacobian</span></code></a></p></td>
+<td><p>Compute state update residuals and Jacobian matrix.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.get_strain_type" title="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.get_strain_type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_strain_type</span></code></a></p></td>
+<td><p>Get material constitutive model strain formulation.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#id7" title="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.get_stress_invariants"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_stress_invariants</span></code></a></p></td>
+<td><p>Compute invariants of stress and deviatoric stress.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id8" title="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.get_stress_invariants_and_derivatives"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_stress_invariants_and_derivatives</span></code></a></p></td>
+<td><p>Compute stress invariants and derivatives w.r.t.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#id9" title="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.plot_convexity_boundary"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_convexity_boundary</span></code></a></p></td>
+<td><p>Plot convexity domain boundary.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.set_device" title="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.set_device"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_device</span></code></a></p></td>
+<td><p>Set device on which torch.Tensor is allocated.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#id10" title="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.state_init"><code class="xref py py-obj docutils literal notranslate"><span class="pre">state_init</span></code></a></p></td>
+<td><p>Get initialized material constitutive model state variables.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id11" title="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.state_update"><code class="xref py py-obj docutils literal notranslate"><span class="pre">state_update</span></code></a></p></td>
+<td><p>Perform material constitutive model state update.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">strain_formulation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">problem_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">model_parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_su_float64</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'cpu'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/material/models/standard/lou.html#LouZhangYoon.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constitutive model constructor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>strain_formulation</strong> (<em>{'infinitesimal'</em><em>, </em><em>'finite'}</em>) – Problem strain formulation.</p></li>
+<li><p><strong>problem_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Problem type: 2D plane strain (1), 2D plane stress (2),
+2D axisymmetric (3) and 3D (4).</p></li>
+<li><p><strong>model_parameters</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Material constitutive model parameters.</p></li>
+<li><p><strong>is_su_float64</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=True</em>) – If True, then state update is locally computed in floating-point
+double precision. If False, then default floating-point precision
+is assumed.</p></li>
+<li><p><strong>device_type</strong> (<em>{'cpu'</em><em>, </em><em>'cuda'}</em><em>, </em><em>default='cpu'</em>) – Type of device on which torch.Tensor is allocated.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id0">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">check_yield_surface_convexity</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">yield_c</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yield_d</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/material/models/standard/lou.html#LouZhangYoon.check_yield_surface_convexity"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id0" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check yield surface convexity.</p>
+<p>Geometry-Inspired Numerical Convex Analysis (GINCA) method.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>yield_c</strong> (<em>torch.Tensor</em><em>(</em><em>0d</em><em>)</em>) – Yield parameter.</p></li>
+<li><p><strong>yield_d</strong> (<em>torch.Tensor</em><em>(</em><em>0d</em><em>)</em>) – Yield parameter.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>is_convex</strong> – If True, then yield surface is convex, False otherwise.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)">bool</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id1">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">compute_convex_boundary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_theta</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">360</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/material/models/standard/lou.html#LouZhangYoon.compute_convex_boundary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id1" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute convexity domain boundary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>n_theta</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>default=360</em>) – Number of discrete angular coordinates to discretize the convexity
+boundary domain.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>convex_boundary</strong> – Convexity domain boundary stored as torch.Tensor(2d) of shape
+(n_point, 2), where each point is stored as (yield_c, yield_d).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor(2d)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.compute_num_derivatives">
+<span class="sig-name descname"><span class="pre">compute_num_derivatives</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comp_order_sym</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_strain</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_consistent_tangent</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/material/models/standard/lou.html#LouZhangYoon.compute_num_derivatives"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.compute_num_derivatives" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute numerical derivatives by finite differences.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_dim</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Problem number of spatial dimensions.</p></li>
+<li><p><strong>comp_order_sym</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a>) – Strain/Stress components symmetric order.</p></li>
+<li><p><strong>e_strain</strong> (<em>torch.Tensor</em><em>(</em><em>2d</em><em>)</em>) – Elastic strain.</p></li>
+<li><p><strong>e_consistent_tangent</strong> (<em>torch.Tensor</em><em>(</em><em>4d</em><em>)</em>) – Elastic consistent tangent modulus.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id2">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">convexity_return_mapping</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">yield_c</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yield_d</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/material/models/standard/lou.html#LouZhangYoon.convexity_return_mapping"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform convexity return-mapping.</p>
+<p>For a given set (c, d), the convexity return-mapping works as follows:</p>
+<ol class="arabic simple">
+<li><p>If the yield parameters (c, d) lie inside the convexity domain
+(yield surface is convex), then they are kept unchanged;</p></li>
+<li><p>If the yield parameters (c, d) lie outside the convexity domain
+(yield surface is not convex), then they are updated to the
+convexity domain boundary point along the same angular direction.</p></li>
+</ol>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>yield_c</strong> (<em>torch.Tensor</em><em>(</em><em>0d</em><em>)</em>) – Yield parameter.</p></li>
+<li><p><strong>yield_d</strong> (<em>torch.Tensor</em><em>(</em><em>0d</em><em>)</em>) – Yield parameter.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>is_convex</strong> (<em>bool</em>) – If True, then yield surface is convex, False otherwise.</p></li>
+<li><p><strong>yield_c</strong> (<em>torch.Tensor(0d)</em>) – Yield parameter.</p></li>
+<li><p><strong>yield_d</strong> (<em>torch.Tensor(0d)</em>) – Yield parameter.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id3">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">directional_convex_boundary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">theta</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_lower</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">r_upper</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">5.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">search_tol</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1e-06</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/material/models/standard/lou.html#LouZhangYoon.directional_convex_boundary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id3" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute convexity domain boundary along given angular direction.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>theta</strong> (<em>torch.Tensor</em><em>(</em><em>0d</em><em>)</em>) – Angular coordinate in yield parameters domain (radians).</p></li>
+<li><p><strong>r_lower</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>default=0.0</em>) – Initial searching radius lower bound.</p></li>
+<li><p><strong>r_upper</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>default=5.0</em>) – Initial searching radius upper bound.</p></li>
+<li><p><strong>search_tol</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>default = 1e-6</em>) – Searching window tolerance.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>yield_c</strong> (<em>torch.Tensor(0d)</em>) – Yield parameter.</p></li>
+<li><p><strong>yield_d</strong> (<em>torch.Tensor(0d)</em>) – Yield parameter.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.get_device">
+<span class="sig-name descname"><span class="pre">get_device</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.get_device" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get device on which torch.Tensor is allocated.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>device_type</strong> (<em>{‘cpu’, ‘cuda’}</em>) – Type of device on which torch.Tensor is allocated.</p></li>
+<li><p><strong>device</strong> (<em>torch.device</em>) – Device on which torch.Tensor is allocated.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id4">
+<span class="sig-name descname"><span class="pre">get_effective_stress</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stress</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yield_a</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yield_b</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yield_c</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">yield_d</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/material/models/standard/lou.html#LouZhangYoon.get_effective_stress"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id4" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute effective stress.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>stress</strong> (<em>torch.Tensor</em><em>(</em><em>2d</em><em>)</em>) – Stress.</p></li>
+<li><p><strong>yield_a</strong> (<em>torch.Tensor</em><em>(</em><em>0d</em><em>)</em>) – Yield parameter.</p></li>
+<li><p><strong>yield_b</strong> (<em>torch.Tensor</em><em>(</em><em>0d</em><em>)</em>) – Yield parameter.</p></li>
+<li><p><strong>yield_c</strong> (<em>torch.Tensor</em><em>(</em><em>0d</em><em>)</em>) – Yield parameter.</p></li>
+<li><p><strong>yield_d</strong> (<em>torch.Tensor</em><em>(</em><em>0d</em><em>)</em>) – Yield parameter.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>effective_stress</strong> – Effective stress.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor(0d)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.get_model_parameters">
+<span class="sig-name descname"><span class="pre">get_model_parameters</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.get_model_parameters" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get material constitutive model parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>model_parameters</strong> – Material constitutive model parameters.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.get_name">
+<span class="sig-name descname"><span class="pre">get_name</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.get_name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get material constitutive model name.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>name</strong> – Material constitutive model name.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.get_numerical_jacobian">
+<span class="sig-name descname"><span class="pre">get_numerical_jacobian</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comp_order_sym</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_strain</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_trial_strain</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">acc_p_strain</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">acc_p_strain_old</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inc_p_mult</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_consistent_tangent</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">init_yield_stress</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hardening_law</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hardening_parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a_hardening_law</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a_hardening_parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b_hardening_law</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b_hardening_parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c_hardening_law</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c_hardening_parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d_hardening_law</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d_hardening_parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_associative_hardening</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/material/models/standard/lou.html#LouZhangYoon.get_numerical_jacobian"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.get_numerical_jacobian" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute state update Jacobian matrix with finite differences.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_dim</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Problem number of spatial dimensions.</p></li>
+<li><p><strong>comp_order_sym</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a>) – Strain/Stress components symmetric order.</p></li>
+<li><p><strong>e_strain</strong> (<em>torch.Tensor</em><em>(</em><em>2d</em><em>)</em>) – Elastic strain.</p></li>
+<li><p><strong>e_trial_strain</strong> (<em>torch.Tensor</em><em>(</em><em>2d</em><em>)</em>) – Elastic trial strain.</p></li>
+<li><p><strong>acc_p_strain</strong> (<em>torch.Tensor</em><em>(</em><em>0d</em><em>)</em>) – Accumulated plastic strain.</p></li>
+<li><p><strong>acc_p_strain_old</strong> (<em>torch.Tensor</em><em>(</em><em>0d</em><em>)</em>) – Last converged accumulated plastic strain.</p></li>
+<li><p><strong>inc_p_mult</strong> (<em>torch.Tensor</em><em>(</em><em>0d</em><em>)</em>) – Incremental plastic multiplier.</p></li>
+<li><p><strong>e_consistent_tangent</strong> (<em>torch.Tensor</em><em>(</em><em>4d</em><em>)</em>) – Elastic consistent tangent modulus.</p></li>
+<li><p><strong>init_yield_stress</strong> (<em>torch.Tensor</em><em>(</em><em>0d</em><em>)</em>) – Initial yield stress.</p></li>
+<li><p><strong>hardening_law</strong> (<em>function</em>) – Hardening law.</p></li>
+<li><p><strong>hardening_parameters</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Hardening law parameters.</p></li>
+<li><p><strong>a_hardening_law</strong> (<em>function</em>) – Yield parameter hardening law.</p></li>
+<li><p><strong>a_hardening_parameters</strong> (<em>function</em>) – Yield parameter hardening law parameters.</p></li>
+<li><p><strong>b_hardening_law</strong> (<em>function</em>) – Yield parameter hardening law.</p></li>
+<li><p><strong>b_hardening_parameters</strong> (<em>function</em>) – Yield parameter hardening law parameters.</p></li>
+<li><p><strong>c_hardening_law</strong> (<em>function</em>) – Yield parameter hardening law.</p></li>
+<li><p><strong>c_hardening_parameters</strong> (<em>function</em>) – Yield parameter hardening law parameters.</p></li>
+<li><p><strong>d_hardening_law</strong> (<em>function</em>) – Yield parameter hardening law.</p></li>
+<li><p><strong>d_hardening_parameters</strong> (<em>function</em>) – Yield parameter hardening law parameters.</p></li>
+<li><p><strong>is_associative_hardening</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – If True, then adopt associative hardening rule.</p></li>
+<li><p><strong>is_verbose</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – If True, enable verbose output.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>num_jacobian</strong> – Jacobian matrix.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor(2d)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id5">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">get_required_model_parameters</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/material/models/standard/lou.html#LouZhangYoon.get_required_model_parameters"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id5" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get required material constitutive model parameters.</p>
+<p>Model parameters:</p>
+<ul class="simple">
+<li><p>‘elastic_symmetry’ : Elastic symmetry (str, {‘isotropic’,
+‘transverse_isotropic’, ‘orthotropic’, ‘monoclinic’, ‘triclinic’})</p></li>
+<li><p>‘elastic_moduli’ : Elastic moduli (dict, {‘Eijkl’: float})</p></li>
+<li><dl class="simple">
+<dt>‘euler_angles’<span class="classifier">Euler angles (degrees) sorted according with Bunge</span></dt><dd><p>convention (tuple[float])</p>
+</dd>
+</dl>
+</li>
+<li><p>‘hardening_law’ : Isotropic hardening law (function)</p></li>
+<li><p>‘hardening_parameters’ : Isotropic hardening law parameters (dict)</p></li>
+<li><p>‘a_hardening_law’: Yield parameter hardening law (function)</p></li>
+<li><p>‘a_hardening_parameters’: Yield parameter hardening parameters (dict)</p></li>
+<li><p>‘b_hardening_law’: Yield parameter hardening law (function)</p></li>
+<li><p>‘b_hardening_parameters’: Yield parameter hardening parameters (dict)</p></li>
+<li><p>‘c_hardening_law’: Yield parameter hardening law (function)</p></li>
+<li><p>‘c_hardening_parameters’: Yield parameter hardening parameters (dict)</p></li>
+<li><p>‘d_hardening_law’: Yield parameter hardening law (function)</p></li>
+<li><p>‘d_hardening_parameters’: Yield parameter hardening parameters (dict)</p></li>
+<li><p>‘is_associative_hardening’: Assume associative hardening rule (bool)</p></li>
+</ul>
+<p>Notes:</p>
+<ul class="simple">
+<li><p>Associative hardening rule is only admissible if the yield parameters
+a, b, c and d are constant, i.e., do not depend on the accumulated
+plastic strain through the corresponding hardening laws</p></li>
+</ul>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>model_parameters_names</strong> – Material constitutive model parameters names (str).</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id6">
+<span class="sig-name descname"><span class="pre">get_residual_and_jacobian</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">comp_order_sym</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_strain</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_trial_strain</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">acc_p_strain</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">acc_p_strain_old</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inc_p_mult</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">e_consistent_tangent</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">init_yield_stress</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hardening_law</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">hardening_parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a_hardening_law</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">a_hardening_parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b_hardening_law</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">b_hardening_parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c_hardening_law</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">c_hardening_parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d_hardening_law</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">d_hardening_parameters</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_associative_hardening</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/material/models/standard/lou.html#LouZhangYoon.get_residual_and_jacobian"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id6" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute state update residuals and Jacobian matrix.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_dim</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Problem number of spatial dimensions.</p></li>
+<li><p><strong>comp_order_sym</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a>) – Strain/Stress components symmetric order.</p></li>
+<li><p><strong>e_strain</strong> (<em>torch.Tensor</em><em>(</em><em>2d</em><em>)</em>) – Elastic strain.</p></li>
+<li><p><strong>e_trial_strain</strong> (<em>torch.Tensor</em><em>(</em><em>2d</em><em>)</em>) – Elastic trial strain.</p></li>
+<li><p><strong>acc_p_strain</strong> (<em>torch.Tensor</em><em>(</em><em>0d</em><em>)</em>) – Accumulated plastic strain.</p></li>
+<li><p><strong>acc_p_strain_old</strong> (<em>torch.Tensor</em><em>(</em><em>0d</em><em>)</em>) – Last converged accumulated plastic strain.</p></li>
+<li><p><strong>inc_p_mult</strong> (<em>torch.Tensor</em><em>(</em><em>0d</em><em>)</em>) – Incremental plastic multiplier.</p></li>
+<li><p><strong>e_consistent_tangent</strong> (<em>torch.Tensor</em><em>(</em><em>4d</em><em>)</em>) – Elastic consistent tangent modulus.</p></li>
+<li><p><strong>init_yield_stress</strong> (<em>torch.Tensor</em><em>(</em><em>0d</em><em>)</em>) – Initial yield stress.</p></li>
+<li><p><strong>hardening_law</strong> (<em>function</em>) – Hardening law.</p></li>
+<li><p><strong>hardening_parameters</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Hardening law parameters.</p></li>
+<li><p><strong>a_hardening_law</strong> (<em>function</em>) – Yield parameter hardening law.</p></li>
+<li><p><strong>a_hardening_parameters</strong> (<em>function</em>) – Yield parameter hardening law parameters.</p></li>
+<li><p><strong>b_hardening_law</strong> (<em>function</em>) – Yield parameter hardening law.</p></li>
+<li><p><strong>b_hardening_parameters</strong> (<em>function</em>) – Yield parameter hardening law parameters.</p></li>
+<li><p><strong>c_hardening_law</strong> (<em>function</em>) – Yield parameter hardening law.</p></li>
+<li><p><strong>c_hardening_parameters</strong> (<em>function</em>) – Yield parameter hardening law parameters.</p></li>
+<li><p><strong>d_hardening_law</strong> (<em>function</em>) – Yield parameter hardening law.</p></li>
+<li><p><strong>d_hardening_parameters</strong> (<em>function</em>) – Yield parameter hardening law parameters.</p></li>
+<li><p><strong>is_associative_hardening</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – If True, then adopt associative hardening rule.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>residual_1</strong> (<em>torch.Tensor(2d)</em>) – First residual.</p></li>
+<li><p><strong>residual_2</strong> (<em>torch.Tensor(2d)</em>) – Second residual.</p></li>
+<li><p><strong>residual_3</strong> (<em>torch.Tensor(2d)</em>) – Third residual.</p></li>
+<li><p><strong>jacobian</strong> (<em>torch.Tensor(2d)</em>) – Jacobian matrix.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.get_strain_type">
+<span class="sig-name descname"><span class="pre">get_strain_type</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="headerlink" href="#hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.get_strain_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get material constitutive model strain formulation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>strain_type</strong> – Material constitutive model strain formulation: infinitesimal
+strain formulation (‘infinitesimal’), finite strain formulation
+(‘finite’) or finite strain formulation through kinematic extension
+(‘finite-kinext’).</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>{‘infinitesimal’, ‘finite’, ‘finite-kinext’}</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id7">
+<span class="sig-name descname"><span class="pre">get_stress_invariants</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">stress</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/material/models/standard/lou.html#LouZhangYoon.get_stress_invariants"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id7" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute invariants of stress and deviatoric stress.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>stress</strong> (<em>torch.Tensor</em><em>(</em><em>2d</em><em>)</em>) – Stress.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>i1</strong> (<em>torch.Tensor(0d)</em>) – First (principal) invariant of stress tensor.</p></li>
+<li><p><strong>i2</strong> (<em>torch.Tensor(0d)</em>) – Second (principal) invariant of stress tensor.</p></li>
+<li><p><strong>i3</strong> (<em>torch.Tensor(0d)</em>) – Third (principal) invariant of stress tensor.</p></li>
+<li><p><strong>j1</strong> (<em>torch.Tensor(0d)</em>) – First invariant of deviatoric stress tensor.</p></li>
+<li><p><strong>j2</strong> (<em>torch.Tensor(0d)</em>) – Second invariant of deviatoric stress tensor.</p></li>
+<li><p><strong>j3</strong> (<em>torch.Tensor(0d)</em>) – Third invariant of deviatoric stress tensor.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id8">
+<span class="sig-name descname"><span class="pre">get_stress_invariants_and_derivatives</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">stress</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/material/models/standard/lou.html#LouZhangYoon.get_stress_invariants_and_derivatives"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id8" title="Permalink to this definition">¶</a></dt>
+<dd><p>Compute stress invariants and derivatives w.r.t. stress.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_dim</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Problem number of spatial dimensions.</p></li>
+<li><p><strong>stress</strong> (<em>torch.Tensor</em><em>(</em><em>2d</em><em>)</em>) – Stress.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>i1</strong> (<em>torch.Tensor(0d)</em>) – First (principal) invariant of stress tensor.</p></li>
+<li><p><strong>i2</strong> (<em>torch.Tensor(0d)</em>) – Second (principal) invariant of stress tensor.</p></li>
+<li><p><strong>i3</strong> (<em>torch.Tensor(0d)</em>) – Third (principal) invariant of stress tensor.</p></li>
+<li><p><strong>j1</strong> (<em>torch.Tensor(0d)</em>) – First invariant of deviatoric stress tensor.</p></li>
+<li><p><strong>j2</strong> (<em>torch.Tensor(0d)</em>) – Second invariant of deviatoric stress tensor.</p></li>
+<li><p><strong>j3</strong> (<em>torch.Tensor(0d)</em>) – Third invariant of deviatoric stress tensor.</p></li>
+<li><p><strong>di1_dstress</strong> (<em>torch.Tensor(1d)</em>) – First-order derivative of first invariant of stress tensor
+w.r.t. stress.</p></li>
+<li><p><strong>dj2_dstress</strong> (<em>torch.Tensor(1d)</em>) – First-order derivative of second invariant of deviatoric stress
+tensor w.r.t. stress.</p></li>
+<li><p><strong>dj3_dstress</strong> (<em>torch.Tensor(1d)</em>) – First-order derivative of third invariant of deviatoric stress
+tensor w.r.t. stress.</p></li>
+<li><p><strong>d2j2_dstress2</strong> (<em>torch.Tensor(1d)</em>) – Second-order derivative of second invariant of deviatoric stress
+tensor w.r.t. stress.</p></li>
+<li><p><strong>d2j3_dstress2</strong> (<em>torch.Tensor(1d)</em>) – Second-order derivative of third invariant of deviatoric stress
+tensor w.r.t. stress.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id9">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">plot_convexity_boundary</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">convex_boundary</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">parameters_paths</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_path_arrows</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">rect_search_domain</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_plot_legend</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_save_fig</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_stdout_display</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_latex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/material/models/standard/lou.html#LouZhangYoon.plot_convexity_boundary"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id9" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot convexity domain boundary.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>convex_boundary</strong> (<em>torch.Tensor</em><em>(</em><em>2d</em><em>)</em>) – Convexity domain boundary stored as torch.Tensor(2d) of shape
+(n_point, 2), where each point is stored as (yield_c, yield_d).</p></li>
+<li><p><strong>parameters_paths</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em>, </em><em>default=None</em>) – For each yield parameters path (key, str), store a torch.Tensor(2d)
+(item, torch.Tensor) of shape (n_point, 2), where each point is
+stored as (yield_c, yield_d).</p></li>
+<li><p><strong>is_path_arrows</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=True</em>) – If True, then yield parameters paths include directional arrows
+along the path, False otherwise.</p></li>
+<li><p><strong>rect_search_domain</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>, </em><em>default=None</em>) – Rectangular search domain boundary defined by the corresponding
+limits along each direction as ((x_min, x_max), (y_min, y_max)).</p></li>
+<li><p><strong>is_plot_legend</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – If True, then plot legend.</p></li>
+<li><p><strong>save_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>default=None</em>) – Directory where data set plots are saved.</p></li>
+<li><p><strong>is_save_fig</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – Save figure.</p></li>
+<li><p><strong>is_stdout_display</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – True if displaying figure to standard output device, False
+otherwise.</p></li>
+<li><p><strong>is_latex</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – If True, then render all strings in LaTeX. If LaTex is not
+available, then this option is silently set to False and all input
+strings are processed to remove $(…)$ enclosure.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.set_device">
+<span class="sig-name descname"><span class="pre">set_device</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device_type</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#hookeai.miscellaneous.materials.lou_convexity.LouZhangYoon.set_device" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set device on which torch.Tensor is allocated.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>device_type</strong> (<em>{'cpu'</em><em>, </em><em>'cuda'}</em>) – Type of device on which torch.Tensor is allocated.</p></li>
+<li><p><strong>device</strong> (<em>torch.device</em>) – Device on which torch.Tensor is allocated.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id10">
+<span class="sig-name descname"><span class="pre">state_init</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/material/models/standard/lou.html#LouZhangYoon.state_init"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id10" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get initialized material constitutive model state variables.</p>
+<p>Constitutive model state variables:</p>
+<ul>
+<li><p><code class="docutils literal notranslate"><span class="pre">e_strain_mf</span></code></p>
+<blockquote>
+<div><ul class="simple">
+<li><p><em>Infinitesimal strains</em>: Elastic infinitesimal strain tensor
+(matricial form).</p></li>
+<li><p><em>Symbol</em>: <span class="math notranslate nohighlight">\(\boldsymbol{\varepsilon^{e}}\)</span></p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">acc_p_strain</span></code></p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Accumulated plastic strain.</p></li>
+<li><p><em>Symbol</em>: <span class="math notranslate nohighlight">\(\bar{\varepsilon}^{p}\)</span></p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">strain_mf</span></code></p>
+<blockquote>
+<div><ul class="simple">
+<li><p><em>Infinitesimal strains</em>: Infinitesimal strain tensor
+(matricial form).</p></li>
+<li><p><em>Symbol</em>: <span class="math notranslate nohighlight">\(\boldsymbol{\varepsilon}\)</span></p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">stress_mf</span></code></p>
+<blockquote>
+<div><ul class="simple">
+<li><p><em>Infinitesimal strains</em>: Cauchy stress tensor (matricial form).</p></li>
+<li><p><em>Symbol</em>: <span class="math notranslate nohighlight">\(\boldsymbol{\sigma}\)</span></p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">is_plastic</span></code></p>
+<blockquote>
+<div><ul class="simple">
+<li><p>Plastic step flag.</p></li>
+</ul>
+</div></blockquote>
+</li>
+<li><p><code class="docutils literal notranslate"><span class="pre">is_su_fail</span></code></p>
+<blockquote>
+<div><ul class="simple">
+<li><p>State update failure flag.</p></li>
+</ul>
+</div></blockquote>
+</li>
+</ul>
+<hr class="docutils" />
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>state_variables_init</strong> – Initialized material constitutive model state variables.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id11">
+<span class="sig-name descname"><span class="pre">state_update</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">inc_strain</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">state_variables_old</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/material/models/standard/lou.html#LouZhangYoon.state_update"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id11" title="Permalink to this definition">¶</a></dt>
+<dd><p>Perform material constitutive model state update.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>inc_strain</strong> (<em>torch.Tensor</em><em>(</em><em>2d</em><em>)</em>) – Incremental strain second-order tensor.</p></li>
+<li><p><strong>state_variables_old</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Last converged constitutive model material state variables.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>state_variables</strong> (<em>dict</em>) – Material constitutive model state variables.</p></li>
+<li><p><strong>consistent_tangent_mf</strong> (<em>torch.Tensor(2d)</em>) – Material constitutive model consistent tangent modulus stored in
+matricial form.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="hookeai.miscellaneous.materials.lou_convexity.make_directory.html" class="btn btn-neutral float-left" title="hookeai.miscellaneous.materials.lou_convexity.make_directory" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="hookeai.miscellaneous.materials.plot_yield_surface.html" class="btn btn-neutral float-right" title="hookeai.miscellaneous.materials.plot_yield_surface" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>hookeai.model_architectures.procedures.model_data_scaling.TorchStandardScaler &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="hookeai.model_architectures.procedures.model_prediction" href="hookeai.model_architectures.procedures.model_prediction.html" />
+    <link rel="prev" title="hookeai.model_architectures.procedures.model_data_scaling.TorchMinMaxScaler" href="hookeai.model_architectures.procedures.model_data_scaling.TorchMinMaxScaler.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="hookeai.html">Code</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="hookeai.data_generation.html">hookeai.data_generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.ioput.html">hookeai.ioput</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.material_model_finder.html">hookeai.material_model_finder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.miscellaneous.html">hookeai.miscellaneous</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="hookeai.model_architectures.html">hookeai.model_architectures</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="hookeai.model_architectures.hybrid_base_model.html">hookeai.model_architectures.hybrid_base_model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hookeai.model_architectures.materials.html">hookeai.model_architectures.materials</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="hookeai.model_architectures.procedures.html">hookeai.model_architectures.procedures</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="hookeai.model_architectures.procedures.convergence_plots.html">hookeai.model_architectures.procedures.convergence_plots</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="hookeai.model_architectures.procedures.model_data_scaling.html">hookeai.model_architectures.procedures.model_data_scaling</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hookeai.model_architectures.procedures.model_prediction.html">hookeai.model_architectures.procedures.model_prediction</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hookeai.model_architectures.procedures.model_state_files.html">hookeai.model_architectures.procedures.model_state_files</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hookeai.model_architectures.procedures.model_summary.html">hookeai.model_architectures.procedures.model_summary</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hookeai.model_architectures.procedures.model_training.html">hookeai.model_architectures.procedures.model_training</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="hookeai.model_architectures.rc_base_model.html">hookeai.model_architectures.rc_base_model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hookeai.model_architectures.rnn_base_model.html">hookeai.model_architectures.rnn_base_model</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.simulators.html">hookeai.simulators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.time_series_data.html">hookeai.time_series_data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.utilities.html">hookeai.utilities</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="hookeai.html">hookeai</a></li>
+          <li class="breadcrumb-item"><a href="hookeai.model_architectures.html">hookeai.model_architectures</a></li>
+          <li class="breadcrumb-item"><a href="hookeai.model_architectures.procedures.html">hookeai.model_architectures.procedures</a></li>
+          <li class="breadcrumb-item"><a href="hookeai.model_architectures.procedures.model_data_scaling.html">hookeai.model_architectures.procedures.model_data_scaling</a></li>
+      <li class="breadcrumb-item active">hookeai.model_architectures.procedures.model_data_scaling.TorchStandardScaler</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="hookeai-model-architectures-procedures-model-data-scaling-torchstandardscaler">
+<h1>hookeai.model_architectures.procedures.model_data_scaling.TorchStandardScaler<a class="headerlink" href="#hookeai-model-architectures-procedures-model-data-scaling-torchstandardscaler" title="Permalink to this heading">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="hookeai.model_architectures.procedures.model_data_scaling.TorchStandardScaler">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">TorchStandardScaler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_features</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">std</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'cpu'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/utilities/data_scalers.html#TorchStandardScaler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.model_architectures.procedures.model_data_scaling.TorchStandardScaler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>PyTorch tensor standardization data scaler.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.model_architectures.procedures.model_data_scaling.TorchStandardScaler._n_features">
+<span class="sig-name descname"><span class="pre">_n_features</span></span><a class="headerlink" href="#hookeai.model_architectures.procedures.model_data_scaling.TorchStandardScaler._n_features" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of features to standardize.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.model_architectures.procedures.model_data_scaling.TorchStandardScaler._mean">
+<span class="sig-name descname"><span class="pre">_mean</span></span><a class="headerlink" href="#hookeai.model_architectures.procedures.model_data_scaling.TorchStandardScaler._mean" title="Permalink to this definition">¶</a></dt>
+<dd><p>Features standardization mean tensor stored as a torch.Tensor with
+shape (n_features,).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.model_architectures.procedures.model_data_scaling.TorchStandardScaler._std">
+<span class="sig-name descname"><span class="pre">_std</span></span><a class="headerlink" href="#hookeai.model_architectures.procedures.model_data_scaling.TorchStandardScaler._std" title="Permalink to this definition">¶</a></dt>
+<dd><p>Features standardization standard deviation tensor stored as a
+torch.Tensor with shape (n_features,).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.model_architectures.procedures.model_data_scaling.TorchStandardScaler._device">
+<span class="sig-name descname"><span class="pre">_device</span></span><a class="headerlink" href="#hookeai.model_architectures.procedures.model_data_scaling.TorchStandardScaler._device" title="Permalink to this definition">¶</a></dt>
+<dd><p>Device on which torch.Tensor is allocated.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.device</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.model_architectures.procedures.model_data_scaling.TorchStandardScaler.set_device">
+<span class="sig-name descname"><span class="pre">set_device</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device_type</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/utilities/data_scalers.html#TorchStandardScaler.set_device"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.model_architectures.procedures.model_data_scaling.TorchStandardScaler.set_device" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set device on which torch.Tensor is allocated.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.model_architectures.procedures.model_data_scaling.TorchStandardScaler.set_mean">
+<span class="sig-name descname"><span class="pre">set_mean</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/utilities/data_scalers.html#TorchStandardScaler.set_mean"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.model_architectures.procedures.model_data_scaling.TorchStandardScaler.set_mean" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set features standardization mean tensor.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.model_architectures.procedures.model_data_scaling.TorchStandardScaler.set_std">
+<span class="sig-name descname"><span class="pre">set_std</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">std</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/utilities/data_scalers.html#TorchStandardScaler.set_std"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.model_architectures.procedures.model_data_scaling.TorchStandardScaler.set_std" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set features standardization standard deviation tensor.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.model_architectures.procedures.model_data_scaling.TorchStandardScaler.set_mean_and_std">
+<span class="sig-name descname"><span class="pre">set_mean_and_std</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">std</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/utilities/data_scalers.html#TorchStandardScaler.set_mean_and_std"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.model_architectures.procedures.model_data_scaling.TorchStandardScaler.set_mean_and_std" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set features standardization mean and standard deviation tensors.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.model_architectures.procedures.model_data_scaling.TorchStandardScaler.get_mean_and_std">
+<span class="sig-name descname"><span class="pre">get_mean_and_std</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/utilities/data_scalers.html#TorchStandardScaler.get_mean_and_std"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.model_architectures.procedures.model_data_scaling.TorchStandardScaler.get_mean_and_std" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get features standardization mean and standard deviation tensors.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.model_architectures.procedures.model_data_scaling.TorchStandardScaler.fit">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/utilities/data_scalers.html#TorchStandardScaler.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.model_architectures.procedures.model_data_scaling.TorchStandardScaler.fit" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit features standardization mean and standard deviation tensors.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.model_architectures.procedures.model_data_scaling.TorchStandardScaler.transform">
+<span class="sig-name descname"><span class="pre">transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_check_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/utilities/data_scalers.html#TorchStandardScaler.transform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.model_architectures.procedures.model_data_scaling.TorchStandardScaler.transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Standardize features tensor.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.model_architectures.procedures.model_data_scaling.TorchStandardScaler.inverse_transform">
+<span class="sig-name descname"><span class="pre">inverse_transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_check_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/utilities/data_scalers.html#TorchStandardScaler.inverse_transform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.model_architectures.procedures.model_data_scaling.TorchStandardScaler.inverse_transform" title="Permalink to this definition">¶</a></dt>
+<dd><p>Destandardize features tensor.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">_check_mean(self,</span> <span class="pre">mean):</span></span></dt>
+<dd><p>Check features standardization mean tensor.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.model_architectures.procedures.model_data_scaling.TorchStandardScaler._check_std">
+<span class="sig-name descname"><span class="pre">_check_std</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">std</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/utilities/data_scalers.html#TorchStandardScaler._check_std"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.model_architectures.procedures.model_data_scaling.TorchStandardScaler._check_std" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check features standardization standard deviation tensor.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">_check_tensor(self,</span> <span class="pre">tensor):</span></span></dt>
+<dd><p>Check features tensor to be transformed.</p>
+</dd></dl>
+
+<p>Constructor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_features</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of features to standardize.</p></li>
+<li><p><strong>mean</strong> (<em>torch.Tensor</em><em>, </em><em>default=None</em>) – Features standardization mean tensor stored as a torch.Tensor with
+shape (n_features,).</p></li>
+<li><p><strong>std</strong> (<em>torch.Tensor</em><em>, </em><em>default=None</em>) – Features standardization standard deviation tensor stored as a
+torch.Tensor with shape (n_features,).</p></li>
+<li><p><strong>device_type</strong> (<em>{'cpu'</em><em>, </em><em>'cuda'}</em><em>, </em><em>default='cpu'</em>) – Type of device on which torch.Tensor is allocated.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">List of Public Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id1" title="hookeai.model_architectures.procedures.model_data_scaling.TorchStandardScaler.fit"><code class="xref py py-obj docutils literal notranslate"><span class="pre">fit</span></code></a></p></td>
+<td><p>Fit features standardization mean and standard deviation tensors.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#id2" title="hookeai.model_architectures.procedures.model_data_scaling.TorchStandardScaler.get_mean_and_std"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_mean_and_std</span></code></a></p></td>
+<td><p>Get features standardization mean and standard deviation tensors.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id3" title="hookeai.model_architectures.procedures.model_data_scaling.TorchStandardScaler.inverse_transform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">inverse_transform</span></code></a></p></td>
+<td><p>Destandardize features tensor.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#id4" title="hookeai.model_architectures.procedures.model_data_scaling.TorchStandardScaler.set_device"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_device</span></code></a></p></td>
+<td><p>Set device on which torch.Tensor is allocated.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id5" title="hookeai.model_architectures.procedures.model_data_scaling.TorchStandardScaler.set_mean"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_mean</span></code></a></p></td>
+<td><p>Set features standardization mean tensor.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#id6" title="hookeai.model_architectures.procedures.model_data_scaling.TorchStandardScaler.set_mean_and_std"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_mean_and_std</span></code></a></p></td>
+<td><p>Set features standardization mean and standard deviation tensors.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id7" title="hookeai.model_architectures.procedures.model_data_scaling.TorchStandardScaler.set_std"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_std</span></code></a></p></td>
+<td><p>Set features standardization standard deviation tensor.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#id8" title="hookeai.model_architectures.procedures.model_data_scaling.TorchStandardScaler.transform"><code class="xref py py-obj docutils literal notranslate"><span class="pre">transform</span></code></a></p></td>
+<td><p>Standardize features tensor.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.model_architectures.procedures.model_data_scaling.TorchStandardScaler.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_features</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mean</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">std</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'cpu'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/utilities/data_scalers.html#TorchStandardScaler.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.model_architectures.procedures.model_data_scaling.TorchStandardScaler.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_features</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of features to standardize.</p></li>
+<li><p><strong>mean</strong> (<em>torch.Tensor</em><em>, </em><em>default=None</em>) – Features standardization mean tensor stored as a torch.Tensor with
+shape (n_features,).</p></li>
+<li><p><strong>std</strong> (<em>torch.Tensor</em><em>, </em><em>default=None</em>) – Features standardization standard deviation tensor stored as a
+torch.Tensor with shape (n_features,).</p></li>
+<li><p><strong>device_type</strong> (<em>{'cpu'</em><em>, </em><em>'cuda'}</em><em>, </em><em>default='cpu'</em>) – Type of device on which torch.Tensor is allocated.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.model_architectures.procedures.model_data_scaling.TorchStandardScaler._check_mean">
+<span class="sig-name descname"><span class="pre">_check_mean</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mean</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/utilities/data_scalers.html#TorchStandardScaler._check_mean"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.model_architectures.procedures.model_data_scaling.TorchStandardScaler._check_mean" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check features standardization mean tensor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>mean</strong> (<em>torch.Tensor</em>) – Features standardization mean tensor stored as a torch.Tensor with
+shape (n_features,).</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>mean</strong> – Features standardization mean tensor stored as a torch.Tensor with
+shape (n_features,).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">_check_std</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">std</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/utilities/data_scalers.html#TorchStandardScaler._check_std"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id0" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check features standardization standard deviation tensor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>std</strong> (<em>torch.Tensor</em>) – Features standardization standard deviation tensor stored as a
+torch.Tensor with shape (n_features,).</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>std</strong> – Features standardization standard deviation tensor stored as a
+torch.Tensor with shape (n_features,).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.model_architectures.procedures.model_data_scaling.TorchStandardScaler._check_tensor">
+<span class="sig-name descname"><span class="pre">_check_tensor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/utilities/data_scalers.html#TorchStandardScaler._check_tensor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.model_architectures.procedures.model_data_scaling.TorchStandardScaler._check_tensor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check features tensor to be transformed.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>tensor</strong> (<em>torch.Tensor</em>) – Standardized features PyTorch tensor stored as torch.Tensor with
+shape (n_samples, n_features).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id1">
+<span class="sig-name descname"><span class="pre">fit</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_bessel</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/utilities/data_scalers.html#TorchStandardScaler.fit"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id1" title="Permalink to this definition">¶</a></dt>
+<dd><p>Fit features standardization mean and standard deviation tensors.</p>
+<p>If sequential data is provided, then all sequence times are
+concatenated and the standardization procedures take into account the
+whole sequence length data for each feature.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tensor</strong> (<em>torch.Tensor</em>) – Features PyTorch tensor stored as torch.Tensor with shape
+(n_samples, n_features) or as torch.Tensor with shape
+(sequence_length, n_samples, n_features).</p></li>
+<li><p><strong>is_bessel</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – If True, apply Bessel’s correction to compute standard deviation,
+False otherwise.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id2">
+<span class="sig-name descname"><span class="pre">get_mean_and_std</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/utilities/data_scalers.html#TorchStandardScaler.get_mean_and_std"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get features standardization mean and standard deviation tensors.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>mean</strong> (<em>torch.Tensor</em>) – Features standardization mean tensor stored as a torch.Tensor with
+shape (n_features,).</p></li>
+<li><p><strong>std</strong> (<em>torch.Tensor</em>) – Features standardization standard deviation tensor stored as a
+torch.Tensor with shape (n_features,).</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id3">
+<span class="sig-name descname"><span class="pre">inverse_transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_check_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/utilities/data_scalers.html#TorchStandardScaler.inverse_transform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id3" title="Permalink to this definition">¶</a></dt>
+<dd><p>Destandardize features tensor.</p>
+<p>If sequential data is provided, then all sequence times are
+concatenated and the standardization procedures take into account the
+whole sequence length data for each feature.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tensor</strong> (<em>torch.Tensor</em>) – Standardized features PyTorch tensor stored as torch.Tensor with
+shape (n_samples, n_features) or as torch.Tensor with shape
+(sequence_length, n_samples, n_features).</p></li>
+<li><p><strong>is_check_data</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – If True, then check transformed tensor data.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>transformed_tensor</strong> – Features PyTorch tensor stored as torch.Tensor with shape
+(n_samples, n_features) or as torch.Tensor with shape
+(sequence_length, n_samples, n_features).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id4">
+<span class="sig-name descname"><span class="pre">set_device</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device_type</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/utilities/data_scalers.html#TorchStandardScaler.set_device"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id4" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set device on which torch.Tensor is allocated.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>device_type</strong> (<em>{'cpu'</em><em>, </em><em>'cuda'}</em>) – Type of device on which torch.Tensor is allocated.</p></li>
+<li><p><strong>device</strong> (<em>torch.device</em>) – Device on which torch.Tensor is allocated.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id5">
+<span class="sig-name descname"><span class="pre">set_mean</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mean</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/utilities/data_scalers.html#TorchStandardScaler.set_mean"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id5" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set features standardization mean tensor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>mean</strong> (<em>torch.Tensor</em>) – Features standardization mean tensor stored as a torch.Tensor with
+shape (n_features,).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id6">
+<span class="sig-name descname"><span class="pre">set_mean_and_std</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mean</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">std</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/utilities/data_scalers.html#TorchStandardScaler.set_mean_and_std"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id6" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set features standardization mean and standard deviation tensors.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mean</strong> (<em>torch.Tensor</em>) – Features standardization mean tensor stored as a torch.Tensor with
+shape (n_features,).</p></li>
+<li><p><strong>std</strong> (<em>torch.Tensor</em>) – Features standardization standard deviation tensor stored as a
+torch.Tensor with shape (n_features,).</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id7">
+<span class="sig-name descname"><span class="pre">set_std</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">std</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/utilities/data_scalers.html#TorchStandardScaler.set_std"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id7" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set features standardization standard deviation tensor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>std</strong> (<em>torch.Tensor</em>) – Features standardization standard deviation tensor stored as a
+torch.Tensor with shape (n_features,).</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id8">
+<span class="sig-name descname"><span class="pre">transform</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tensor</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_check_data</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/utilities/data_scalers.html#TorchStandardScaler.transform"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id8" title="Permalink to this definition">¶</a></dt>
+<dd><p>Standardize features tensor.</p>
+<p>If sequential data is provided, then all sequence times are
+concatenated and the standardization procedures take into account the
+whole sequence length data for each feature.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>tensor</strong> (<em>torch.Tensor</em>) – Features PyTorch tensor stored as torch.Tensor with shape
+(n_samples, n_features) or as torch.Tensor with shape
+(sequence_length, n_samples, n_features).</p></li>
+<li><p><strong>is_check_data</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – If True, then check transformed tensor data.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>transformed_tensor</strong> – Standardized features PyTorch tensor stored as torch.Tensor with
+shape (n_samples, n_features) or as torch.Tensor with shape
+(sequence_length, n_samples, n_features).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="hookeai.model_architectures.procedures.model_data_scaling.TorchMinMaxScaler.html" class="btn btn-neutral float-left" title="hookeai.model_architectures.procedures.model_data_scaling.TorchMinMaxScaler" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="hookeai.model_architectures.procedures.model_prediction.html" class="btn btn-neutral float-right" title="hookeai.model_architectures.procedures.model_prediction" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

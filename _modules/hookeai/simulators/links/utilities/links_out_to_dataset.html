@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>hookeai.simulators.links.utilities.links_out_to_dataset &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../../" id="documentation_options" src="../../../../../_static/documentation_options.js"></script>
+        <script src="../../../../../_static/doctools.js"></script>
+        <script src="../../../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../_autosummary/hookeai.html">Code</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">hookeai.simulators.links.utilities.links_out_to_dataset</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for hookeai.simulators.links.utilities.links_out_to_dataset</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Convert Links Gauss point &#39;.out&#39; files to time series data set.</span>
+
+<span class="sd">Functions</span>
+<span class="sd">---------</span>
+<span class="sd">build_dataset</span>
+<span class="sd">    Build time series data set from set of Links Gauss point &#39;.out&#39; files.</span>
+<span class="sd">extract_sample_path</span>
+<span class="sd">    Build material response path data from Links Gauss point &#39;.out&#39; file.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#                                                                       Modules</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Standard</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pathlib</span>
+<span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+<span class="c1"># Add project root directory to sys.path</span>
+<span class="n">root_dir</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parents</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+<span class="k">if</span> <span class="n">root_dir</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">root_dir</span><span class="p">)</span>
+<span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="c1"># Third-party</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pandas</span>
+<span class="c1"># Local</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">time_series_data.time_dataset</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimeSeriesDatasetInMemory</span><span class="p">,</span> \
+    <span class="n">save_dataset</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ioput.iostandard</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_directory</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">user_scripts.synthetic_data.gen_response_dataset</span><span class="w"> </span><span class="kn">import</span> \
+    <span class="n">generate_dataset_plots</span>
+<span class="c1">#</span>
+<span class="c1">#                                                          Authorship &amp; Credits</span>
+<span class="c1"># =============================================================================</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Bernardo Ferreira (bernardo_ferreira@brown.edu)&#39;</span>
+<span class="n">__credits__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Bernardo Ferreira&#39;</span><span class="p">,</span> <span class="p">]</span>
+<span class="n">__status__</span> <span class="o">=</span> <span class="s1">&#39;Stable&#39;</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="build_dataset"><a class="viewcode-back" href="../../../../../_autosummary/hookeai.simulators.links.utilities.links_out_to_dataset.build_dataset.html#hookeai.simulators.links.utilities.links_out_to_dataset.build_dataset">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">build_dataset</span><span class="p">(</span><span class="n">links_out_file_paths</span><span class="p">,</span> <span class="n">n_dim</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build time series data set from set of Links Gauss point &#39;.out&#39; files.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    links_out_file_paths : tuple</span>
+<span class="sd">        Links Gauss point &#39;.out&#39; data file paths.</span>
+<span class="sd">    n_dim : int</span>
+<span class="sd">        Number of spatial dimensions.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dataset : torch.utils.data.Dataset</span>
+<span class="sd">        Time series data set. Each sample is stored as a dictionary where</span>
+<span class="sd">        each feature (key, str) data is a torch.Tensor(2d) of shape</span>
+<span class="sd">        (sequence_length, n_features).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Initialize data set samples</span>
+    <span class="n">dataset_samples</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Loop over data file paths</span>
+    <span class="k">for</span> <span class="n">links_out_file_path</span> <span class="ow">in</span> <span class="n">links_out_file_paths</span><span class="p">:</span>
+        <span class="c1"># Build material response path data</span>
+        <span class="n">response_path</span> <span class="o">=</span> <span class="n">extract_sample_path</span><span class="p">(</span><span class="n">links_out_file_path</span><span class="p">,</span> <span class="n">n_dim</span><span class="p">)</span>
+        <span class="c1"># Store material response path data</span>
+        <span class="n">dataset_samples</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">response_path</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Create strain-stress material response path data set</span>
+    <span class="n">dataset</span> <span class="o">=</span> <span class="n">TimeSeriesDatasetInMemory</span><span class="p">(</span><span class="n">dataset_samples</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">dataset</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="extract_sample_path"><a class="viewcode-back" href="../../../../../_autosummary/hookeai.simulators.links.utilities.links_out_to_dataset.extract_sample_path.html#hookeai.simulators.links.utilities.links_out_to_dataset.extract_sample_path">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">extract_sample_path</span><span class="p">(</span><span class="n">links_out_file_path</span><span class="p">,</span> <span class="n">n_dim</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build material response path data from Links Gauss point &#39;.out&#39; file.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    links_out_file_path : str</span>
+<span class="sd">        Links Gauss point &#39;.out&#39; data file path.</span>
+<span class="sd">    n_dim : int</span>
+<span class="sd">        Number of spatial dimensions.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    response_path : dict</span>
+<span class="sd">        Material response path.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check data file path</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">links_out_file_path</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Links Gauss point </span><span class="se">\&#39;</span><span class="s1">.out</span><span class="se">\&#39;</span><span class="s1"> data file has not &#39;</span>
+                           <span class="s1">&#39;been found: </span><span class="se">\n\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">links_out_file_path</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Load path data</span>
+    <span class="n">df_path_data</span> <span class="o">=</span> <span class="n">pandas</span><span class="o">.</span><span class="n">read_csv</span><span class="p">(</span><span class="n">links_out_file_path</span><span class="p">,</span> <span class="n">sep</span><span class="o">=</span><span class="s1">&#39;\s+&#39;</span><span class="p">,</span> <span class="n">header</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+    <span class="c1"># Convert to array</span>
+    <span class="n">full_data_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">df_path_data</span><span class="o">.</span><span class="n">values</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set Links strain components symmetric order</span>
+    <span class="k">if</span> <span class="n">n_dim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">strain_comps_order</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">strain_comps_order</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;11&#39;</span><span class="p">,</span> <span class="s1">&#39;22&#39;</span><span class="p">,</span> <span class="s1">&#39;33&#39;</span><span class="p">,</span> <span class="s1">&#39;12&#39;</span><span class="p">,</span> <span class="s1">&#39;23&#39;</span><span class="p">,</span> <span class="s1">&#39;13&#39;</span><span class="p">)</span>
+    <span class="n">n_strain_comp</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">strain_comps_order</span><span class="p">)</span>
+    <span class="c1"># Set Links stress components symmetric order</span>
+    <span class="k">if</span> <span class="n">n_dim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">stress_comps_order</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">stress_comps_order</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;11&#39;</span><span class="p">,</span> <span class="s1">&#39;22&#39;</span><span class="p">,</span> <span class="s1">&#39;33&#39;</span><span class="p">,</span> <span class="s1">&#39;12&#39;</span><span class="p">,</span> <span class="s1">&#39;23&#39;</span><span class="p">,</span> <span class="s1">&#39;13&#39;</span><span class="p">)</span>
+    <span class="n">n_stress_comp</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">stress_comps_order</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get time path</span>
+    <span class="n">time_hist</span> <span class="o">=</span> <span class="n">full_data_array</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+    <span class="n">n_time</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">time_hist</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set total strain starting index</span>
+    <span class="k">if</span> <span class="n">n_dim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="n">strain_idx_init</span> <span class="o">=</span> <span class="mi">49</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">strain_idx_init</span> <span class="o">=</span> <span class="mi">53</span>
+    <span class="c1"># Initialize strain path</span>
+    <span class="n">strain_path</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_time</span><span class="p">,</span> <span class="n">n_strain_comp</span><span class="p">))</span>
+    <span class="c1"># Loop over strain components</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">comp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">strain_comps_order</span><span class="p">):</span>
+        <span class="c1"># Set Voigt factor</span>
+        <span class="k">if</span> <span class="n">comp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">!=</span> <span class="n">comp</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+            <span class="n">factor</span> <span class="o">=</span> <span class="mf">0.5</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">factor</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="c1"># Get strain component</span>
+        <span class="n">strain_path</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="n">factor</span><span class="o">*</span><span class="n">full_data_array</span><span class="p">[:,</span> <span class="n">strain_idx_init</span> <span class="o">+</span> <span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set stress starting index</span>
+    <span class="n">stress_idx_init</span> <span class="o">=</span> <span class="mi">11</span>
+    <span class="c1"># Initialize stress path</span>
+    <span class="n">stress_path</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_time</span><span class="p">,</span> <span class="n">n_stress_comp</span><span class="p">))</span>
+    <span class="c1"># Loop over stress components</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">comp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">stress_comps_order</span><span class="p">):</span>
+        <span class="c1"># Get stress component</span>
+        <span class="n">stress_path</span><span class="p">[:,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="n">full_data_array</span><span class="p">[:,</span> <span class="n">stress_idx_init</span> <span class="o">+</span> <span class="n">i</span><span class="p">]</span><span class="o">.</span><span class="n">astype</span><span class="p">(</span><span class="nb">float</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize material response path data</span>
+    <span class="n">response_path</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="c1"># Assemble strain-stress material response path</span>
+    <span class="n">response_path</span><span class="p">[</span><span class="s1">&#39;strain_comps_order&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">strain_comps_order</span>
+    <span class="n">response_path</span><span class="p">[</span><span class="s1">&#39;strain_path&#39;</span><span class="p">]</span> <span class="o">=</span> \
+        <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">strain_path</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">get_default_dtype</span><span class="p">())</span>
+    <span class="n">response_path</span><span class="p">[</span><span class="s1">&#39;stress_comps_order&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">stress_comps_order</span>
+    <span class="n">response_path</span><span class="p">[</span><span class="s1">&#39;stress_path&#39;</span><span class="p">]</span> <span class="o">=</span> \
+        <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="n">stress_path</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">get_default_dtype</span><span class="p">())</span>
+    <span class="c1"># Assemble time path</span>
+    <span class="n">response_path</span><span class="p">[</span><span class="s1">&#39;time_hist&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span>
+        <span class="n">time_hist</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">get_default_dtype</span><span class="p">())</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">response_path</span></div>
+<span class="c1"># =============================================================================</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="c1"># Set save data set plots flags</span>
+    <span class="n">is_save_dataset_plots</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set data set directory</span>
+    <span class="n">dataset_dir</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;/home/username/Desktop/test_fortran/&#39;</span>
+                   <span class="s1">&#39;test_links_lou/3D_HEXA8_LOU_Mixed&#39;</span><span class="p">)</span>
+    <span class="c1"># Set Links Gauss points &#39;.out&#39; data file paths</span>
+    <span class="n">links_out_file_paths</span> <span class="o">=</span> \
+        <span class="p">(</span><span class="s1">&#39;/home/username/Desktop/test_fortran/test_links_lou/&#39;</span>
+         <span class="s1">&#39;3D_HEXA8_LOU_Mixed/3D_HEXA8_LOU_Mixed_ELEM_1_GP_5.out&#39;</span><span class="p">,</span>
+         <span class="s1">&#39;/home/username/Desktop/test_fortran/test_links_lou/&#39;</span>
+         <span class="s1">&#39;3D_HEXA8_LOU_Mixed/3D_HEXA8_LOU_Mixed_ELEM_1_GP_7.out&#39;</span><span class="p">,</span>
+         <span class="s1">&#39;/home/username/Desktop/test_fortran/test_links_lou/&#39;</span>
+         <span class="s1">&#39;3D_HEXA8_LOU_Mixed/3D_HEXA8_LOU_Mixed_ELEM_1_GP_8.out&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set strain formulation</span>
+    <span class="n">strain_formulation</span> <span class="o">=</span> <span class="s1">&#39;infinitesimal&#39;</span>
+    <span class="c1"># Set number of spatial dimensions</span>
+    <span class="n">n_dim</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Build time series data set from set of Links Gauss point &#39;.out&#39; files</span>
+    <span class="n">dataset</span> <span class="o">=</span> <span class="n">build_dataset</span><span class="p">(</span><span class="n">links_out_file_paths</span><span class="p">,</span> <span class="n">n_dim</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set data set file basename</span>
+    <span class="n">dataset_basename</span> <span class="o">=</span> <span class="s1">&#39;ss_paths_dataset&#39;</span>
+    <span class="c1"># Save data set</span>
+    <span class="n">save_dataset</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">dataset_basename</span><span class="p">,</span> <span class="n">dataset_dir</span><span class="p">,</span>
+                 <span class="n">is_append_n_sample</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Generate plots</span>
+    <span class="k">if</span> <span class="n">is_save_dataset_plots</span><span class="p">:</span>
+        <span class="c1"># Set data set plots directory</span>
+        <span class="n">plots_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">dataset_dir</span><span class="p">,</span> <span class="s1">&#39;plots&#39;</span><span class="p">)</span>
+        <span class="c1"># Create plots directory</span>
+        <span class="n">plots_dir</span> <span class="o">=</span> <span class="n">make_directory</span><span class="p">(</span><span class="n">plots_dir</span><span class="p">,</span> <span class="n">is_overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># Generate data set plots</span>
+        <span class="n">generate_dataset_plots</span><span class="p">(</span><span class="n">strain_formulation</span><span class="p">,</span> <span class="n">n_dim</span><span class="p">,</span> <span class="n">dataset</span><span class="p">,</span>
+                               <span class="n">save_dir</span><span class="o">=</span><span class="n">plots_dir</span><span class="p">,</span> <span class="n">is_save_fig</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                               <span class="n">is_stdout_display</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

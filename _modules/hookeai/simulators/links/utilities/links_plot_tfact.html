@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>hookeai.simulators.links.utilities.links_plot_tfact &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../../" id="documentation_options" src="../../../../../_static/documentation_options.js"></script>
+        <script src="../../../../../_static/doctools.js"></script>
+        <script src="../../../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../_autosummary/hookeai.html">Code</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">hookeai.simulators.links.utilities.links_plot_tfact</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for hookeai.simulators.links.utilities.links_plot_tfact</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Generate total load factor history plot from Links input data file.</span>
+
+<span class="sd">Functions</span>
+<span class="sd">---------</span>
+<span class="sd">plot_links_tfact_hist</span>
+<span class="sd">    Plot Links total loading factor history.</span>
+<span class="sd">gen_links_loading_incrementation_file</span>
+<span class="sd">    Generate Links loading incrementation file.</span>
+<span class="sd">scale_tfact_hist</span>
+<span class="sd">    Perform linear scaling of total load factor history.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#                                                                       Modules</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Standard</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pathlib</span>
+<span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+<span class="c1"># Add project root directory to sys.path</span>
+<span class="n">root_dir</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parents</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+<span class="k">if</span> <span class="n">root_dir</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">root_dir</span><span class="p">)</span>
+<span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="c1"># Third-party</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="c1"># Local</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">simulators.links.links</span><span class="w"> </span><span class="kn">import</span> <span class="n">LinksSimulator</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ioput.plots</span><span class="w"> </span><span class="kn">import</span> <span class="n">save_figure</span><span class="p">,</span> <span class="n">plot_xy_data</span>
+<span class="c1">#</span>
+<span class="c1">#                                                          Authorship &amp; Credits</span>
+<span class="c1"># =============================================================================</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Bernardo Ferreira (bernardo_ferreira@brown.edu)&#39;</span>
+<span class="n">__credits__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Bernardo Ferreira&#39;</span><span class="p">,</span> <span class="p">]</span>
+<span class="n">__status__</span> <span class="o">=</span> <span class="s1">&#39;Stable&#39;</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="plot_links_tfact_hist"><a class="viewcode-back" href="../../../../../_autosummary/hookeai.simulators.links.utilities.links_plot_tfact.plot_links_tfact_hist.html#hookeai.simulators.links.utilities.links_plot_tfact.plot_links_tfact_hist">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">plot_links_tfact_hist</span><span class="p">(</span><span class="n">links_input_file_path</span><span class="p">,</span> <span class="n">is_stdout_display</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                          <span class="n">is_save_fig</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot Links total loading factor history.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    links_input_file_path : str</span>
+<span class="sd">        Links input data file path.</span>
+<span class="sd">    is_stdout_display : bool, default=False</span>
+<span class="sd">        True if displaying figure to standard output device, False otherwise.</span>
+<span class="sd">    is_save_fig : bool, default=False</span>
+<span class="sd">        Save figure.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check if simulation input data file exists</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">links_input_file_path</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Links simulation input data file has not been &#39;</span>
+                           <span class="sa">f</span><span class="s1">&#39;found:</span><span class="se">\n\n</span><span class="si">{</span><span class="n">links_input_file_path</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get simulation name</span>
+    <span class="n">simulation_name</span> <span class="o">=</span> \
+        <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">basename</span><span class="p">(</span><span class="n">links_input_file_path</span><span class="p">))[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="c1"># Get Links simulation input data file directory</span>
+    <span class="n">links_input_file_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">dirname</span><span class="p">(</span><span class="n">links_input_file_path</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Open Links simulation input data file</span>
+    <span class="n">links_input_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">links_input_file_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Reset file position</span>
+    <span class="n">links_input_file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+    <span class="c1"># Initialize search flags</span>
+    <span class="n">is_keyword_found</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="c1"># Search for Number_of_Increments or INCREMENTS keyword</span>
+    <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">links_input_file</span><span class="p">:</span>
+        <span class="k">if</span> <span class="nb">bool</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;Number_of_Increments\b&#39;</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)):</span> 
+            <span class="c1"># Collect number of increments</span>
+            <span class="n">n_inc</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="c1"># Initialize incremental and total load factor history</span>
+            <span class="n">dfact_hist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_inc</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+            <span class="n">tfact_hist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_inc</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+            <span class="c1"># Set discrete time history</span>
+            <span class="n">time_hist</span> <span class="o">=</span> \
+                <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">n_inc</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+            <span class="c1"># Store discrete time history</span>
+            <span class="n">dfact_hist</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">time_hist</span>
+            <span class="n">tfact_hist</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">time_hist</span>
+            <span class="c1"># Compute incremental load factor history</span>
+            <span class="n">dfact_hist</span><span class="p">[</span><span class="mi">1</span><span class="p">:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="p">(</span><span class="mf">1.0</span><span class="o">/</span><span class="n">n_inc</span><span class="p">)</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">n_inc</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">inc</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_inc</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="n">tfact_hist</span><span class="p">[</span><span class="n">inc</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> \
+                    <span class="n">tfact_hist</span><span class="p">[</span><span class="n">inc</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">dfact_hist</span><span class="p">[</span><span class="n">inc</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="c1"># Finished processing Number_of_Increments section</span>
+            <span class="k">break</span>
+        <span class="k">elif</span> <span class="nb">bool</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;INCREMENTS\b&#39;</span><span class="p">,</span> <span class="n">line</span><span class="p">,</span> <span class="n">re</span><span class="o">.</span><span class="n">IGNORECASE</span><span class="p">)):</span>        
+            <span class="c1"># Start processing INCREMENTS section</span>
+            <span class="n">is_keyword_found</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="c1"># Collect number of increments</span>
+            <span class="n">n_inc</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="c1"># Initialize incremental and total load factor history</span>
+            <span class="n">dfact_hist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_inc</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+            <span class="n">tfact_hist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_inc</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+            <span class="c1"># Set discrete time history</span>
+            <span class="n">time_hist</span> <span class="o">=</span> \
+                <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">n_inc</span> <span class="o">+</span> <span class="mi">1</span><span class="p">,</span> <span class="n">endpoint</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+            <span class="c1"># Store discrete time history</span>
+            <span class="n">dfact_hist</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">time_hist</span>
+            <span class="n">tfact_hist</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">time_hist</span>
+            <span class="c1"># Initialize increment counter</span>
+            <span class="n">inc</span> <span class="o">=</span> <span class="mi">1</span>
+        <span class="k">elif</span> <span class="n">is_keyword_found</span> <span class="ow">and</span> <span class="p">(</span><span class="nb">bool</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^&#39;</span> <span class="o">+</span> <span class="sa">r</span><span class="s1">&#39;[*][A-Z]+&#39;</span><span class="p">,</span> <span class="n">line</span><span class="p">))</span>
+                                   <span class="ow">or</span> <span class="n">line</span><span class="o">.</span><span class="n">strip</span><span class="p">()</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">):</span>
+            <span class="c1"># Finished processing INCREMENTS section</span>
+            <span class="k">break</span>
+        <span class="k">elif</span> <span class="n">is_keyword_found</span><span class="p">:</span>
+            <span class="c1"># Get incremental load factor</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">())</span> <span class="o">==</span> <span class="mi">3</span><span class="p">:</span>
+                <span class="n">dfact</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">())</span> <span class="o">==</span> <span class="mi">4</span><span class="p">:</span>
+                <span class="n">dfact</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="mi">1</span><span class="p">])</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Expecting 3 or 4 parameters for each &#39;</span>
+                                   <span class="sa">f</span><span class="s1">&#39;increment loading data, but found &#39;</span>
+                                   <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">())</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
+            <span class="c1"># Store incremental load factor</span>
+            <span class="n">dfact_hist</span><span class="p">[</span><span class="n">inc</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">dfact</span>
+            <span class="c1"># Store total load factor</span>
+            <span class="n">tfact_hist</span><span class="p">[</span><span class="n">inc</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">tfact_hist</span><span class="p">[</span><span class="n">inc</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">+</span> <span class="n">dfact</span>
+            <span class="c1"># Update increment counter</span>
+            <span class="n">inc</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Compute total accumulated load factor</span>
+    <span class="n">total_acc_tfact</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">dfact_hist</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]))</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set total load factor history data file path</span>
+    <span class="n">tfact_hist_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">links_input_file_dir</span><span class="p">,</span> <span class="s1">&#39;tfact_hist.dat&#39;</span><span class="p">)</span>
+    <span class="c1"># Open total load factor history data file</span>
+    <span class="n">tfact_hist_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">tfact_hist_path</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span>
+    <span class="c1"># Build total load factor history file content</span>
+    <span class="n">write_lines</span> <span class="o">=</span> \
+        <span class="p">[</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">LOAD FACTOR HISTORY&#39;</span> <span class="o">+</span> <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">]</span> \
+        <span class="o">+</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Number of loading increments = </span><span class="si">{</span><span class="n">n_inc</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> \
+        <span class="o">+</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">Total accumulated load factor = </span><span class="si">{</span><span class="n">total_acc_tfact</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> \
+        <span class="o">+</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">Incremental (absolute) load factor history:&#39;</span><span class="p">]</span> \
+        <span class="o">+</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">dfact_hist_abs = </span><span class="si">{</span><span class="nb">list</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="n">dfact_hist</span><span class="p">[:,</span><span class="w"> </span><span class="mi">1</span><span class="p">]))</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> \
+        <span class="o">+</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">Total load factor history data:&#39;</span><span class="p">]</span> \
+        <span class="o">+</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n\n</span><span class="si">{</span><span class="s2">&quot;Time&quot;</span><span class="si">:</span><span class="s1">^16s</span><span class="si">}</span><span class="s1">  </span><span class="si">{</span><span class="s2">&quot;Total Load Factor&quot;</span><span class="si">:</span><span class="s1">^16s</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">]</span> \
+        <span class="o">+</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="si">{</span><span class="n">tfact_hist</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s1">^16.8e</span><span class="si">}</span><span class="s1">   </span><span class="si">{</span><span class="n">tfact_hist</span><span class="p">[</span><span class="n">i</span><span class="p">,</span><span class="w"> </span><span class="mi">1</span><span class="p">]</span><span class="si">:</span><span class="s1">^16.8e</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_inc</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)]</span>
+    <span class="c1"># Write total load factor history data file</span>
+    <span class="n">tfact_hist_file</span><span class="o">.</span><span class="n">writelines</span><span class="p">(</span><span class="n">write_lines</span><span class="p">)</span>
+    <span class="c1"># Close total load factor history data file</span>
+    <span class="n">tfact_hist_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>    
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Plot total load factor history data</span>
+    <span class="n">figure</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">plot_xy_data</span><span class="p">(</span><span class="n">tfact_hist</span><span class="p">,</span> <span class="n">x_lims</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">),</span>
+                             <span class="n">x_label</span><span class="o">=</span><span class="s1">&#39;Time&#39;</span><span class="p">,</span> <span class="n">y_label</span><span class="o">=</span><span class="s1">&#39;Total load factor&#39;</span><span class="p">,</span>
+                             <span class="n">is_latex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Display figure</span>
+    <span class="k">if</span> <span class="n">is_stdout_display</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Save figure</span>
+    <span class="k">if</span> <span class="n">is_save_fig</span><span class="p">:</span>
+        <span class="c1"># Set figure name</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="s1">&#39;total_load_factor_hist&#39;</span>
+        <span class="c1"># Save figure</span>
+        <span class="n">save_figure</span><span class="p">(</span><span class="n">figure</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span><span class="p">,</span>
+                    <span class="n">save_dir</span><span class="o">=</span><span class="n">links_input_file_dir</span><span class="p">)</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="gen_links_loading_incrementation_file"><a class="viewcode-back" href="../../../../../_autosummary/hookeai.simulators.links.utilities.links_plot_tfact.gen_links_loading_incrementation_file.html#hookeai.simulators.links.utilities.links_plot_tfact.gen_links_loading_incrementation_file">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">gen_links_loading_incrementation_file</span><span class="p">(</span><span class="n">save_dir</span><span class="p">,</span> <span class="n">is_stdout_display</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                          <span class="n">is_save_fig</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Generate Links loading incrementation file.</span>
+<span class="sd">    </span>
+<span class="sd">    Loading incrementation parameters must be directly set in</span>
+<span class="sd">    LinksSimulator._get_links_loading_incrementation().</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    save_dir : str</span>
+<span class="sd">        Directory where loading incrementation file is saved.</span>
+<span class="sd">    is_stdout_display : bool, default=False</span>
+<span class="sd">        True if displaying figure to standard output device, False otherwise.</span>
+<span class="sd">    is_save_fig : bool, default=False</span>
+<span class="sd">        Save figure.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check saving directory</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">save_dir</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Saving directory has not been found:&#39;</span>
+                           <span class="s1">&#39;</span><span class="se">\n\n</span><span class="si">{save_dir}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize Links simulator</span>
+    <span class="n">links_simulator</span> <span class="o">=</span> <span class="n">LinksSimulator</span><span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get loading incrementation</span>
+    <span class="n">increm_lines</span> <span class="o">=</span> <span class="n">links_simulator</span><span class="o">.</span><span class="n">_get_links_loading_incrementation</span><span class="p">()</span>
+    <span class="c1"># Append loading increment</span>
+    <span class="n">write_lines</span> <span class="o">=</span> <span class="n">increm_lines</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set loading incrementation data file path</span>
+    <span class="n">increm_file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">save_dir</span><span class="p">),</span>
+                                    <span class="s1">&#39;loading_incrementation.dat&#39;</span><span class="p">)</span>
+    <span class="c1"># Open loading incrementation data file</span>
+    <span class="n">increm_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">increm_file_path</span><span class="p">,</span> <span class="s1">&#39;w&#39;</span><span class="p">)</span>
+    <span class="c1"># Write loading incrementation data file</span>
+    <span class="n">increm_file</span><span class="o">.</span><span class="n">writelines</span><span class="p">(</span><span class="n">write_lines</span><span class="p">)</span>
+    <span class="c1"># Close loading incrementation data file</span>
+    <span class="n">increm_file</span><span class="o">.</span><span class="n">close</span><span class="p">()</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Plot Links total loading factor history</span>
+    <span class="n">plot_links_tfact_hist</span><span class="p">(</span><span class="n">increm_file_path</span><span class="p">,</span>
+                          <span class="n">is_stdout_display</span><span class="o">=</span><span class="n">is_stdout_display</span><span class="p">,</span>
+                          <span class="n">is_save_fig</span><span class="o">=</span><span class="n">is_save_fig</span><span class="p">)</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="scale_tfact_hist"><a class="viewcode-back" href="../../../../../_autosummary/hookeai.simulators.links.utilities.links_plot_tfact.scale_tfact_hist.html#hookeai.simulators.links.utilities.links_plot_tfact.scale_tfact_hist">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">scale_tfact_hist</span><span class="p">(</span><span class="n">tfact_hist</span><span class="p">,</span> <span class="n">scale_factor</span><span class="o">=</span><span class="mf">1.0</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Perform linear scaling of total load factor history.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    tfact_hist : np.ndarray(2d)</span>
+<span class="sd">        Total load factor history stored as numpy.ndarray(2d) of shape</span>
+<span class="sd">        (n_time, 2), where the discrete time is stored in array[:, 0] and the</span>
+<span class="sd">        total load factor in array[:, 1].</span>
+<span class="sd">    scale_factor : float, default=1.0</span>
+<span class="sd">        Linear scaling factor.</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    tfact_hist_scaled : np.ndarray(2d)</span>
+<span class="sd">        Total load factor history stored as numpy.ndarray(2d) of shape</span>
+<span class="sd">        (n_time, 2), where the discrete time is stored in array[:, 0] and the</span>
+<span class="sd">        total load factor in array[:, 1].</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check total load factor history</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">tfact_hist</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Total load factor history is not provided as &#39;</span>
+                           <span class="s1">&#39;numpy.ndarray(2d)&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">tfact_hist</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Total load factor history is not provided as &#39;</span>
+                           <span class="s1">&#39;numpy.ndarray(2d) of shape (n_time, 2).&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize scaled total load factor history</span>
+    <span class="n">tfact_hist_scaled</span> <span class="o">=</span> <span class="n">tfact_hist</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+    <span class="c1"># Perform linear scaling of total load factor history</span>
+    <span class="n">tfact_hist_scaled</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">scale_factor</span><span class="o">*</span><span class="n">tfact_hist</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">tfact_hist_scaled</span></div>
+<span class="c1"># =============================================================================</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="c1"># Set computation processes</span>
+    <span class="n">is_plot_links_tfact_hist</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">is_generate_links_tfact_hist</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Plot Links total loading factor history</span>
+    <span class="k">if</span> <span class="n">is_plot_links_tfact_hist</span><span class="p">:</span>
+        <span class="c1"># Set Links simulation input data file</span>
+        <span class="n">links_input_file_path</span> <span class="o">=</span> \
+            <span class="p">(</span><span class="s1">&#39;/home/username/Documents/brown/projects/&#39;</span>
+             <span class="s1">&#39;darpa_paper_examples/global/specimens/tensile_double_notched/&#39;</span>
+             <span class="s1">&#39;meshes/hexa8_n760_e504/0_links_simulation/&#39;</span>
+             <span class="s1">&#39;tensile_double_notched.dat&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set display and save plot flags</span>
+        <span class="n">is_stdout_display</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">is_save_fig</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Plot Links total loading factor history</span>
+        <span class="n">plot_links_tfact_hist</span><span class="p">(</span><span class="n">links_input_file_path</span><span class="p">,</span> <span class="n">is_stdout_display</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                              <span class="n">is_save_fig</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Generate Links loading incrementation file</span>
+    <span class="k">if</span> <span class="n">is_generate_links_tfact_hist</span><span class="p">:</span>
+        <span class="c1"># Set saving directory</span>
+        <span class="n">save_dir</span> <span class="o">=</span> \
+            <span class="p">(</span><span class="s1">&#39;/home/username/Documents/brown/projects/&#39;</span>
+             <span class="s1">&#39;darpa_paper_examples/global/specimens/tensile_double_notched/&#39;</span>
+             <span class="s1">&#39;meshes/hexa8_n760_e504/0_links_simulation&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Generate Links loading incrementation file.</span>
+        <span class="n">gen_links_loading_incrementation_file</span><span class="p">(</span>
+            <span class="n">save_dir</span><span class="p">,</span> <span class="n">is_stdout_display</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_save_fig</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

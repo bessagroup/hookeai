@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>simulators.fetorch.structure.structure_mesh &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../_autosummary/hookeai.html">Code</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">simulators.fetorch.structure.structure_mesh</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for simulators.fetorch.structure.structure_mesh</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;FETorch: Structure finite element mesh.</span>
+
+<span class="sd">Classes</span>
+<span class="sd">-------</span>
+<span class="sd">StructureMesh</span>
+<span class="sd">    FETorch structure finite element mesh.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#                                                                       Modules</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Standard</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="c1"># Third-party</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="c1"># Local</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">simulators.fetorch.element.type.interface</span><span class="w"> </span><span class="kn">import</span> <span class="n">ElementType</span>
+<span class="c1">#</span>
+<span class="c1">#                                                          Authorship &amp; Credits</span>
+<span class="c1"># =============================================================================</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Bernardo Ferreira (bernardo_ferreira@brown.edu)&#39;</span>
+<span class="n">__credits__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Bernardo Ferreira&#39;</span><span class="p">,</span> <span class="p">]</span>
+<span class="n">__status__</span> <span class="o">=</span> <span class="s1">&#39;Stable&#39;</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="StructureMesh"><a class="viewcode-back" href="../../../../_autosummary/hookeai.material_model_finder.data.specimen_data.StructureMesh.html#hookeai.material_model_finder.data.specimen_data.StructureMesh">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">StructureMesh</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;FETorch structure finite element mesh.</span>
+<span class="sd">    </span>
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    _n_dim : int</span>
+<span class="sd">        Number of spatial dimensions.</span>
+<span class="sd">    _n_node_mesh : int</span>
+<span class="sd">        Number of nodes of finite element mesh.</span>
+<span class="sd">    _n_elem : int</span>
+<span class="sd">        Number of elements of finite element mesh.</span>
+<span class="sd">    _elements_type : dict</span>
+<span class="sd">        FETorch element type (item, ElementType) of each finite element mesh</span>
+<span class="sd">        element (str[int]). Elements are labeled from 1 to n_elem.</span>
+<span class="sd">    _connectivities : dict</span>
+<span class="sd">        Nodes (item, tuple[int]) of each finite element mesh element</span>
+<span class="sd">        (key, str[int]). Nodes are labeled from 1 to n_node_mesh. Elements are</span>
+<span class="sd">        labeled from 1 to n_elem.</span>
+<span class="sd">    _nodes_coords_mesh_init : torch.Tensor(2d)</span>
+<span class="sd">        Initial coordinates of finite element mesh nodes stored as</span>
+<span class="sd">        torch.Tensor(2d) of shape (n_node_mesh, n_dim).</span>
+<span class="sd">    _nodes_coords_mesh : torch.Tensor(2d)</span>
+<span class="sd">        Coordinates of finite element mesh nodes stored as torch.Tensor(2d) of</span>
+<span class="sd">        shape (n_node_mesh, n_dim).</span>
+<span class="sd">    _nodes_coords_mesh_old : torch.Tensor(2d)</span>
+<span class="sd">        Last converged coordinates of finite element mesh nodes stored as</span>
+<span class="sd">        torch.Tensor(2d) of shape (n_node_mesh, n_dim).</span>
+<span class="sd">    _nodes_disps_mesh : torch.Tensor(2d)</span>
+<span class="sd">        Displacements of finite element mesh nodes stored as torch.Tensor(2d)</span>
+<span class="sd">        of shape (n_node_mesh, n_dim).</span>
+<span class="sd">    _nodes_disps_mesh_old : torch.Tensor(2d)</span>
+<span class="sd">        Last converged displacements of finite element mesh nodes stored as</span>
+<span class="sd">        torch.Tensor(2d) of shape (n_node_mesh, n_dim).</span>
+<span class="sd">    _dirichlet_bool_mesh : torch.Tensor(2d)</span>
+<span class="sd">        Degrees of freedom of finite element mesh subject to Dirichlet boundary</span>
+<span class="sd">        conditions. Stored as torch.Tensor(2d) of shape (n_node_mesh, n_dim)</span>
+<span class="sd">        where constrained degrees of freedom are labeled 1, otherwise 0.</span>
+
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    get_n_dim(self)</span>
+<span class="sd">        Get number of spatial dimensions.</span>
+<span class="sd">    get_n_node_mesh(self)</span>
+<span class="sd">        Get number of nodes of finite element mesh.</span>
+<span class="sd">    get_n_elem(self)</span>
+<span class="sd">        Number of elements of finite element mesh.</span>
+<span class="sd">    get_elements_type(self)</span>
+<span class="sd">        Get type of elements of finite element mesh.</span>
+<span class="sd">    get_n_element_type(self)</span>
+<span class="sd">        Get the number of elements types of finite element mesh.</span>
+<span class="sd">    get_connectivities(self)</span>
+<span class="sd">        Get finite element mesh elements connectivities.</span>
+<span class="sd">    get_connectivities_tensor(self)</span>
+<span class="sd">        Get finite element mesh elements connectivities stored (tensor).</span>
+<span class="sd">    get_dirichlet_bool_mesh(self)</span>
+<span class="sd">        Get degrees of freedom subject to Dirichlet boundary conditions.</span>
+<span class="sd">    get_n_dirichlet_dof(self)</span>
+<span class="sd">        Get number of degrees of freedom subject to Dirichlet conditions.</span>
+<span class="sd">    get_element_configuration(self, element_id, time=&#39;current&#39;)</span>
+<span class="sd">        Get element nodes coordinates and displacements.</span>
+<span class="sd">    get_mesh_configuration(self, time=&#39;current&#39;)</span>
+<span class="sd">        Get finite element mesh configuration.</span>
+<span class="sd">    update_mesh_configuration(self, nodes_disps_mesh, \</span>
+<span class="sd">                              nodes_disps_mesh_old=None, is_update_coords=True)</span>
+<span class="sd">    element_assembler(self, elements_array)</span>
+<span class="sd">        Assemble element level arrays into mesh level counterparts.</span>
+<span class="sd">    _element_assembler_1d(self, elements_array_1d)</span>
+<span class="sd">        Assemble element level 1D array into mesh level counterpart.</span>
+<span class="sd">    element_extractor(self, mesh_array, element_id)</span>
+<span class="sd">        Extract element level array from mesh level counterpart.</span>
+<span class="sd">    _element_extractor_1d(self, mesh_array, element_id)</span>
+<span class="sd">        Extract element level 1D array from mesh level counterpart.</span>
+<span class="sd">    build_elements_mesh_indexing(self, n_dof_node)</span>
+<span class="sd">        Build elements nodes degrees of freedom mesh indexes.</span>
+<span class="sd">    build_element_mesh_indexing(cls, element_nodes, n_dof_node)</span>
+<span class="sd">        Get element nodes degrees of freedom mesh indexes.</span>
+<span class="sd">    _check_mesh_initialization(self, nodes_coords_mesh_init, elements_type,</span>
+<span class="sd">                               connectivities)</span>
+<span class="sd">        Check finite element mesh initialization.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="StructureMesh.__init__"><a class="viewcode-back" href="../../../../_autosummary/hookeai.material_model_finder.data.specimen_data.StructureMesh.html#hookeai.material_model_finder.data.specimen_data.StructureMesh.__init__">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes_coords_mesh_init</span><span class="p">,</span> <span class="n">elements_type</span><span class="p">,</span> <span class="n">connectivities</span><span class="p">,</span>
+                 <span class="n">dirichlet_bool_mesh</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Constructor.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        nodes_coords_mesh_init : torch.Tensor(2d)</span>
+<span class="sd">            Initial coordinates of finite element mesh nodes stored as</span>
+<span class="sd">            torch.Tensor(2d) of shape (n_node_mesh, n_dim).</span>
+<span class="sd">        elements_type : dict</span>
+<span class="sd">            FETorch element type (item, ElementType) of each finite element</span>
+<span class="sd">            mesh element (str[int]). Elements labels must be within the range</span>
+<span class="sd">            of 1 to n_elem (included).</span>
+<span class="sd">        connectivities : dict</span>
+<span class="sd">            Nodes (item, tuple[int]) of each finite element mesh element</span>
+<span class="sd">            (key, str[int]). Nodes are labeled from 1 to n_node_mesh. Elements</span>
+<span class="sd">            are labeled from 1 to n_elem.</span>
+<span class="sd">        dirichlet_bool_mesh : torch.Tensor(2d)</span>
+<span class="sd">            Degrees of freedom of finite element mesh subject to Dirichlet</span>
+<span class="sd">            boundary conditions. Stored as torch.Tensor(2d) of shape</span>
+<span class="sd">            (n_node_mesh, n_dim) where constrained degrees of freedom are</span>
+<span class="sd">            labeled 1, otherwise 0.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check finite element mesh initialization</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_check_mesh_initialization</span><span class="p">(</span><span class="n">nodes_coords_mesh_init</span><span class="p">,</span> <span class="n">elements_type</span><span class="p">,</span>
+                                        <span class="n">connectivities</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set nodes initial coordinates</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nodes_coords_mesh_init</span> <span class="o">=</span> <span class="n">nodes_coords_mesh_init</span>
+        <span class="c1"># Set elements types</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_elements_type</span> <span class="o">=</span> <span class="n">elements_type</span>
+        <span class="c1"># Set elements connectivities</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_connectivities</span> <span class="o">=</span> <span class="n">connectivities</span>
+        <span class="c1"># Set Dirichlet boundary conditions (boolean)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_dirichlet_bool_mesh</span> <span class="o">=</span> <span class="n">dirichlet_bool_mesh</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set number of nodes</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_n_node_mesh</span> <span class="o">=</span> <span class="n">nodes_coords_mesh_init</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># Set number of spatial dimensions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_n_dim</span> <span class="o">=</span> <span class="n">nodes_coords_mesh_init</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span>
+        <span class="c1"># Set number of elements</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_n_elem</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">elements_type</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize coordinates</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nodes_coords_mesh</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nodes_coords_mesh_init</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nodes_coords_mesh_old</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nodes_coords_mesh_init</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+        <span class="c1"># Initialize displacements</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nodes_disps_mesh</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_nodes_coords_mesh</span><span class="p">)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_nodes_disps_mesh_old</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nodes_disps_mesh</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="StructureMesh.get_n_dim"><a class="viewcode-back" href="../../../../_autosummary/hookeai.material_model_finder.data.specimen_data.StructureMesh.html#hookeai.material_model_finder.data.specimen_data.StructureMesh.get_n_dim">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_n_dim</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get number of spatial dimensions.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        n_dim : int</span>
+<span class="sd">            Number of spatial dimensions.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_dim</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="StructureMesh.get_n_node_mesh"><a class="viewcode-back" href="../../../../_autosummary/hookeai.material_model_finder.data.specimen_data.StructureMesh.html#hookeai.material_model_finder.data.specimen_data.StructureMesh.get_n_node_mesh">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_n_node_mesh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get number of nodes of finite element mesh.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        n_node_mesh : int</span>
+<span class="sd">            Number of nodes of finite element mesh.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_node_mesh</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="StructureMesh.get_n_elem"><a class="viewcode-back" href="../../../../_autosummary/hookeai.material_model_finder.data.specimen_data.StructureMesh.html#hookeai.material_model_finder.data.specimen_data.StructureMesh.get_n_elem">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_n_elem</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Number of elements of finite element mesh.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        n_elem : int</span>
+<span class="sd">            Number of elements of finite element mesh.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_elem</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="StructureMesh.get_elements_type"><a class="viewcode-back" href="../../../../_autosummary/hookeai.material_model_finder.data.specimen_data.StructureMesh.html#hookeai.material_model_finder.data.specimen_data.StructureMesh.get_elements_type">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_elements_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get type of elements of finite element mesh.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        elements_type : dict</span>
+<span class="sd">            FETorch element type (item, ElementType) of each finite element</span>
+<span class="sd">            mesh element (str[int]). Elements are labeled from 1 to n_elem.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_elements_type</span><span class="p">)</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="StructureMesh.get_n_element_type"><a class="viewcode-back" href="../../../../_autosummary/hookeai.material_model_finder.data.specimen_data.StructureMesh.html#hookeai.material_model_finder.data.specimen_data.StructureMesh.get_n_element_type">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_n_element_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the number of elements types of finite element mesh.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        n_element_type : int</span>
+<span class="sd">            Number of element types of finite element mesh.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">({</span><span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_elements_type</span><span class="o">.</span><span class="n">values</span><span class="p">()})</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="StructureMesh.get_connectivities"><a class="viewcode-back" href="../../../../_autosummary/hookeai.material_model_finder.data.specimen_data.StructureMesh.html#hookeai.material_model_finder.data.specimen_data.StructureMesh.get_connectivities">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_connectivities</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get finite element mesh elements connectivities.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        connectivities : dict</span>
+<span class="sd">            Nodes (item, tuple[int]) of each finite element mesh element</span>
+<span class="sd">            (key, str[int]). Nodes are labeled from 1 to n_node_mesh. Elements</span>
+<span class="sd">            are labeled from 1 to n_elem.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_connectivities</span><span class="p">)</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="StructureMesh.get_connectivities_tensor"><a class="viewcode-back" href="../../../../_autosummary/hookeai.material_model_finder.data.specimen_data.StructureMesh.html#hookeai.material_model_finder.data.specimen_data.StructureMesh.get_connectivities_tensor">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_connectivities_tensor</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get finite element mesh elements connectivities (tensor).</span>
+<span class="sd">        </span>
+<span class="sd">        Storage of finite element mesh elements connectivities in tensor,</span>
+<span class="sd">        i.e., batching over the element dimension, requires that all finite</span>
+<span class="sd">        element mesh elements have the same number of nodes.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        connectivities_tensor : torch.Tensor(2d)</span>
+<span class="sd">            Finite element mesh elements connectitivities stored as</span>
+<span class="sd">            torch.Tensor(2d) of shape (n_elem, n_node). Elements are sorted</span>
+<span class="sd">            according with their labels (1 to n_elem). Nodes are labeled from</span>
+<span class="sd">            1 to n_node_mesh.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Build connectivities tensor</span>
+        <span class="k">try</span><span class="p">:</span>
+            <span class="n">connectivities_tensor</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span>
+                <span class="p">[</span><span class="n">torch</span><span class="o">.</span><span class="n">tensor</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_connectivities</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">x</span><span class="p">)],</span> <span class="n">dtype</span><span class="o">=</span><span class="n">torch</span><span class="o">.</span><span class="n">int</span><span class="p">)</span>
+                 <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">sorted</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_connectivities</span><span class="o">.</span><span class="n">keys</span><span class="p">(),</span> <span class="n">key</span><span class="o">=</span><span class="nb">int</span><span class="p">)],</span> <span class="n">dim</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="k">except</span> <span class="ne">RuntimeError</span> <span class="k">as</span> <span class="n">error</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Error: </span><span class="si">{</span><span class="n">error</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;Stacking operation over elements requires that all finite &#39;</span>
+                  <span class="s1">&#39;element mesh elements share the same element type &#39;</span>
+                  <span class="s1">&#39;(number of nodes).&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">connectivities_tensor</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="StructureMesh.get_dirichlet_bool_mesh"><a class="viewcode-back" href="../../../../_autosummary/hookeai.material_model_finder.data.specimen_data.StructureMesh.html#hookeai.material_model_finder.data.specimen_data.StructureMesh.get_dirichlet_bool_mesh">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_dirichlet_bool_mesh</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get degrees of freedom subject to Dirichlet boundary conditions.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        dirichlet_bool_mesh : torch.Tensor(2d)</span>
+<span class="sd">            Degrees of freedom of finite element mesh subject to Dirichlet</span>
+<span class="sd">            boundary conditions. Stored as torch.Tensor(2d) of shape</span>
+<span class="sd">            (n_node_mesh, n_dim) where constrained degrees of freedom are</span>
+<span class="sd">            labeled 1, otherwise 0.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_dirichlet_bool_mesh</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="StructureMesh.get_n_dirichlet_dof"><a class="viewcode-back" href="../../../../_autosummary/hookeai.material_model_finder.data.specimen_data.StructureMesh.html#hookeai.material_model_finder.data.specimen_data.StructureMesh.get_n_dirichlet_dof">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_n_dirichlet_dof</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get number of degrees of freedom subject to Dirichlet conditions.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        n_dof_dirichlet : int</span>
+<span class="sd">            Number of degrees of freedom subject to Dirichlet boundary</span>
+<span class="sd">            conditions.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_dirichlet_bool_mesh</span> <span class="o">==</span> <span class="mi">1</span><span class="p">)</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="StructureMesh.get_element_configuration"><a class="viewcode-back" href="../../../../_autosummary/hookeai.material_model_finder.data.specimen_data.StructureMesh.html#hookeai.material_model_finder.data.specimen_data.StructureMesh.get_element_configuration">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_element_configuration</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element_id</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="s1">&#39;current&#39;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get element nodes coordinates and displacements.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        element_id : int</span>
+<span class="sd">            Element label. Elements labels must be within the range of</span>
+<span class="sd">            1 to n_elem (included).</span>
+<span class="sd">        time : {&#39;init&#39;, &#39;last&#39;, &#39;current&#39;}, default=&#39;current&#39;</span>
+<span class="sd">            Time where element configuration is returned: initial configuration</span>
+<span class="sd">            (&#39;init&#39;), last converged configuration (&#39;last&#39;), or current</span>
+<span class="sd">            configuration (&#39;current&#39;).</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        nodes_coords : torch.Tensor(2d)</span>
+<span class="sd">            Nodes coordinates stored as torch.Tensor(2d) of shape</span>
+<span class="sd">            (n_node, n_dof_node).</span>
+<span class="sd">        nodes_disps : torch.Tensor(2d)</span>
+<span class="sd">            Nodes displacements stored as torch.Tensor(2d) of shape</span>
+<span class="sd">            (n_node, n_dof_node).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get element nodes indexes</span>
+        <span class="n">elem_nodes_idxs</span> <span class="o">=</span> \
+            <span class="p">[</span><span class="n">node</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">node</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connectivities</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">element_id</span><span class="p">)]]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get element nodes coordinates and displacements</span>
+        <span class="k">if</span> <span class="n">time</span> <span class="o">==</span> <span class="s1">&#39;init&#39;</span><span class="p">:</span>
+            <span class="n">nodes_coords</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nodes_coords_mesh_init</span><span class="p">[</span><span class="n">elem_nodes_idxs</span><span class="p">,</span> <span class="p">:]</span>
+            <span class="n">nodes_disps</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">nodes_coords</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">time</span> <span class="o">==</span> <span class="s1">&#39;last&#39;</span><span class="p">:</span>
+            <span class="n">nodes_coords</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nodes_coords_mesh_old</span><span class="p">[</span><span class="n">elem_nodes_idxs</span><span class="p">,</span> <span class="p">:]</span>
+            <span class="n">nodes_disps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nodes_disps_mesh_old</span><span class="p">[</span><span class="n">elem_nodes_idxs</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="k">elif</span> <span class="n">time</span> <span class="o">==</span> <span class="s1">&#39;current&#39;</span><span class="p">:</span>
+            <span class="n">nodes_coords</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nodes_coords_mesh</span><span class="p">[</span><span class="n">elem_nodes_idxs</span><span class="p">,</span> <span class="p">:]</span>
+            <span class="n">nodes_disps</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nodes_disps_mesh</span><span class="p">[</span><span class="n">elem_nodes_idxs</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Unknown time option.&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">nodes_coords</span><span class="p">,</span> <span class="n">nodes_disps</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="StructureMesh.get_mesh_configuration"><a class="viewcode-back" href="../../../../_autosummary/hookeai.material_model_finder.data.specimen_data.StructureMesh.html#hookeai.material_model_finder.data.specimen_data.StructureMesh.get_mesh_configuration">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_mesh_configuration</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="s1">&#39;current&#39;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get finite element mesh configuration.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        time : {&#39;init&#39;, &#39;last&#39;, &#39;current&#39;}, default=&#39;current&#39;</span>
+<span class="sd">            Time where element configuration is returned: initial configuration</span>
+<span class="sd">            (&#39;init&#39;), last converged configuration (&#39;last&#39;), or current</span>
+<span class="sd">            configuration (&#39;current&#39;).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        nodes_coords_mesh : torch.Tensor(2d)</span>
+<span class="sd">            Coordinates of finite element mesh nodes stored as torch.Tensor(2d)</span>
+<span class="sd">            of shape (n_node_mesh, n_dim).</span>
+<span class="sd">        nodes_disps_mesh : torch.Tensor(2d)</span>
+<span class="sd">            Displacements of finite element mesh nodes stored as</span>
+<span class="sd">            torch.Tensor(2d) of shape (n_node_mesh, n_dim).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get nodes coordinates and displacements</span>
+        <span class="k">if</span> <span class="n">time</span> <span class="o">==</span> <span class="s1">&#39;init&#39;</span><span class="p">:</span>
+            <span class="n">nodes_coords_mesh</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nodes_coords_mesh_init</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+            <span class="n">nodes_disps_mesh</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros_like</span><span class="p">(</span><span class="n">nodes_coords_mesh</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="n">time</span> <span class="o">==</span> <span class="s1">&#39;last&#39;</span><span class="p">:</span>
+            <span class="n">nodes_coords_mesh</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nodes_coords_mesh_old</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+            <span class="n">nodes_disps_mesh</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nodes_disps_mesh_old</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+        <span class="k">elif</span> <span class="n">time</span> <span class="o">==</span> <span class="s1">&#39;current&#39;</span><span class="p">:</span>
+            <span class="n">nodes_coords_mesh</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nodes_coords_mesh</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+            <span class="n">nodes_disps_mesh</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nodes_disps_mesh</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Unknown time option.&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">nodes_coords_mesh</span><span class="p">,</span> <span class="n">nodes_disps_mesh</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="StructureMesh.update_mesh_configuration"><a class="viewcode-back" href="../../../../_autosummary/hookeai.material_model_finder.data.specimen_data.StructureMesh.html#hookeai.material_model_finder.data.specimen_data.StructureMesh.update_mesh_configuration">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">update_mesh_configuration</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes_disps_mesh</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="s1">&#39;current&#39;</span><span class="p">,</span>
+                                  <span class="n">is_update_coords</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update finite element mesh configuration from nodes displacements.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        nodes_disps_mesh : torch.Tensor(2d)</span>
+<span class="sd">            Displacements of finite element mesh nodes stored as</span>
+<span class="sd">            torch.Tensor(2d) of shape (n_node_mesh, n_dim).</span>
+<span class="sd">        time : {&#39;last&#39;, &#39;current&#39;}, default=&#39;current&#39;</span>
+<span class="sd">            Time where update of element state variables is performed: last</span>
+<span class="sd">            converged state variables (&#39;last&#39;) or current state variables</span>
+<span class="sd">            (&#39;current&#39;).</span>
+<span class="sd">        is_update_coords : bool, default=True</span>
+<span class="sd">            If False, then only updates the displacements of the finite element</span>
+<span class="sd">            mesh nodes, leaving the nodes coordinates unchanged. If True, then</span>
+<span class="sd">            update both coordinates and displacements of finite element mesh</span>
+<span class="sd">            nodes.</span>
+<span class="sd">        &quot;&quot;&quot;</span>            
+        <span class="c1"># Update nodes coordinates and displacements</span>
+        <span class="k">if</span> <span class="n">time</span> <span class="o">==</span> <span class="s1">&#39;last&#39;</span><span class="p">:</span>
+            <span class="c1"># Update last converged nodes displacements</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_nodes_disps_mesh_old</span> <span class="o">=</span> <span class="n">nodes_disps_mesh</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+            <span class="c1"># Update last converged nodes coordinates</span>
+            <span class="k">if</span> <span class="n">is_update_coords</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_nodes_coords_mesh_old</span> <span class="o">=</span> \
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_nodes_coords_mesh_init</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nodes_disps_mesh_old</span>
+        <span class="k">elif</span> <span class="n">time</span> <span class="o">==</span> <span class="s1">&#39;current&#39;</span><span class="p">:</span>
+            <span class="c1"># Update current nodes displacements</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_nodes_disps_mesh</span> <span class="o">=</span> <span class="n">nodes_disps_mesh</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span>
+            <span class="c1"># Update current nodes coordinates</span>
+            <span class="k">if</span> <span class="n">is_update_coords</span><span class="p">:</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_nodes_coords_mesh</span> <span class="o">=</span> \
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_nodes_coords_mesh_init</span> <span class="o">+</span> <span class="bp">self</span><span class="o">.</span><span class="n">_nodes_disps_mesh</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Unknown time option.&#39;</span><span class="p">)</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="StructureMesh.element_assembler"><a class="viewcode-back" href="../../../../_autosummary/hookeai.material_model_finder.data.specimen_data.StructureMesh.html#hookeai.material_model_finder.data.specimen_data.StructureMesh.element_assembler">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">element_assembler</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">elements_array</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Assemble element level arrays into mesh level counterparts.</span>
+
+<span class="sd">        Assumes similar number of dimensions per node in the whole finite</span>
+<span class="sd">        element mesh.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        elements_array : dict</span>
+<span class="sd">            Generic array (item, torch.Tensor) associated with given finite</span>
+<span class="sd">            element mesh element (key, str[int]). Elements labels must be</span>
+<span class="sd">            within the range of 1 to n_elem (included).</span>
+<span class="sd">            </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        mesh_array : torch.Tensor</span>
+<span class="sd">            Mesh level array resulting from the assembly of the corresponding</span>
+<span class="sd">            element level arrays. Mesh level array is always sorted and</span>
+<span class="sd">            dimensioned accounting for the total number of nodes in the finite</span>
+<span class="sd">            element mesh.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Probe element array shape</span>
+        <span class="n">elem_id</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">elements_array</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">elem_array_shape</span> <span class="o">=</span> <span class="n">elements_array</span><span class="p">[</span><span class="n">elem_id</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Assemble element level arrays</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">elem_array_shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">mesh_array</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_element_assembler_1d</span><span class="p">(</span><span class="n">elements_array</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The element assembly procedure is not &#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;implemented for </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">elem_array_shape</span><span class="p">)</span><span class="si">}</span><span class="s1">-&#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;dimensional array.&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">mesh_array</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="StructureMesh._element_assembler_1d"><a class="viewcode-back" href="../../../../_autosummary/hookeai.material_model_finder.data.specimen_data.StructureMesh.html#hookeai.material_model_finder.data.specimen_data.StructureMesh._element_assembler_1d">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">_element_assembler_1d</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">elements_array_1d</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Assemble element level 1D array into mesh level counterpart.</span>
+<span class="sd">        </span>
+<span class="sd">        Assumes similar number of dimensions per node in the whole finite</span>
+<span class="sd">        element mesh.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        elements_arrays_1d : dict</span>
+<span class="sd">            Generic array (item, torch.Tensor(1d)) associated with given finite</span>
+<span class="sd">            element mesh element (key, str[int]). Elements labels must be</span>
+<span class="sd">            within the range of 1 to n_elem (included).</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        mesh_array : torch.Tensor(1d)</span>
+<span class="sd">            Mesh level array resulting from the assembly of the corresponding</span>
+<span class="sd">            element level arrays. Mesh level array is always sorted and</span>
+<span class="sd">            dimensioned accounting for the total number of nodes in the finite</span>
+<span class="sd">            element mesh.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Infer number of dimensions per node</span>
+        <span class="n">elem_key</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">elements_array_1d</span><span class="o">.</span><span class="n">keys</span><span class="p">())[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">n_dim_per_node</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">elements_array_1d</span><span class="p">[</span><span class="n">elem_key</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                             <span class="o">/</span><span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_connectivities</span><span class="p">[</span><span class="n">elem_key</span><span class="p">]))</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize mesh level array</span>
+        <span class="n">mesh_array</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_node_mesh</span><span class="o">*</span><span class="n">n_dim_per_node</span><span class="p">,</span>
+                                 <span class="n">device</span><span class="o">=</span><span class="n">elements_array_1d</span><span class="p">[</span><span class="n">elem_key</span><span class="p">]</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Loop over element arrays</span>
+        <span class="k">for</span> <span class="n">elem_key</span><span class="p">,</span> <span class="n">element_array</span> <span class="ow">in</span> <span class="n">elements_array_1d</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="c1"># Get element nodes</span>
+            <span class="n">elem_nodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connectivities</span><span class="p">[</span><span class="n">elem_key</span><span class="p">]</span>
+            <span class="c1"># Loop over element nodes</span>
+            <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">node</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">elem_nodes</span><span class="p">):</span>
+                <span class="c1"># Set node initial assembly index</span>
+                <span class="n">mesh_index</span> <span class="o">=</span> <span class="p">(</span><span class="n">node</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">n_dim_per_node</span>
+                <span class="c1"># Set node initial element index</span>
+                <span class="n">elem_index</span> <span class="o">=</span> <span class="n">i</span><span class="o">*</span><span class="n">n_dim_per_node</span>
+                <span class="c1"># Assemble element node contribution</span>
+                <span class="n">mesh_array</span><span class="p">[</span><span class="n">mesh_index</span><span class="p">:</span><span class="n">mesh_index</span> <span class="o">+</span> <span class="n">n_dim_per_node</span><span class="p">]</span> <span class="o">+=</span> \
+                    <span class="n">element_array</span><span class="p">[</span><span class="n">elem_index</span><span class="p">:</span><span class="n">elem_index</span> <span class="o">+</span> <span class="n">n_dim_per_node</span><span class="p">]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">mesh_array</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="StructureMesh.element_extractor"><a class="viewcode-back" href="../../../../_autosummary/hookeai.material_model_finder.data.specimen_data.StructureMesh.html#hookeai.material_model_finder.data.specimen_data.StructureMesh.element_extractor">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">element_extractor</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mesh_array</span><span class="p">,</span> <span class="n">element_id</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Extract element level array from mesh level counterpart.</span>
+
+<span class="sd">        Assumes similar number of dimensions per node in the whole finite</span>
+<span class="sd">        element mesh.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        mesh_array : torch.Tensor</span>
+<span class="sd">            Mesh level array resulting from the assembly of the corresponding</span>
+<span class="sd">            element level arrays. Mesh level array is always sorted and</span>
+<span class="sd">            dimensioned accounting for the total number of nodes in the finite</span>
+<span class="sd">            element mesh.</span>
+<span class="sd">        element_id : int</span>
+<span class="sd">            Element label. Elements labels must be within the range of</span>
+<span class="sd">            1 to n_elem (included).</span>
+<span class="sd">            </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        element_array : torch.Tensor</span>
+<span class="sd">            Generic element array.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Extract element level array</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">mesh_array</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">==</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="n">element_array</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_element_extractor_1d</span><span class="p">(</span><span class="n">mesh_array</span><span class="p">,</span> <span class="n">element_id</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The element extraction procedure is not &#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;implemented for </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">mesh_array</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span><span class="si">}</span><span class="s1">-&#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;dimensional array.&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">element_array</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="StructureMesh._element_extractor_1d"><a class="viewcode-back" href="../../../../_autosummary/hookeai.material_model_finder.data.specimen_data.StructureMesh.html#hookeai.material_model_finder.data.specimen_data.StructureMesh._element_extractor_1d">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">_element_extractor_1d</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">mesh_array</span><span class="p">,</span> <span class="n">element_id</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Extract element level 1D array from mesh level counterpart.</span>
+
+<span class="sd">        Assumes similar number of dimensions per node in the whole finite</span>
+<span class="sd">        element mesh.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        mesh_array : torch.Tensor(1d)</span>
+<span class="sd">            Mesh level array resulting from the assembly of the corresponding</span>
+<span class="sd">            element level arrays. Mesh level array is always sorted and</span>
+<span class="sd">            dimensioned accounting for the total number of nodes in the finite</span>
+<span class="sd">            element mesh.</span>
+<span class="sd">        element_id : int</span>
+<span class="sd">            Element label. Elements labels must be within the range of</span>
+<span class="sd">            1 to n_elem (included).</span>
+<span class="sd">            </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        element_array : torch.Tensor(1d)</span>
+<span class="sd">            Generic element array.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Infer number of dimensions per node</span>
+        <span class="n">n_dim_per_node</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">mesh_array</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="o">/</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_node_mesh</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get element nodes</span>
+        <span class="n">elem_nodes</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_connectivities</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">element_id</span><span class="p">)]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize element level array</span>
+        <span class="n">element_array</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">elem_nodes</span><span class="p">)</span><span class="o">*</span><span class="n">n_dim_per_node</span><span class="p">),</span>
+                                    <span class="n">device</span><span class="o">=</span><span class="n">mesh_array</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Loop over element nodes</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">node</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">elem_nodes</span><span class="p">):</span>
+            <span class="c1"># Set node initial element index</span>
+            <span class="n">elem_index</span> <span class="o">=</span> <span class="n">i</span><span class="o">*</span><span class="n">n_dim_per_node</span>
+            <span class="c1"># Set node initial assembly index</span>
+            <span class="n">mesh_index</span> <span class="o">=</span> <span class="p">(</span><span class="n">node</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">n_dim_per_node</span>
+            <span class="c1"># Extract element node data</span>
+            <span class="n">element_array</span><span class="p">[</span><span class="n">elem_index</span><span class="p">:</span><span class="n">elem_index</span> <span class="o">+</span> <span class="n">n_dim_per_node</span><span class="p">]</span> <span class="o">=</span> \
+                <span class="n">mesh_array</span><span class="p">[</span><span class="n">mesh_index</span><span class="p">:</span><span class="n">mesh_index</span> <span class="o">+</span> <span class="n">n_dim_per_node</span><span class="p">]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">element_array</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="StructureMesh.build_elements_mesh_indexing"><a class="viewcode-back" href="../../../../_autosummary/hookeai.material_model_finder.data.specimen_data.StructureMesh.html#hookeai.material_model_finder.data.specimen_data.StructureMesh.build_elements_mesh_indexing">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">build_elements_mesh_indexing</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">n_dof_node</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Build elements nodes degrees of freedom mesh indexes.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        n_dof_node : int</span>
+<span class="sd">            Number of degrees of freedom per element node.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        elements_mesh_indexes : torch.Tensor(2d)</span>
+<span class="sd">            Elements nodes degrees of freedom mesh indexes stored as</span>
+<span class="sd">            torch.Tensor(2d) of shape (n_elem, n_node*n_dof_node).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Build connectivities tensor</span>
+        <span class="n">connectivities_tensor</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">get_connectivities_tensor</span><span class="p">()</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set vectorized element mesh indexing (batch along element)</span>
+        <span class="n">vmap_element_mesh_indexing</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">vmap</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">build_element_mesh_indexing</span><span class="p">,</span> <span class="n">in_dims</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="n">out_dims</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,))</span>
+        <span class="c1"># Compute elements mesh indexing</span>
+        <span class="n">elements_mesh_indexes</span> <span class="o">=</span> \
+            <span class="n">vmap_element_mesh_indexing</span><span class="p">(</span><span class="n">connectivities_tensor</span><span class="p">,</span> <span class="n">n_dof_node</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">elements_mesh_indexes</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="StructureMesh.build_element_mesh_indexing"><a class="viewcode-back" href="../../../../_autosummary/hookeai.material_model_finder.data.specimen_data.StructureMesh.html#hookeai.material_model_finder.data.specimen_data.StructureMesh.build_element_mesh_indexing">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">build_element_mesh_indexing</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">element_nodes</span><span class="p">,</span> <span class="n">n_dof_node</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get element nodes degrees of freedom mesh indexes.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        element_nodes : torch.Tensor(1d)</span>
+<span class="sd">            Finite element mesh element connectitivities stored as</span>
+<span class="sd">            torch.Tensor(1d) of shape (n_node,). Nodes are labeled from</span>
+<span class="sd">            1 to n_node_mesh.</span>
+<span class="sd">        n_dof_node : int</span>
+<span class="sd">            Number of degrees of freedom per element node.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        element_mesh_indexes : torch.Tensor(1d)</span>
+<span class="sd">            Element nodes degrees of freedom mesh indexes stored as</span>
+<span class="sd">            torch.Tensor(1d) of shape (n_node*n_dof_node,).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Build element nodes degrees of freedom mesh indexes</span>
+        <span class="n">element_mesh_indexes</span> <span class="o">=</span> \
+            <span class="p">((</span><span class="n">element_nodes</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span><span class="o">*</span><span class="n">n_dof_node</span><span class="p">)</span><span class="o">.</span><span class="n">repeat_interleave</span><span class="p">(</span><span class="n">n_dof_node</span><span class="p">)</span> \
+            <span class="o">+</span> <span class="n">torch</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="n">n_dof_node</span><span class="p">)</span><span class="o">.</span><span class="n">repeat</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">element_nodes</span><span class="p">))</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">element_mesh_indexes</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="StructureMesh._check_mesh_initialization"><a class="viewcode-back" href="../../../../_autosummary/hookeai.material_model_finder.data.specimen_data.StructureMesh.html#hookeai.material_model_finder.data.specimen_data.StructureMesh._check_mesh_initialization">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">_check_mesh_initialization</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">nodes_coords_mesh_init</span><span class="p">,</span> <span class="n">elements_type</span><span class="p">,</span>
+                                   <span class="n">connectivities</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check finite element mesh initialization.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        nodes_coords_mesh_init : torch.Tensor(2d)</span>
+<span class="sd">            Initial coordinates of finite element mesh nodes stored as</span>
+<span class="sd">            torch.Tensor(2d) of shape (n_node_mesh, n_dim).</span>
+<span class="sd">        elements_type : dict</span>
+<span class="sd">            FETorch element type (item, ElementType) of each finite element</span>
+<span class="sd">            mesh element (str[int]). Elements are labeled from 1 to n_elem.</span>
+<span class="sd">        connectivities : dict</span>
+<span class="sd">            Nodes (item, tuple[int]) of each finite element mesh element</span>
+<span class="sd">            (key, str[int]). Elements are labeled from 1 to n_elem.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check initial coordinates</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">nodes_coords_mesh_init</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Initial coordinates of finite element mesh &#39;</span>
+                               <span class="s1">&#39;nodes must be stored in torch.Tensor(2d).&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">nodes_coords_mesh_init</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Initial coordinates of finite element mesh &#39;</span>
+                               <span class="s1">&#39;nodes must be stored in torch.Tensor(2d) &#39;</span>
+                               <span class="s1">&#39;of shape (n_node_mesh, n_dim).&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set expected elements labels</span>
+        <span class="n">elements_labels</span> <span class="o">=</span> \
+            <span class="nb">tuple</span><span class="p">([</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">)</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">elements_type</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)])</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~        </span>
+        <span class="c1"># Check elements labels</span>
+        <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">elements_type</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">!=</span> <span class="nb">set</span><span class="p">(</span><span class="n">elements_labels</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;All elements type were not specified and/or&#39;</span>
+                               <span class="s1">&#39;elements are not labeled from 1 to n_elem.&#39;</span><span class="p">)</span>
+        <span class="c1"># Check element types</span>
+        <span class="k">for</span> <span class="n">element_type</span> <span class="ow">in</span> <span class="n">elements_type</span><span class="o">.</span><span class="n">values</span><span class="p">():</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">element_type</span><span class="p">,</span> <span class="n">ElementType</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;All finite element mesh elements must be &#39;</span>
+                                   <span class="s1">&#39;of instances of class ElementType.&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Check elements</span>
+        <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">connectivities</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">!=</span> <span class="nb">set</span><span class="p">(</span><span class="n">elements_labels</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;All elements connectivities were not &#39;</span>
+                               <span class="s1">&#39;specified and/or elements are not labeled &#39;</span>
+                               <span class="s1">&#39;from 1 to n_elem.&#39;</span><span class="p">)</span>
+        <span class="c1"># Check elements connectivities</span>
+        <span class="k">for</span> <span class="n">elem_key</span><span class="p">,</span> <span class="n">element_nodes</span> <span class="ow">in</span> <span class="n">connectivities</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="c1"># Get element type</span>
+            <span class="n">element_type</span> <span class="o">=</span> <span class="n">elements_type</span><span class="p">[</span><span class="n">elem_key</span><span class="p">]</span>
+            <span class="c1"># Get element type number of nodes</span>
+            <span class="n">n_node</span> <span class="o">=</span> <span class="n">element_type</span><span class="o">.</span><span class="n">get_n_node</span><span class="p">()</span>
+            <span class="c1"># Check element connectivities</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">element_nodes</span><span class="p">)</span> <span class="o">!=</span> <span class="n">n_node</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Element </span><span class="si">{</span><span class="n">elem_key</span><span class="si">}</span><span class="s1"> connectivities &#39;</span>
+                                   <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">element_nodes</span><span class="p">)</span><span class="si">}</span><span class="s1"> do &#39;</span>
+                                   <span class="sa">f</span><span class="s1">&#39;not match the corresponding element &#39;</span>
+                                   <span class="sa">f</span><span class="s1">&#39;type number of nodes (</span><span class="si">{</span><span class="n">n_node</span><span class="si">}</span><span class="s1">).&#39;</span><span class="p">)</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

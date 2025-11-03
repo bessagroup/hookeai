@@ -1,0 +1,361 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>hookeai.miscellaneous.other.export_strain_paths.ProportionalStrainPathGenerator &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="hookeai.miscellaneous.other.export_strain_paths.RandomStrainPathGenerator" href="hookeai.miscellaneous.other.export_strain_paths.RandomStrainPathGenerator.html" />
+    <link rel="prev" title="hookeai.miscellaneous.other.export_strain_paths" href="hookeai.miscellaneous.other.export_strain_paths.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="hookeai.html">Code</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="hookeai.data_generation.html">hookeai.data_generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.ioput.html">hookeai.ioput</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.material_model_finder.html">hookeai.material_model_finder</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="hookeai.miscellaneous.html">hookeai.miscellaneous</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="hookeai.miscellaneous.dataset_processing.html">hookeai.miscellaneous.dataset_processing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hookeai.miscellaneous.file_processing.html">hookeai.miscellaneous.file_processing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hookeai.miscellaneous.materials.html">hookeai.miscellaneous.materials</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hookeai.miscellaneous.noisy_data.html">hookeai.miscellaneous.noisy_data</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="hookeai.miscellaneous.other.html">hookeai.miscellaneous.other</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="hookeai.miscellaneous.other.element_paths_indices.html">hookeai.miscellaneous.other.element_paths_indices</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="hookeai.miscellaneous.other.export_strain_paths.html">hookeai.miscellaneous.other.export_strain_paths</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hookeai.miscellaneous.other.function_discretizer.html">hookeai.miscellaneous.other.function_discretizer</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="hookeai.miscellaneous.pruning.html">hookeai.miscellaneous.pruning</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.model_architectures.html">hookeai.model_architectures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.simulators.html">hookeai.simulators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.time_series_data.html">hookeai.time_series_data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.utilities.html">hookeai.utilities</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="hookeai.html">hookeai</a></li>
+          <li class="breadcrumb-item"><a href="hookeai.miscellaneous.html">hookeai.miscellaneous</a></li>
+          <li class="breadcrumb-item"><a href="hookeai.miscellaneous.other.html">hookeai.miscellaneous.other</a></li>
+          <li class="breadcrumb-item"><a href="hookeai.miscellaneous.other.export_strain_paths.html">hookeai.miscellaneous.other.export_strain_paths</a></li>
+      <li class="breadcrumb-item active">hookeai.miscellaneous.other.export_strain_paths.ProportionalStrainPathGenerator</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="hookeai-miscellaneous-other-export-strain-paths-proportionalstrainpathgenerator">
+<h1>hookeai.miscellaneous.other.export_strain_paths.ProportionalStrainPathGenerator<a class="headerlink" href="#hookeai-miscellaneous-other-export-strain-paths-proportionalstrainpathgenerator" title="Permalink to this heading">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.other.export_strain_paths.ProportionalStrainPathGenerator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ProportionalStrainPathGenerator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">strain_formulation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_dim</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data_generation/strain_paths/proportional_path.html#ProportionalStrainPathGenerator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.miscellaneous.other.export_strain_paths.ProportionalStrainPathGenerator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="hookeai.miscellaneous.materials.compare_material_models.StrainPathGenerator.html#hookeai.miscellaneous.materials.compare_material_models.StrainPathGenerator" title="data_generation.strain_paths.interface.StrainPathGenerator"><code class="xref py py-class docutils literal notranslate"><span class="pre">StrainPathGenerator</span></code></a></p>
+<p>Proportional strain loading path generator.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.other.export_strain_paths.ProportionalStrainPathGenerator._strain_formulation">
+<span class="sig-name descname"><span class="pre">_strain_formulation</span></span><a class="headerlink" href="#hookeai.miscellaneous.other.export_strain_paths.ProportionalStrainPathGenerator._strain_formulation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Problem strain formulation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>{‘infinitesimal’, ‘finite’}</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.other.export_strain_paths.ProportionalStrainPathGenerator._n_dim">
+<span class="sig-name descname"><span class="pre">_n_dim</span></span><a class="headerlink" href="#hookeai.miscellaneous.other.export_strain_paths.ProportionalStrainPathGenerator._n_dim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Problem number of spatial dimensions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.other.export_strain_paths.ProportionalStrainPathGenerator._comp_order_sym">
+<span class="sig-name descname"><span class="pre">_comp_order_sym</span></span><a class="headerlink" href="#hookeai.miscellaneous.other.export_strain_paths.ProportionalStrainPathGenerator._comp_order_sym" title="Permalink to this definition">¶</a></dt>
+<dd><p>Strain/Stress components symmetric order.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.other.export_strain_paths.ProportionalStrainPathGenerator._comp_order_nsym">
+<span class="sig-name descname"><span class="pre">_comp_order_nsym</span></span><a class="headerlink" href="#hookeai.miscellaneous.other.export_strain_paths.ProportionalStrainPathGenerator._comp_order_nsym" title="Permalink to this definition">¶</a></dt>
+<dd><p>Strain/Stress components nonsymmetric order.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.other.export_strain_paths.ProportionalStrainPathGenerator.generate_strain_path">
+<span class="sig-name descname"><span class="pre">generate_strain_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strain_bounds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_init</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_end</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inc_strain_norm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strain_noise_std</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_cycle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data_generation/strain_paths/proportional_path.html#ProportionalStrainPathGenerator.generate_strain_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.miscellaneous.other.export_strain_paths.ProportionalStrainPathGenerator.generate_strain_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate strain path.</p>
+</dd></dl>
+
+<p>Constructor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>strain_formulation</strong> (<em>{'infinitesimal'</em><em>, </em><em>'finite'}</em>) – Problem strain formulation.</p></li>
+<li><p><strong>n_dim</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Problem number of spatial dimensions.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">List of Public Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#hookeai.miscellaneous.other.export_strain_paths.ProportionalStrainPathGenerator.build_strain_tensor" title="hookeai.miscellaneous.other.export_strain_paths.ProportionalStrainPathGenerator.build_strain_tensor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">build_strain_tensor</span></code></a></p></td>
+<td><p>Build second-order strain tensor from strain components.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#id0" title="hookeai.miscellaneous.other.export_strain_paths.ProportionalStrainPathGenerator.generate_strain_path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_strain_path</span></code></a></p></td>
+<td><p>Generate strain path.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#hookeai.miscellaneous.other.export_strain_paths.ProportionalStrainPathGenerator.plot_strain_path" title="hookeai.miscellaneous.other.export_strain_paths.ProportionalStrainPathGenerator.plot_strain_path"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_strain_path</span></code></a></p></td>
+<td><p>Plot strain path.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.other.export_strain_paths.ProportionalStrainPathGenerator.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">strain_formulation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_dim</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#hookeai.miscellaneous.other.export_strain_paths.ProportionalStrainPathGenerator.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>strain_formulation</strong> (<em>{'infinitesimal'</em><em>, </em><em>'finite'}</em>) – Problem strain formulation.</p></li>
+<li><p><strong>n_dim</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Problem number of spatial dimensions.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.other.export_strain_paths.ProportionalStrainPathGenerator.build_strain_tensor">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">build_strain_tensor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strain_comps</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strain_comp_order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_symmetric</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#hookeai.miscellaneous.other.export_strain_paths.ProportionalStrainPathGenerator.build_strain_tensor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build second-order strain tensor from strain components.</p>
+<p>All the components required to build the complete second-order strain
+tensor must be provided.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_dim</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of spatial dimensions.</p></li>
+<li><p><strong>strain_comps</strong> (<em>np.ndarray</em><em>(</em><em>1d</em><em>)</em>) – Strain tensor components sorted according with given components
+order.</p></li>
+<li><p><strong>strain_comp_order</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>]</em>) – Strain components order.</p></li>
+<li><p><strong>is_symmetric</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – If True, then assembles off-diagonal strain components from
+symmetric component.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>strain</strong> – Strain tensor.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>np.ndarray(2d)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">generate_strain_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">strain_bounds</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_time</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_init</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">0.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_end</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">1.0</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">inc_strain_norm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strain_noise_std</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_cycle</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">random_seed</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/data_generation/strain_paths/proportional_path.html#ProportionalStrainPathGenerator.generate_strain_path"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id0" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate strain path.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>strain_bounds</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Lower and upper sampling bounds (item, tuple(lower, upper)) for
+each independent strain component (key, str).</p></li>
+<li><p><strong>n_time</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of discrete time points.</p></li>
+<li><p><strong>time_init</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>default=0.0</em>) – Initial time.</p></li>
+<li><p><strong>time_end</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>default=1.0</em>) – Final time.</p></li>
+<li><p><strong>inc_strain_norm</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>default=None</em>) – Enforce given incremental strain norm in all time steps of the
+strain path.</p></li>
+<li><p><strong>strain_noise_std</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#float" title="(in Python v3.14)"><em>float</em></a><em>, </em><em>default=None</em>) – For each discrete time, add noise to the strain components sampled
+from a Gaussian distribution with zero mean and given standard
+deviation.</p></li>
+<li><p><strong>n_cycle</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>default=None</em>) – Number of strain path (similar) loading/reverse-loading cycles.
+Last time step (corresponding to the initial strain state) is
+replicated until the prescribed number of discrete time points is
+met.</p></li>
+<li><p><strong>random_seed</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>default=None</em>) – Seed used to initialize the random number generator of Python and
+other libraries to preserve reproducibility.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>strain_comps_order</strong> (<em>tuple[str]</em>) – Strain components order.</p></li>
+<li><p><strong>time_hist</strong> (<em>numpy.ndarray(1d)</em>) – Discrete time history.</p></li>
+<li><p><strong>strain_path</strong> (<em>numpy.ndarray(2d)</em>) – Strain path history stored as numpy.ndarray(2d) of shape
+(sequence_length, n_strain_comps).</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.miscellaneous.other.export_strain_paths.ProportionalStrainPathGenerator.plot_strain_path">
+<em class="property"><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">plot_strain_path</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">strain_formulation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_dim</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strain_comps_order</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time_hist</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strain_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_plot_strain_path</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_plot_strain_comp_hist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_plot_strain_norm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_plot_strain_norm_hist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_plot_inc_strain_norm</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_plot_inc_strain_norm_hist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_plot_strain_path_pairs</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_plot_strain_pairs_hist</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_plot_strain_pairs_marginals</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_plot_strain_comp_box</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strain_label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'Strain'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strain_units</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">''</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'strain_path'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">save_dir</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_save_fig</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_stdout_display</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_latex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="headerlink" href="#hookeai.miscellaneous.other.export_strain_paths.ProportionalStrainPathGenerator.plot_strain_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot strain path.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>strain_formulation</strong> (<em>{'infinitesimal'</em><em>, </em><em>'finite'}</em>) – Problem strain formulation.</p></li>
+<li><p><strong>n_dim</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Problem number of spatial dimensions.</p></li>
+<li><p><strong>strain_comps_order</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>]</em>) – Strain components order.</p></li>
+<li><p><strong>time_hist</strong> (<em>{numpy.ndarray</em><em>(</em><em>1d</em><em>)</em><em>, </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>numpy.ndarray</em></a><em>(</em><em>1d</em><em>)</em><em>]</em><em>}</em>) – Discrete time history or list of multiple discrete time histories.</p></li>
+<li><p><strong>strain_path</strong> (<em>{numpy.ndarray</em><em>(</em><em>2d</em><em>)</em><em>, </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)"><em>list</em></a><em>[</em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>numpy.ndarray</em></a><em>(</em><em>2d</em><em>)</em><em>]</em><em>}</em>) – Strain path history stored as numpy.ndarray(2d) of shape
+(sequence_length, n_strain_comps) or list of multiple strain path
+histories.</p></li>
+<li><p><strong>is_plot_strain_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – Plot the strain components path. If multiple strain paths are
+provided, the strain components path is only plotted for the first
+three available paths.</p></li>
+<li><p><strong>is_plot_strain_comp_hist</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – Plot a histogram for each strain component.</p></li>
+<li><p><strong>is_plot_strain_norm</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – Plot strain norm path and distribution.</p></li>
+<li><p><strong>is_plot_strain_norm_hist</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – Plot strain norm distribution.</p></li>
+<li><p><strong>is_plot_inc_strain_norm</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – Plot incremental strain norm path.</p></li>
+<li><p><strong>is_plot_inc_strain_norm_hist</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – Plot incremental strain norm distribution.</p></li>
+<li><p><strong>is_plot_strain_path_pairs</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – Plot the strain path for pairs of strain components in the strain
+space.</p></li>
+<li><p><strong>is_plot_strain_pairs_hist</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – Plot the distribution for pairs of strain components in the strain
+space.</p></li>
+<li><p><strong>is_plot_strain_pairs_marginals</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – Plot the pairs of strain components in the strain space together
+with the marginal distributions for each component.</p></li>
+<li><p><strong>is_plot_strain_comp_box</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – If True, then plot a box plot including the different strain
+components.</p></li>
+<li><p><strong>strain_label</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>default='Strain'</em>) – Strain label.</p></li>
+<li><p><strong>strain_units</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>default=''</em>) – Strain units label.</p></li>
+<li><p><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>default='strain_path'</em>) – Figure name.</p></li>
+<li><p><strong>save_dir</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>default=None</em>) – Directory where figure is saved. If None, then figure is saved in
+current working directory.</p></li>
+<li><p><strong>is_save_fig</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – Save figure.</p></li>
+<li><p><strong>is_stdout_display</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – True if displaying figure to standard output device, False
+otherwise.</p></li>
+<li><p><strong>is_latex</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – If True, then render all strings in LaTeX. If LaTex is not
+available, then this option is silently set to False and all input
+strings are processed to remove $(…)$ enclosure.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="hookeai.miscellaneous.other.export_strain_paths.html" class="btn btn-neutral float-left" title="hookeai.miscellaneous.other.export_strain_paths" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="hookeai.miscellaneous.other.export_strain_paths.RandomStrainPathGenerator.html" class="btn btn-neutral float-right" title="hookeai.miscellaneous.other.export_strain_paths.RandomStrainPathGenerator" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

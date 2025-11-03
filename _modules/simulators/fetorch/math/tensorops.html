@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>simulators.fetorch.math.tensorops &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../_autosummary/hookeai.html">Code</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">simulators.fetorch.math.tensorops</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for simulators.fetorch.math.tensorops</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;FETorch: Algebraic tensorial operations and standard tensorial operators.</span>
+
+<span class="sd">This module is essentially a toolkit containing the definition of several</span>
+<span class="sd">standard tensorial operators (e.g., Kronecker delta, second- and fourth-order</span>
+<span class="sd">identity tensors, rotation tensor) and tensorial operations (e.g., tensorial</span>
+<span class="sd">product, tensorial contraction, spectral decomposition) arising in</span>
+<span class="sd">computational mechanics.</span>
+
+<span class="sd">Apart from a conversion to a PyTorch framework and some additional procedures,</span>
+<span class="sd">most of the code is taken from the package cratepy [#]_.</span>
+
+<span class="sd">.. [#] Ferreira, B.P., Andrade Pires, F.M., and Bessa, M.A. (2023). CRATE: A</span>
+<span class="sd">       Python package to perform fast material simulations. The Journal of Open</span>
+<span class="sd">       Source Software, 8(87)</span>
+<span class="sd">       (see `here &lt;https://joss.theoj.org/papers/10.21105/joss.05594&gt;`_)</span>
+
+<span class="sd">Functions</span>
+<span class="sd">---------</span>
+<span class="sd">dyad11</span>
+<span class="sd">    Dyadic product: :math:`i \\otimes j \\rightarrow ij`.</span>
+<span class="sd">dyad22_1</span>
+<span class="sd">    Dyadic product: :math:`ij \\otimes kl \\rightarrow ijkl`.</span>
+<span class="sd">dyad22_2</span>
+<span class="sd">    Dyadic product: :math:`ik \\otimes jl \\rightarrow ijkl`.</span>
+<span class="sd">dyad22_3</span>
+<span class="sd">    Dyadic product: :math:`il \\otimes jk \\rightarrow ijkl`.</span>
+<span class="sd">dot21_1</span>
+<span class="sd">    Single contraction: :math:`ij \\cdot j \\rightarrow i`.</span>
+<span class="sd">dot12_1</span>
+<span class="sd">    Single contraction: :math:`i \\cdot ij \\rightarrow j`.</span>
+<span class="sd">dot42_1</span>
+<span class="sd">    Single contraction: :math:`ijkm \\cdot lm \\rightarrow ijkl`.</span>
+<span class="sd">dot42_2</span>
+<span class="sd">    Single contraction: :math:`ipkl \\cdot jp \\rightarrow ijkl`.</span>
+<span class="sd">dot42_3</span>
+<span class="sd">    Single contraction: :math:`ijkm \\cdot ml \\rightarrow ijkl`.</span>
+<span class="sd">dot24_1</span>
+<span class="sd">    Single contraction: :math:`im \\cdot mjkl \\rightarrow ijkl`.</span>
+<span class="sd">dot24_2</span>
+<span class="sd">    Single contraction: :math:`jm \\cdot imkl \\rightarrow ijkl`.</span>
+<span class="sd">dot24_3</span>
+<span class="sd">    Single contraction: :math:`km \\cdot ijml \\rightarrow ijkl`.</span>
+<span class="sd">dot24_4</span>
+<span class="sd">    Single contraction: :math:`lm \\cdot ijkm \\rightarrow ijkl`.</span>
+<span class="sd">ddot22_1</span>
+<span class="sd">    Double contraction: :math:`ij : ij \\rightarrow \\text{scalar}`.</span>
+<span class="sd">ddot42_1</span>
+<span class="sd">    Double contraction: :math:`ijkl : kl \\rightarrow ij`.</span>
+<span class="sd">ddot44_1</span>
+<span class="sd">    Double contraction: :math:`ijmn : mnkl \\rightarrow ijkl`.</span>
+<span class="sd">dd</span>
+<span class="sd">    Kronecker delta function.</span>
+<span class="sd">get_id_operators</span>
+<span class="sd">    Set common second- and fourth-order identity operators.</span>
+<span class="sd">fo_dinv_sym(inv)</span>
+<span class="sd">    Derivative of inverse of symmetric second-order tensor w.r.t. to itself.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#                                                                       Modules</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Standard</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">itertools</span>
+<span class="c1"># Third-party</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="c1">#</span>
+<span class="c1">#                                                          Authorship &amp; Credits</span>
+<span class="c1"># =============================================================================</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Bernardo Ferreira (bernardo_ferreira@brown.edu)&#39;</span>
+<span class="n">__credits__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Bernardo Ferreira&#39;</span><span class="p">,</span> <span class="p">]</span>
+<span class="n">__status__</span> <span class="o">=</span> <span class="s1">&#39;Stable&#39;</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1">#                                                          Tensorial operations</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Tensorial products</span>
+<span class="n">dyad11</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">a1</span><span class="p">,</span> <span class="n">b1</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;i,j -&gt; ij&#39;</span><span class="p">,</span> <span class="n">a1</span><span class="p">,</span> <span class="n">b1</span><span class="p">)</span>
+<span class="n">dyad22_1</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">a2</span><span class="p">,</span> <span class="n">b2</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;ij,kl -&gt; ijkl&#39;</span><span class="p">,</span> <span class="n">a2</span><span class="p">,</span> <span class="n">b2</span><span class="p">)</span>
+<span class="n">dyad22_2</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">a2</span><span class="p">,</span> <span class="n">b2</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;ik,jl -&gt; ijkl&#39;</span><span class="p">,</span> <span class="n">a2</span><span class="p">,</span> <span class="n">b2</span><span class="p">)</span>
+<span class="n">dyad22_3</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">a2</span><span class="p">,</span> <span class="n">b2</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;il,jk -&gt; ijkl&#39;</span><span class="p">,</span> <span class="n">a2</span><span class="p">,</span> <span class="n">b2</span><span class="p">)</span>
+<span class="c1"># Tensorial single contractions</span>
+<span class="n">dot21_1</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">a2</span><span class="p">,</span> <span class="n">b1</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;ij,j -&gt; i&#39;</span><span class="p">,</span> <span class="n">a2</span><span class="p">,</span> <span class="n">b1</span><span class="p">)</span>
+<span class="n">dot12_1</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">a1</span><span class="p">,</span> <span class="n">b2</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;i,ij -&gt; j&#39;</span><span class="p">,</span> <span class="n">a1</span><span class="p">,</span> <span class="n">b2</span><span class="p">)</span>
+<span class="n">dot42_1</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">a4</span><span class="p">,</span> <span class="n">b2</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;ijkm,lm -&gt; ijkl&#39;</span><span class="p">,</span> <span class="n">a4</span><span class="p">,</span> <span class="n">b2</span><span class="p">)</span>
+<span class="n">dot42_2</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">a4</span><span class="p">,</span> <span class="n">b2</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;ipkl,jp -&gt; ijkl&#39;</span><span class="p">,</span> <span class="n">a4</span><span class="p">,</span> <span class="n">b2</span><span class="p">)</span>
+<span class="n">dot42_3</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">a4</span><span class="p">,</span> <span class="n">b2</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;ijkm,ml -&gt; ijkl&#39;</span><span class="p">,</span> <span class="n">a4</span><span class="p">,</span> <span class="n">b2</span><span class="p">)</span>
+<span class="n">dot24_1</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">a2</span><span class="p">,</span> <span class="n">b4</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;im,mjkl -&gt; ijkl&#39;</span><span class="p">,</span> <span class="n">a2</span><span class="p">,</span> <span class="n">b4</span><span class="p">)</span>
+<span class="n">dot24_2</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">a2</span><span class="p">,</span> <span class="n">b4</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;jm,imkl -&gt; ijkl&#39;</span><span class="p">,</span> <span class="n">a2</span><span class="p">,</span> <span class="n">b4</span><span class="p">)</span>
+<span class="n">dot24_3</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">a2</span><span class="p">,</span> <span class="n">b4</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;km,ijml -&gt; ijkl&#39;</span><span class="p">,</span> <span class="n">a2</span><span class="p">,</span> <span class="n">b4</span><span class="p">)</span>
+<span class="n">dot24_4</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">a2</span><span class="p">,</span> <span class="n">b4</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;lm,ijkm -&gt; ijkl&#39;</span><span class="p">,</span> <span class="n">a2</span><span class="p">,</span> <span class="n">b4</span><span class="p">)</span>
+<span class="c1"># Tensorial double contractions</span>
+<span class="n">ddot22_1</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">a2</span><span class="p">,</span> <span class="n">b2</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;ij,ij&#39;</span><span class="p">,</span> <span class="n">a2</span><span class="p">,</span> <span class="n">b2</span><span class="p">)</span>
+<span class="n">ddot42_1</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">a4</span><span class="p">,</span> <span class="n">b2</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;ijkl,kl -&gt; ij&#39;</span><span class="p">,</span> <span class="n">a4</span><span class="p">,</span> <span class="n">b2</span><span class="p">)</span>
+<span class="n">ddot44_1</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">a4</span><span class="p">,</span> <span class="n">b4</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;ijmn,mnkl -&gt; ijkl&#39;</span><span class="p">,</span> <span class="n">a4</span><span class="p">,</span> <span class="n">b4</span><span class="p">)</span>
+<span class="n">ddot24_1</span> <span class="o">=</span> <span class="k">lambda</span> <span class="n">a2</span><span class="p">,</span> <span class="n">b4</span><span class="p">:</span> <span class="n">torch</span><span class="o">.</span><span class="n">einsum</span><span class="p">(</span><span class="s1">&#39;kl,klij -&gt; ij&#39;</span><span class="p">,</span> <span class="n">a2</span><span class="p">,</span> <span class="n">b4</span><span class="p">)</span>
+<span class="c1">#</span>
+<span class="c1">#                                                                     Operators</span>
+<span class="c1"># =============================================================================</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">dd</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Kronecker delta function.</span>
+
+<span class="sd">    .. math::</span>
+
+<span class="sd">       \\delta_{ij} =</span>
+<span class="sd">           \\begin{cases}</span>
+<span class="sd">                   1, &amp;         \\text{if } i=j, \\\\</span>
+<span class="sd">                   0, &amp;         \\text{if } i\\neq j.</span>
+<span class="sd">           \\end{cases}</span>
+
+<span class="sd">    ----</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    i : int</span>
+<span class="sd">        First index.</span>
+<span class="sd">    j : int</span>
+<span class="sd">        Second index.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    value : int (0 or 1)</span>
+<span class="sd">        Kronecker delta.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">int</span><span class="p">))</span> <span class="ow">or</span> \
+            <span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">j</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">int</span><span class="p">)):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The Kronecker delta function only accepts two &#39;</span>
+                           <span class="o">+</span> <span class="s1">&#39;integer indexes as arguments.&#39;</span><span class="p">)</span>
+    <span class="n">value</span> <span class="o">=</span> <span class="mi">1</span> <span class="k">if</span> <span class="n">i</span> <span class="o">==</span> <span class="n">j</span> <span class="k">else</span> <span class="mi">0</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">value</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="get_id_operators"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.fetorch.material.models.vmap.von_mises_mixed.get_id_operators.html#hookeai.simulators.fetorch.material.models.standard.drucker_prager.get_id_operators">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">get_id_operators</span><span class="p">(</span><span class="n">n_dim</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Set common second- and fourth-order identity operators.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    n_dim : int</span>
+<span class="sd">        Number of dimensions.</span>
+<span class="sd">    device : torch.device, default=None</span>
+<span class="sd">        Device on which torch.Tensor is allocated.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    soid : torch.Tensor(2d)</span>
+<span class="sd">        Second-order identity tensor:</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">           I_{ij} = \\delta_{ij}</span>
+<span class="sd">    foid : torch.Tensor(4d)</span>
+<span class="sd">        Fourth-order identity tensor:</span>
+
+<span class="sd">        .. math::</span>
+<span class="sd">           I_{ijkl} = \\delta_{ik}\\delta_{jl}</span>
+<span class="sd">    fotransp : torch.Tensor(4d)</span>
+<span class="sd">        Fourth-order transposition tensor:</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">           I_{ijkl} = \\delta_{il}\\delta_{jk}</span>
+<span class="sd">    fosym : torch.Tensor(4d)</span>
+<span class="sd">        Fourth-order symmetric projection tensor:</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">           I_{ij} = 0.5(\\delta_{ik}\\delta_{jl} +</span>
+<span class="sd">                    \\delta_{il}\\delta_{jk})</span>
+<span class="sd">    fodiagtrace : torch.Tensor(4d)</span>
+<span class="sd">        Fourth-order &#39;diagonal trace&#39; tensor:</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">           I_{ijkl} = \\delta_{ij}\\delta_{kl}</span>
+<span class="sd">    fodevproj : torch.Tensor(4d)</span>
+<span class="sd">        Fourth-order deviatoric projection tensor:</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">           I_{ijkl} = \\delta_{ik}\\delta_{jl}</span>
+<span class="sd">                      - \\dfrac{1}{3} \\delta_{ij}\\delta_{kl}</span>
+<span class="sd">    fodevprojsym : torch.Tensor(4d)</span>
+<span class="sd">        Fourth-order deviatoric projection tensor (second-order symmetric</span>
+<span class="sd">        tensors):</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">           I_{ijkl} = 0.5(\\delta_{ik}\\delta_{jl}</span>
+<span class="sd">                      + \\delta_{il}\\delta_{jk})</span>
+<span class="sd">                      - \\dfrac{1}{3} \\delta_{ij}\\delta_{kl}</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Set second-order identity tensor</span>
+    <span class="n">soid</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">n_dim</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+    <span class="c1"># Set fourth-order identity tensor and fourth-order transposition tensor</span>
+    <span class="n">foid</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_dim</span><span class="p">,</span> <span class="n">n_dim</span><span class="p">,</span> <span class="n">n_dim</span><span class="p">,</span> <span class="n">n_dim</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+    <span class="n">fotransp</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_dim</span><span class="p">,</span> <span class="n">n_dim</span><span class="p">,</span> <span class="n">n_dim</span><span class="p">,</span> <span class="n">n_dim</span><span class="p">),</span> <span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_dim</span><span class="p">):</span>
+        <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_dim</span><span class="p">):</span>
+            <span class="n">foid</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+            <span class="n">fotransp</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="mf">1.0</span>
+    <span class="c1"># Set fourth-order symmetric projection tensor</span>
+    <span class="n">fosym</span> <span class="o">=</span> <span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="n">foid</span> <span class="o">+</span> <span class="n">fotransp</span><span class="p">)</span>
+    <span class="c1"># Set fourth-order &#39;diagonal trace&#39; tensor</span>
+    <span class="n">fodiagtrace</span> <span class="o">=</span> <span class="n">dyad22_1</span><span class="p">(</span><span class="n">soid</span><span class="p">,</span> <span class="n">soid</span><span class="p">)</span>
+    <span class="c1"># Set fourth-order deviatoric projection tensor</span>
+    <span class="n">fodevproj</span> <span class="o">=</span> <span class="n">foid</span> <span class="o">-</span> <span class="p">(</span><span class="mf">1.0</span><span class="o">/</span><span class="mf">3.0</span><span class="p">)</span><span class="o">*</span><span class="n">fodiagtrace</span>
+    <span class="c1"># Set fourth-order deviatoric projection tensor (second order symmetric</span>
+    <span class="c1"># tensors)</span>
+    <span class="n">fodevprojsym</span> <span class="o">=</span> <span class="n">fosym</span> <span class="o">-</span> <span class="p">(</span><span class="mf">1.0</span><span class="o">/</span><span class="mf">3.0</span><span class="p">)</span><span class="o">*</span><span class="n">fodiagtrace</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">soid</span><span class="p">,</span> <span class="n">foid</span><span class="p">,</span> <span class="n">fotransp</span><span class="p">,</span> <span class="n">fosym</span><span class="p">,</span> <span class="n">fodiagtrace</span><span class="p">,</span> <span class="n">fodevproj</span><span class="p">,</span> <span class="n">fodevprojsym</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="fo_dinv_sym"><a class="viewcode-back" href="../../../../_autosummary/hookeai.simulators.fetorch.material.models.vmap.lou.fo_dinv_sym.html#hookeai.simulators.fetorch.material.models.standard.drucker_prager.fo_dinv_sym">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">fo_dinv_sym</span><span class="p">(</span><span class="n">inv</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Derivative of inverse of symmetric second-order tensor w.r.t. to itself.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    inv : torch.Tensor(2d)</span>
+<span class="sd">        Inverse of symmetric second-order tensor.</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dinv : torch.Tensor(4d)</span>
+<span class="sd">        Derivative of inverse of symmetric second-order tensor w.r.t itself.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get number of dimensions</span>
+    <span class="n">n_dim</span> <span class="o">=</span> <span class="n">inv</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="c1"># Set fourth-order tensor shape</span>
+    <span class="n">fo_shape</span> <span class="o">=</span> <span class="mi">4</span><span class="o">*</span><span class="p">(</span><span class="n">n_dim</span><span class="p">,)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get fourth-order tensor components indices (cartesian product)</span>
+    <span class="n">fo_idxs</span> <span class="o">=</span> <span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="o">*</span><span class="p">[</span><span class="nb">range</span><span class="p">(</span><span class="n">dim</span><span class="p">)</span> <span class="k">for</span> <span class="n">dim</span> <span class="ow">in</span> <span class="n">fo_shape</span><span class="p">])</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize derivative components</span>
+    <span class="n">dinv_list</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># Loop over components</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">,</span> <span class="n">k</span><span class="p">,</span> <span class="n">l</span> <span class="ow">in</span> <span class="n">fo_idxs</span><span class="p">:</span>
+        <span class="c1"># Compute derivative (partial) component</span>
+        <span class="n">dinv_list</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">inv</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">k</span><span class="p">]</span><span class="o">*</span><span class="n">inv</span><span class="p">[</span><span class="n">l</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">+</span> <span class="n">inv</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">l</span><span class="p">]</span><span class="o">*</span><span class="n">inv</span><span class="p">[</span><span class="n">k</span><span class="p">,</span> <span class="n">j</span><span class="p">]))</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Compute fourth-order derivative</span>
+    <span class="n">dinv</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.5</span><span class="o">*</span><span class="n">torch</span><span class="o">.</span><span class="n">stack</span><span class="p">(</span><span class="n">dinv_list</span><span class="p">)</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">fo_shape</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">dinv</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

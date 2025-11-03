@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>hookeai.simulators.fetorch.material.models.vmap.von_mises.convert_tensor_to_float32 &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="hookeai.simulators.fetorch.material.models.vmap.von_mises.convert_tensor_to_float64" href="hookeai.simulators.fetorch.material.models.vmap.von_mises.convert_tensor_to_float64.html" />
+    <link rel="prev" title="hookeai.simulators.fetorch.material.models.vmap.von_mises.convert_dict_to_tensor" href="hookeai.simulators.fetorch.material.models.vmap.von_mises.convert_dict_to_tensor.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="hookeai.html">Code</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="hookeai.data_generation.html">hookeai.data_generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.ioput.html">hookeai.ioput</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.material_model_finder.html">hookeai.material_model_finder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.miscellaneous.html">hookeai.miscellaneous</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.model_architectures.html">hookeai.model_architectures</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="hookeai.simulators.html">hookeai.simulators</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="hookeai.simulators.fetorch.html">hookeai.simulators.fetorch</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="hookeai.simulators.fetorch.element.html">hookeai.simulators.fetorch.element</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="hookeai.simulators.fetorch.material.html">hookeai.simulators.fetorch.material</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hookeai.simulators.fetorch.math.html">hookeai.simulators.fetorch.math</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hookeai.simulators.fetorch.structure.html">hookeai.simulators.fetorch.structure</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="hookeai.simulators.links.html">hookeai.simulators.links</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.time_series_data.html">hookeai.time_series_data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.utilities.html">hookeai.utilities</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="hookeai.html">hookeai</a></li>
+          <li class="breadcrumb-item"><a href="hookeai.simulators.html">hookeai.simulators</a></li>
+          <li class="breadcrumb-item"><a href="hookeai.simulators.fetorch.html">hookeai.simulators.fetorch</a></li>
+          <li class="breadcrumb-item"><a href="hookeai.simulators.fetorch.material.html">hookeai.simulators.fetorch.material</a></li>
+          <li class="breadcrumb-item"><a href="hookeai.simulators.fetorch.material.models.html">hookeai.simulators.fetorch.material.models</a></li>
+          <li class="breadcrumb-item"><a href="hookeai.simulators.fetorch.material.models.vmap.html">hookeai.simulators.fetorch.material.models.vmap</a></li>
+          <li class="breadcrumb-item"><a href="hookeai.simulators.fetorch.material.models.vmap.von_mises.html">hookeai.simulators.fetorch.material.models.vmap.von_mises</a></li>
+      <li class="breadcrumb-item active">hookeai.simulators.fetorch.material.models.vmap.von_mises.convert_tensor_to_float32</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="hookeai-simulators-fetorch-material-models-vmap-von-mises-convert-tensor-to-float32">
+<h1>hookeai.simulators.fetorch.material.models.vmap.von_mises.convert_tensor_to_float32<a class="headerlink" href="#hookeai-simulators-fetorch-material-models-vmap-von-mises-convert-tensor-to-float32" title="Permalink to this heading">¶</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="hookeai.simulators.fetorch.material.models.vmap.von_mises.convert_tensor_to_float32">
+<span class="sig-name descname"><span class="pre">convert_tensor_to_float32</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">tensor</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/utilities/type_conversion.html#convert_tensor_to_float32"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.simulators.fetorch.material.models.vmap.von_mises.convert_tensor_to_float32" title="Permalink to this definition">¶</a></dt>
+<dd><p>Convert floating point torch tensor to torch.float32.</p>
+<p>Torch tensor with type torch.float32 or other non-float types is kept
+unchanged.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>tensor</strong> (<em>torch.Tensor</em>) – Tensor.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>tensor</strong> – Tensor.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="hookeai.simulators.fetorch.material.models.vmap.von_mises.convert_dict_to_tensor.html" class="btn btn-neutral float-left" title="hookeai.simulators.fetorch.material.models.vmap.von_mises.convert_dict_to_tensor" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="hookeai.simulators.fetorch.material.models.vmap.von_mises.convert_tensor_to_float64.html" class="btn btn-neutral float-right" title="hookeai.simulators.fetorch.material.models.vmap.von_mises.convert_tensor_to_float64" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

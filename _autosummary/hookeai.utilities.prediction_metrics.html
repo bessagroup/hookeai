@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>hookeai.utilities.prediction_metrics &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="hookeai.utilities.prediction_metrics.compute_prediction_metrics" href="hookeai.utilities.prediction_metrics.compute_prediction_metrics.html" />
+    <link rel="prev" title="hookeai.utilities.output_prediction_metrics.write_mean_metrics_results_file" href="hookeai.utilities.output_prediction_metrics.write_mean_metrics_results_file.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="hookeai.html">Code</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="hookeai.data_generation.html">hookeai.data_generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.ioput.html">hookeai.ioput</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.material_model_finder.html">hookeai.material_model_finder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.miscellaneous.html">hookeai.miscellaneous</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.model_architectures.html">hookeai.model_architectures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.simulators.html">hookeai.simulators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.time_series_data.html">hookeai.time_series_data</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="hookeai.utilities.html">hookeai.utilities</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="hookeai.utilities.data_denoisers.html">hookeai.utilities.data_denoisers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hookeai.utilities.data_loaders.html">hookeai.utilities.data_loaders</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hookeai.utilities.data_scalers.html">hookeai.utilities.data_scalers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hookeai.utilities.fit_data_scalers.html">hookeai.utilities.fit_data_scalers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hookeai.utilities.loss_functions.html">hookeai.utilities.loss_functions</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hookeai.utilities.optimizers.html">hookeai.utilities.optimizers</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hookeai.utilities.output_prediction_metrics.html">hookeai.utilities.output_prediction_metrics</a></li>
+<li class="toctree-l3 current"><a class="current reference internal" href="#">hookeai.utilities.prediction_metrics</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#functions">Functions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hookeai.utilities.prediction_metrics.compute_prediction_metrics.html">hookeai.utilities.prediction_metrics.compute_prediction_metrics</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hookeai.utilities.prediction_metrics.get_feature_data.html">hookeai.utilities.prediction_metrics.get_feature_data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hookeai.utilities.prediction_metrics.get_sample_n_features.html">hookeai.utilities.prediction_metrics.get_sample_n_features</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="hookeai.utilities.type_conversion.html">hookeai.utilities.type_conversion</a></li>
+</ul>
+</li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="hookeai.html">hookeai</a></li>
+          <li class="breadcrumb-item"><a href="hookeai.utilities.html">hookeai.utilities</a></li>
+      <li class="breadcrumb-item active">hookeai.utilities.prediction_metrics</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-hookeai.utilities.prediction_metrics">
+<span id="hookeai-utilities-prediction-metrics"></span><h1>hookeai.utilities.prediction_metrics<a class="headerlink" href="#module-hookeai.utilities.prediction_metrics" title="Permalink to this heading">¶</a></h1>
+<p>Prediction metrics computed from sample prediction file.</p>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this heading">¶</a></h2>
+<dl class="simple">
+<dt>compute_prediction_metrics</dt><dd><p>Compute prediction metrics from sample prediction file path.</p>
+</dd>
+<dt>get_sample_n_features</dt><dd><p>Get number of prediction features.</p>
+</dd>
+<dt>get_feature_and_target</dt><dd><p>Get sample prediction and ground-truth for given feature.</p>
+</dd>
+</dl>
+</section>
+<p class="rubric">Functions</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="hookeai.utilities.prediction_metrics.compute_prediction_metrics.html#hookeai.utilities.prediction_metrics.compute_prediction_metrics" title="hookeai.utilities.prediction_metrics.compute_prediction_metrics"><code class="xref py py-obj docutils literal notranslate"><span class="pre">compute_prediction_metrics</span></code></a>(...[, ...])</p></td>
+<td><p>Compute prediction metrics from sample prediction file path.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="hookeai.utilities.prediction_metrics.get_feature_data.html#hookeai.utilities.prediction_metrics.get_feature_data" title="hookeai.utilities.prediction_metrics.get_feature_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_feature_data</span></code></a>(sample_results, feature_idx)</p></td>
+<td><p>Get sample prediction and ground-truth for given feature.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="hookeai.utilities.prediction_metrics.get_sample_n_features.html#hookeai.utilities.prediction_metrics.get_sample_n_features" title="hookeai.utilities.prediction_metrics.get_sample_n_features"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_sample_n_features</span></code></a>(sample_results)</p></td>
+<td><p>Get number of sample prediction features.</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="hookeai.utilities.output_prediction_metrics.write_mean_metrics_results_file.html" class="btn btn-neutral float-left" title="hookeai.utilities.output_prediction_metrics.write_mean_metrics_results_file" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="hookeai.utilities.prediction_metrics.compute_prediction_metrics.html" class="btn btn-neutral float-right" title="hookeai.utilities.prediction_metrics.compute_prediction_metrics" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

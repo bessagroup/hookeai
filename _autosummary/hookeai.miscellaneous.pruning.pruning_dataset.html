@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>hookeai.miscellaneous.pruning.pruning_dataset &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="hookeai.miscellaneous.pruning.pruning_dataset.display_pruning_data" href="hookeai.miscellaneous.pruning.pruning_dataset.display_pruning_data.html" />
+    <link rel="prev" title="hookeai.miscellaneous.pruning" href="hookeai.miscellaneous.pruning.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="hookeai.html">Code</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="hookeai.data_generation.html">hookeai.data_generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.ioput.html">hookeai.ioput</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.material_model_finder.html">hookeai.material_model_finder</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="hookeai.miscellaneous.html">hookeai.miscellaneous</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="hookeai.miscellaneous.dataset_processing.html">hookeai.miscellaneous.dataset_processing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hookeai.miscellaneous.file_processing.html">hookeai.miscellaneous.file_processing</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hookeai.miscellaneous.materials.html">hookeai.miscellaneous.materials</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hookeai.miscellaneous.noisy_data.html">hookeai.miscellaneous.noisy_data</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hookeai.miscellaneous.other.html">hookeai.miscellaneous.other</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="hookeai.miscellaneous.pruning.html">hookeai.miscellaneous.pruning</a><ul class="current">
+<li class="toctree-l4 current"><a class="current reference internal" href="#">hookeai.miscellaneous.pruning.pruning_dataset</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.model_architectures.html">hookeai.model_architectures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.simulators.html">hookeai.simulators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.time_series_data.html">hookeai.time_series_data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.utilities.html">hookeai.utilities</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="hookeai.html">hookeai</a></li>
+          <li class="breadcrumb-item"><a href="hookeai.miscellaneous.html">hookeai.miscellaneous</a></li>
+          <li class="breadcrumb-item"><a href="hookeai.miscellaneous.pruning.html">hookeai.miscellaneous.pruning</a></li>
+      <li class="breadcrumb-item active">hookeai.miscellaneous.pruning.pruning_dataset</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="module-hookeai.miscellaneous.pruning.pruning_dataset">
+<span id="hookeai-miscellaneous-pruning-pruning-dataset"></span><h1>hookeai.miscellaneous.pruning.pruning_dataset<a class="headerlink" href="#module-hookeai.miscellaneous.pruning.pruning_dataset" title="Permalink to this heading">¶</a></h1>
+<p>Pruning procedure of time series data set.</p>
+<section id="functions">
+<h2>Functions<a class="headerlink" href="#functions" title="Permalink to this heading">¶</a></h2>
+<dl class="simple">
+<dt>prune_time_series_dataset</dt><dd><p>Prune time series data set.</p>
+</dd>
+<dt>setup_pruning_dirs</dt><dd><p>Setup main pruning process directories.</p>
+</dd>
+<dt>set_pruning_iter_dir</dt><dd><p>Setup pruning iteration directory.</p>
+</dd>
+<dt>set_default_pruning_parameters</dt><dd><p>Set default pruning parameters.</p>
+</dd>
+<dt>get_n_prun_sample</dt><dd><p>Get number of pruned samples.</p>
+</dd>
+<dt>perform_pruning_step</dt><dd><p>Perform pruning step.</p>
+</dd>
+<dt>set_pruning_step_dir</dt><dd><p>Setup pruning iteration directory.</p>
+</dd>
+<dt>write_summary_file</dt><dd><p>Write summary file.</p>
+</dd>
+<dt>load_full_dataset</dt><dd><p>Load full data set.</p>
+</dd>
+<dt>read_samples_loss_from_dir</dt><dd><p>Read loss samples from prediction directory.</p>
+</dd>
+<dt>plot_pruning_iterative_data</dt><dd><p>Plot pruning iterative data.</p>
+</dd>
+<dt>display_pruning_data</dt><dd><p>Display data from pruning data file.</p>
+</dd>
+<dt>preview_pruning_iterations</dt><dd><p>Preview pruning iterations.</p>
+</dd>
+</dl>
+</section>
+<p class="rubric">Functions</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="hookeai.miscellaneous.pruning.pruning_dataset.display_pruning_data.html#hookeai.miscellaneous.pruning.pruning_dataset.display_pruning_data" title="hookeai.miscellaneous.pruning.pruning_dataset.display_pruning_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">display_pruning_data</span></code></a>(pruning_data_file_path)</p></td>
+<td><p>Display data from pruning data file.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="hookeai.miscellaneous.pruning.pruning_dataset.find_unique_file_with_regex.html#hookeai.miscellaneous.pruning.pruning_dataset.find_unique_file_with_regex" title="hookeai.miscellaneous.pruning.pruning_dataset.find_unique_file_with_regex"><code class="xref py py-obj docutils literal notranslate"><span class="pre">find_unique_file_with_regex</span></code></a>(directory, regex)</p></td>
+<td><p>Find file in directory based on regular expression.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="hookeai.miscellaneous.pruning.pruning_dataset.get_n_prun_sample.html#hookeai.miscellaneous.pruning.pruning_dataset.get_n_prun_sample" title="hookeai.miscellaneous.pruning.pruning_dataset.get_n_prun_sample"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_n_prun_sample</span></code></a>(prun_scheduler_type, ...)</p></td>
+<td><p>Get number of pruned samples.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="hookeai.miscellaneous.pruning.pruning_dataset.get_parent_dataset_indices.html#hookeai.miscellaneous.pruning.pruning_dataset.get_parent_dataset_indices" title="hookeai.miscellaneous.pruning.pruning_dataset.get_parent_dataset_indices"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_parent_dataset_indices</span></code></a>(subset, ...)</p></td>
+<td><p>Get parent data set indices from subset indices.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="hookeai.miscellaneous.pruning.pruning_dataset.load_dataset.html#hookeai.miscellaneous.pruning.pruning_dataset.load_dataset" title="hookeai.miscellaneous.pruning.pruning_dataset.load_dataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_dataset</span></code></a>(dataset_file_path)</p></td>
+<td><p>Load PyTorch time series data set.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="hookeai.miscellaneous.pruning.pruning_dataset.load_full_dataset.html#hookeai.miscellaneous.pruning.pruning_dataset.load_full_dataset" title="hookeai.miscellaneous.pruning.pruning_dataset.load_full_dataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">load_full_dataset</span></code></a>(full_dataset_dir)</p></td>
+<td><p>Load full data set.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="hookeai.miscellaneous.pruning.pruning_dataset.make_directory.html#hookeai.miscellaneous.pruning.pruning_dataset.make_directory" title="hookeai.miscellaneous.pruning.pruning_dataset.make_directory"><code class="xref py py-obj docutils literal notranslate"><span class="pre">make_directory</span></code></a>(directory[, is_overwrite])</p></td>
+<td><p>Create a directory.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="hookeai.miscellaneous.pruning.pruning_dataset.perform_model_prediction.html#hookeai.miscellaneous.pruning.pruning_dataset.perform_model_prediction" title="hookeai.miscellaneous.pruning.pruning_dataset.perform_model_prediction"><code class="xref py py-obj docutils literal notranslate"><span class="pre">perform_model_prediction</span></code></a>(predict_directory, ...)</p></td>
+<td><p>Perform prediction with RNN-based model.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="hookeai.miscellaneous.pruning.pruning_dataset.perform_model_standard_training.html#hookeai.miscellaneous.pruning.pruning_dataset.perform_model_standard_training" title="hookeai.miscellaneous.pruning.pruning_dataset.perform_model_standard_training"><code class="xref py py-obj docutils literal notranslate"><span class="pre">perform_model_standard_training</span></code></a>(...[, ...])</p></td>
+<td><p>Perform standard training of RNN-based model.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="hookeai.miscellaneous.pruning.pruning_dataset.perform_pruning_step.html#hookeai.miscellaneous.pruning.pruning_dataset.perform_pruning_step" title="hookeai.miscellaneous.pruning.pruning_dataset.perform_pruning_step"><code class="xref py py-obj docutils literal notranslate"><span class="pre">perform_pruning_step</span></code></a>(prun_datasets_dir, ...)</p></td>
+<td><p>Perform pruning step.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="hookeai.miscellaneous.pruning.pruning_dataset.plot_pruning_iterative_data.html#hookeai.miscellaneous.pruning.pruning_dataset.plot_pruning_iterative_data" title="hookeai.miscellaneous.pruning.pruning_dataset.plot_pruning_iterative_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_pruning_iterative_data</span></code></a>(pruning_dir, ...)</p></td>
+<td><p>Plot pruning iterative data.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="hookeai.miscellaneous.pruning.pruning_dataset.plot_xy_data.html#hookeai.miscellaneous.pruning.pruning_dataset.plot_xy_data" title="hookeai.miscellaneous.pruning.pruning_dataset.plot_xy_data"><code class="xref py py-obj docutils literal notranslate"><span class="pre">plot_xy_data</span></code></a>(data_xy[, data_labels, ...])</p></td>
+<td><p>Plot data in xy axes.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="hookeai.miscellaneous.pruning.pruning_dataset.preview_pruning_iterations.html#hookeai.miscellaneous.pruning.pruning_dataset.preview_pruning_iterations" title="hookeai.miscellaneous.pruning.pruning_dataset.preview_pruning_iterations"><code class="xref py py-obj docutils literal notranslate"><span class="pre">preview_pruning_iterations</span></code></a>(pruning_dir[, ...])</p></td>
+<td><p>Preview pruning iterations.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="hookeai.miscellaneous.pruning.pruning_dataset.prune_time_series_dataset.html#hookeai.miscellaneous.pruning.pruning_dataset.prune_time_series_dataset" title="hookeai.miscellaneous.pruning.pruning_dataset.prune_time_series_dataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">prune_time_series_dataset</span></code></a>(pruning_dir, ...)</p></td>
+<td><p>Prune time series data set.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="hookeai.miscellaneous.pruning.pruning_dataset.read_mean_metrics_results_file.html#hookeai.miscellaneous.pruning.pruning_dataset.read_mean_metrics_results_file" title="hookeai.miscellaneous.pruning.pruning_dataset.read_mean_metrics_results_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_mean_metrics_results_file</span></code></a>(file_path[, ...])</p></td>
+<td><p>Read mean prediction metrics from file.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="hookeai.miscellaneous.pruning.pruning_dataset.read_samples_loss_from_dir.html#hookeai.miscellaneous.pruning.pruning_dataset.read_samples_loss_from_dir" title="hookeai.miscellaneous.pruning.pruning_dataset.read_samples_loss_from_dir"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_samples_loss_from_dir</span></code></a>(predictions_dir)</p></td>
+<td><p>Read loss samples from prediction directory.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="hookeai.miscellaneous.pruning.pruning_dataset.save_dataset.html#hookeai.miscellaneous.pruning.pruning_dataset.save_dataset" title="hookeai.miscellaneous.pruning.pruning_dataset.save_dataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_dataset</span></code></a>(dataset, dataset_basename, ...)</p></td>
+<td><p>Save PyTorch time series data set to file.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="hookeai.miscellaneous.pruning.pruning_dataset.save_figure.html#hookeai.miscellaneous.pruning.pruning_dataset.save_figure" title="hookeai.miscellaneous.pruning.pruning_dataset.save_figure"><code class="xref py py-obj docutils literal notranslate"><span class="pre">save_figure</span></code></a>(figure, filename[, height, ...])</p></td>
+<td><p>Save Matplotlib figure.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="hookeai.miscellaneous.pruning.pruning_dataset.set_default_pruning_parameters.html#hookeai.miscellaneous.pruning.pruning_dataset.set_default_pruning_parameters" title="hookeai.miscellaneous.pruning.pruning_dataset.set_default_pruning_parameters"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_default_pruning_parameters</span></code></a>()</p></td>
+<td><p>Set default pruning parameters.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="hookeai.miscellaneous.pruning.pruning_dataset.set_pruning_iter_dir.html#hookeai.miscellaneous.pruning.pruning_dataset.set_pruning_iter_dir" title="hookeai.miscellaneous.pruning.pruning_dataset.set_pruning_iter_dir"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_pruning_iter_dir</span></code></a>(prun_datasets_dir, ...)</p></td>
+<td><p>Setup pruning iteration directory.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="hookeai.miscellaneous.pruning.pruning_dataset.set_pruning_step_dir.html#hookeai.miscellaneous.pruning.pruning_dataset.set_pruning_step_dir" title="hookeai.miscellaneous.pruning.pruning_dataset.set_pruning_step_dir"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_pruning_step_dir</span></code></a>(prun_datasets_dir, ...)</p></td>
+<td><p>Setup pruning iteration directory.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="hookeai.miscellaneous.pruning.pruning_dataset.setup_pruning_dirs.html#hookeai.miscellaneous.pruning.pruning_dataset.setup_pruning_dirs" title="hookeai.miscellaneous.pruning.pruning_dataset.setup_pruning_dirs"><code class="xref py py-obj docutils literal notranslate"><span class="pre">setup_pruning_dirs</span></code></a>(pruning_dir, testing_types)</p></td>
+<td><p>Setup main pruning process directories.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="hookeai.miscellaneous.pruning.pruning_dataset.split_dataset.html#hookeai.miscellaneous.pruning.pruning_dataset.split_dataset" title="hookeai.miscellaneous.pruning.pruning_dataset.split_dataset"><code class="xref py py-obj docutils literal notranslate"><span class="pre">split_dataset</span></code></a>(dataset, split_sizes[, ...])</p></td>
+<td><p>Randomly split data set into non-overlapping subsets.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="hookeai.miscellaneous.pruning.pruning_dataset.write_summary_file.html#hookeai.miscellaneous.pruning.pruning_dataset.write_summary_file" title="hookeai.miscellaneous.pruning.pruning_dataset.write_summary_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">write_summary_file</span></code></a>(pruning_dir, pruning_params)</p></td>
+<td><p>Write summary file.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Classes</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="hookeai.miscellaneous.pruning.pruning_dataset.TimeSeriesDatasetInMemory.html#hookeai.miscellaneous.pruning.pruning_dataset.TimeSeriesDatasetInMemory" title="hookeai.miscellaneous.pruning.pruning_dataset.TimeSeriesDatasetInMemory"><code class="xref py py-obj docutils literal notranslate"><span class="pre">TimeSeriesDatasetInMemory</span></code></a>(dataset_samples)</p></td>
+<td><p>Time series data set (in-memory storage only).</p></td>
+</tr>
+</tbody>
+</table>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="hookeai.miscellaneous.pruning.html" class="btn btn-neutral float-left" title="hookeai.miscellaneous.pruning" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="hookeai.miscellaneous.pruning.pruning_dataset.display_pruning_data.html" class="btn btn-neutral float-right" title="hookeai.miscellaneous.pruning.pruning_dataset.display_pruning_data" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

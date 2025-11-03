@@ -1,0 +1,405 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>hookeai.model_architectures.rnn_base_model.optimization.hydra_optimization_plots &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../../" id="documentation_options" src="../../../../../_static/documentation_options.js"></script>
+        <script src="../../../../../_static/doctools.js"></script>
+        <script src="../../../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../_autosummary/hookeai.html">Code</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">hookeai.model_architectures.rnn_base_model.optimization.hydra_optimization_plots</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for hookeai.model_architectures.rnn_base_model.optimization.hydra_optimization_plots</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Automatic plotting for Hydra hyperparameter optimization.</span>
+
+<span class="sd">Functions</span>
+<span class="sd">---------</span>
+<span class="sd">plot_optimization_history</span>
+<span class="sd">    Plot Hydra multi-run optimization process history.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#                                                                       Modules</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Standard</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pathlib</span>
+<span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+<span class="c1"># Add project root directory to sys.path</span>
+<span class="n">root_dir</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parents</span><span class="p">[</span><span class="mi">3</span><span class="p">])</span>
+<span class="k">if</span> <span class="n">root_dir</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">root_dir</span><span class="p">)</span>
+<span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="c1"># Third-party</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="c1"># Local</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ioput.plots</span><span class="w"> </span><span class="kn">import</span> <span class="n">scatter_xy_data</span><span class="p">,</span> <span class="n">save_figure</span>
+<span class="c1">#</span>
+<span class="c1">#                                                          Authorship &amp; Credits</span>
+<span class="c1"># =============================================================================</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Bernardo Ferreira (bernardo_ferreira@brown.edu)&#39;</span>
+<span class="n">__credits__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Bernardo Ferreira&#39;</span><span class="p">,</span> <span class="p">]</span>
+<span class="n">__status__</span> <span class="o">=</span> <span class="s1">&#39;Stable&#39;</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="plot_optimization_history"><a class="viewcode-back" href="../../../../../_autosummary/hookeai.model_architectures.rnn_base_model.optimization.hydra_optimization_plots.plot_optimization_history.html#hookeai.model_architectures.rnn_base_model.optimization.hydra_optimization_plots.plot_optimization_history">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">plot_optimization_history</span><span class="p">(</span><span class="n">optim_history</span><span class="p">,</span> <span class="n">optim_metric</span><span class="p">,</span> <span class="n">is_log_metric</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                              <span class="n">objective_scale</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">,</span> <span class="n">is_data_labels</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                              <span class="n">filename</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                              <span class="n">save_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_save_fig</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                              <span class="n">is_stdout_display</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_latex</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                              <span class="n">is_verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot Hydra multi-run optimization process history.</span>
+<span class="sd">    </span>
+<span class="sd">    Assumes that each Hydra multi-run optimization process generates a</span>
+<span class="sd">    &#39;job_summary.dat&#39; file for each job (in hydra_cfg.runtime.output_dir) with</span>
+<span class="sd">    data formatted as &lt; optim_metric &gt;: &lt; value &gt;.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    optim_history : dict</span>
+<span class="sd">        One or more multi-run optimization processes (key, str) jobs</span>
+<span class="sd">        directories (item, str). The multi-run job directory is set in</span>
+<span class="sd">        Hydra configuration file (hydra.sweep.dir). Dictionary keys are taken</span>
+<span class="sd">        as labels in the corresponding optimization processes history plot.</span>
+<span class="sd">    optim_metric : str</span>
+<span class="sd">        The metric whose optimization process history is to be plotted.</span>
+<span class="sd">        Must be available from all optimization processes jobs summary</span>
+<span class="sd">        data files in the format &lt; optim_metric &gt;: &lt; value &gt;.</span>
+<span class="sd">    is_log_metric : bool, default=False</span>
+<span class="sd">        Applies logarithm to optimization metric values if True, keeps</span>
+<span class="sd">        original metric values otherwise.</span>
+<span class="sd">    objective_scale : {&#39;linear&#39;, &#39;log&#39;}, default=&#39;linear&#39;</span>
+<span class="sd">        Optimization metric values axis scale type.</span>
+<span class="sd">    is_data_labels : bool, default=False</span>
+<span class="sd">        If True, then plot data labels according with optimization processes</span>
+<span class="sd">        dictionary keys.</span>
+<span class="sd">    filename : str, default=None</span>
+<span class="sd">        Figure name. If None, then figure name is set as</span>
+<span class="sd">        optimization_history_{optim_metric}.</span>
+<span class="sd">    save_dir : str, default=None</span>
+<span class="sd">        Directory where figure is saved. If None, then figure is saved in</span>
+<span class="sd">        current working directory.</span>
+<span class="sd">    is_save_fig : bool, default=False</span>
+<span class="sd">        Save figure.</span>
+<span class="sd">    is_stdout_display : bool, default=False</span>
+<span class="sd">        True if displaying figure to standard output device, False otherwise.</span>
+<span class="sd">    is_latex : bool, default=False</span>
+<span class="sd">        If True, then render all strings in LaTeX. If LaTex is not available,</span>
+<span class="sd">        then this option is silently set to False and all input strings are</span>
+<span class="sd">        processed to remove $(...)$ enclosure.</span>
+<span class="sd">    is_verbose : bool, default=False</span>
+<span class="sd">        If True, enable verbose output.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Plot Hydra multi-run optimization processes&#39;</span>
+              <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">-------------------------------------------&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get number of optimization processes</span>
+    <span class="n">n_optim_history</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">optim_history</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="c1"># Initialize maximum number of jobs (function evaluations)</span>
+    <span class="n">max_n_jobs</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize optimization processes data</span>
+    <span class="n">optim_data</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="c1"># Initialize data labels</span>
+    <span class="n">data_labels</span><span class="o">=</span><span class="kc">None</span>
+    <span class="k">if</span> <span class="n">is_data_labels</span><span class="p">:</span>
+        <span class="n">data_labels</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Loop over optimization processes</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="n">optim_dir</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">optim_history</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+        <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&gt; Process: </span><span class="si">{</span><span class="n">label</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Check optimization process directory</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">optim_dir</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The optimization jobs directory has not been &#39;</span>
+                               <span class="s1">&#39;found:</span><span class="se">\n\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">optim_dir</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get job files in optimization process directory</span>
+        <span class="n">directory_list</span> <span class="o">=</span> <span class="p">[</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">optim_dir</span><span class="p">)</span>
+                          <span class="k">if</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^(\d+)$&#39;</span><span class="p">,</span> <span class="n">x</span><span class="p">)]</span>
+        <span class="c1"># Sort job files in optimization process directory</span>
+        <span class="n">directory_list</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="n">directory_list</span><span class="p">,</span>
+               <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">x</span><span class="p">:</span> <span class="nb">int</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^(\d+)$&#39;</span><span class="p">,</span> <span class="n">x</span><span class="p">)</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">]))</span>
+        <span class="c1"># Check directory</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">directory_list</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;No job files have been found in optimization &#39;</span>
+                               <span class="s1">&#39;process directory:</span><span class="se">\n\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">optim_dir</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize optimization metric history</span>
+        <span class="n">metric_hist</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># Initialize optimization jobs history</span>
+        <span class="n">job_hist</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Loop over optimization process jobs</span>
+        <span class="k">for</span> <span class="n">job_dir</span> <span class="ow">in</span> <span class="n">directory_list</span><span class="p">:</span>
+            <span class="c1"># Check if optimization process job directory</span>
+            <span class="n">job_id</span> <span class="o">=</span> <span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^([0-9]+)$&#39;</span><span class="p">,</span> <span class="n">job_dir</span><span class="p">)</span>
+            <span class="c1"># Extract history data from job summary file</span>
+            <span class="k">if</span> <span class="n">job_id</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># Get job ID</span>
+                <span class="n">job_id</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">job_id</span><span class="o">.</span><span class="n">groups</span><span class="p">()[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="c1"># Check job ID</span>
+                <span class="n">expected_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">optim_dir</span><span class="p">),</span>
+                                            <span class="nb">str</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">metric_hist</span><span class="p">)))</span>
+                <span class="k">if</span> <span class="n">job_id</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">metric_hist</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                        <span class="sa">f</span><span class="s1">&#39;Job ID </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">metric_hist</span><span class="p">)</span><span class="si">}</span><span class="s1"> directory has not been &#39;</span>
+                        <span class="sa">f</span><span class="s1">&#39;found:</span><span class="se">\n\n</span><span class="si">{</span><span class="n">expected_dir</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Get job summary file path</span>
+                <span class="n">job_summary_path</span> <span class="o">=</span> \
+                    <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">optim_dir</span><span class="p">),</span>
+                                 <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">job_id</span><span class="si">}</span><span class="s1">/job_summary.dat&#39;</span><span class="p">)</span>
+                <span class="c1"># Check job summary file path</span>
+                <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">job_summary_path</span><span class="p">):</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The job summary file path has not &#39;</span>
+                                       <span class="sa">f</span><span class="s1">&#39;been found for job ID </span><span class="si">{</span><span class="n">job_id</span><span class="si">}</span><span class="s1">:&#39;</span>
+                                       <span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1"> </span><span class="si">{</span><span class="n">job_summary_path</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+                <span class="c1"># Open job summary file</span>
+                <span class="n">job_summary_file</span> <span class="o">=</span> <span class="nb">open</span><span class="p">(</span><span class="n">job_summary_path</span><span class="p">,</span> <span class="s1">&#39;r&#39;</span><span class="p">)</span>
+                <span class="n">job_summary_file</span><span class="o">.</span><span class="n">seek</span><span class="p">(</span><span class="mi">0</span><span class="p">)</span>
+                <span class="c1"># Look for optimization metric value</span>
+                <span class="n">metric</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="n">line_number</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">for</span> <span class="n">line</span> <span class="ow">in</span> <span class="n">job_summary_file</span><span class="p">:</span>
+                    <span class="n">line_number</span> <span class="o">=</span> <span class="n">line_number</span> <span class="o">+</span> <span class="mi">1</span>
+                    <span class="k">if</span> <span class="nb">str</span><span class="p">(</span><span class="n">optim_metric</span><span class="p">)</span> <span class="ow">in</span> <span class="n">line</span><span class="p">:</span>
+                        <span class="n">metric</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">line</span><span class="o">.</span><span class="n">split</span><span class="p">()[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+                        <span class="k">break</span>
+                <span class="c1"># Append job ID and optimization metric to history</span>
+                <span class="k">if</span> <span class="n">metric</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Optimization metric </span><span class="si">{</span><span class="n">optim_metric</span><span class="si">}</span><span class="s1"> &#39;</span>
+                                       <span class="sa">f</span><span class="s1">&#39;has not been found in job summary &#39;</span>
+                                       <span class="sa">f</span><span class="s1">&#39;file:</span><span class="se">\n\n</span><span class="si">{</span><span class="n">job_summary_path</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">job_hist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">job_id</span><span class="p">)</span>
+                    <span class="n">metric_hist</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">metric</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Update maximum number of jobs</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">metric_hist</span><span class="p">)</span> <span class="o">&gt;</span> <span class="n">max_n_jobs</span><span class="p">:</span>
+            <span class="n">max_n_jobs</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">metric_hist</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Assemble optimization metric history</span>
+        <span class="n">optim_data</span><span class="p">[</span><span class="n">label</span><span class="p">]</span> <span class="o">=</span> <span class="n">metric_hist</span>
+        <span class="c1"># Assemble data label</span>
+        <span class="k">if</span> <span class="n">is_data_labels</span><span class="p">:</span>
+            <span class="n">data_labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">label</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+            <span class="c1"># Get sorted indices based on optimization metric</span>
+            <span class="n">sorted_indices</span> <span class="o">=</span> <span class="nb">sorted</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">metric_hist</span><span class="p">)),</span>
+                                    <span class="n">key</span><span class="o">=</span><span class="k">lambda</span> <span class="n">i</span><span class="p">:</span> <span class="n">metric_hist</span><span class="p">[</span><span class="n">i</span><span class="p">])</span>
+            <span class="c1"># Get sorted job IDs and optimization metric histories</span>
+            <span class="n">job_hist_sorted</span> <span class="o">=</span> <span class="p">[</span><span class="n">job_hist</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">sorted_indices</span><span class="p">]</span>
+            <span class="n">metric_hist_sorted</span> <span class="o">=</span> <span class="p">[</span><span class="n">metric_hist</span><span class="p">[</span><span class="n">i</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">sorted_indices</span><span class="p">]</span>
+            <span class="c1"># Diplay best performance</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">  &gt; Best performance: </span><span class="si">{</span><span class="n">metric_hist_sorted</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">:</span><span class="s1">15.8e</span><span class="si">}</span><span class="s1"> &#39;</span>
+                  <span class="sa">f</span><span class="s1">&#39;(job #</span><span class="si">{</span><span class="n">job_hist_sorted</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1">)&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&gt; Generating optimization processes plot...&#39;</span><span class="p">)</span>    
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize data array and data labels</span>
+    <span class="n">data_xy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">max_n_jobs</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">n_optim_history</span><span class="p">),</span> <span class="n">fill_value</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="c1"># Build data array</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">label</span><span class="p">,</span> <span class="n">data_hist</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">optim_data</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+        <span class="c1"># Get optimization process number of jobs</span>
+        <span class="n">n_jobs</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">data_hist</span><span class="p">)</span>
+        <span class="c1"># Assemble optimization process history to data array</span>
+        <span class="n">data_xy</span><span class="p">[:</span><span class="n">n_jobs</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span><span class="o">*</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">n_jobs</span><span class="p">)])</span>
+        <span class="k">if</span> <span class="n">is_log_metric</span><span class="p">:</span>
+            <span class="n">data_xy</span><span class="p">[:</span><span class="n">n_jobs</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">metric_hist</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">data_xy</span><span class="p">[:</span><span class="n">n_jobs</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">metric_hist</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set axes limits and scale</span>
+    <span class="n">x_lims</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">max_n_jobs</span><span class="p">)</span>
+    <span class="n">y_lims</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">y_scale</span> <span class="o">=</span> <span class="n">objective_scale</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set axes labels</span>
+    <span class="n">x_label</span> <span class="o">=</span> <span class="s1">&#39;Jobs (Function Evaluations)&#39;</span>
+    <span class="k">if</span> <span class="n">is_log_metric</span><span class="p">:</span>
+        <span class="n">y_label</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;log(</span><span class="si">{</span><span class="n">optim_metric</span><span class="si">}</span><span class="s1">)&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">y_label</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">optim_metric</span><span class="o">.</span><span class="n">capitalize</span><span class="p">()</span><span class="si">}</span><span class="s1">&#39;</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set title</span>
+    <span class="n">title</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Plot loss history</span>
+    <span class="n">figure</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">scatter_xy_data</span><span class="p">(</span><span class="n">data_xy</span><span class="p">,</span> <span class="n">data_labels</span><span class="o">=</span><span class="n">data_labels</span><span class="p">,</span>
+                                   <span class="n">x_lims</span><span class="o">=</span><span class="n">x_lims</span><span class="p">,</span> <span class="n">y_lims</span><span class="o">=</span><span class="n">y_lims</span><span class="p">,</span> <span class="n">title</span><span class="o">=</span><span class="n">title</span><span class="p">,</span>
+                                   <span class="n">x_label</span><span class="o">=</span><span class="n">x_label</span><span class="p">,</span> <span class="n">y_label</span><span class="o">=</span><span class="n">y_label</span><span class="p">,</span>
+                                   <span class="n">y_scale</span><span class="o">=</span><span class="n">y_scale</span><span class="p">,</span> <span class="n">x_tick_format</span><span class="o">=</span><span class="s1">&#39;int&#39;</span><span class="p">,</span>
+                                   <span class="n">is_latex</span><span class="o">=</span><span class="n">is_latex</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Build best-so-far history</span>
+    <span class="n">data_min_xy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">copy</span><span class="p">(</span><span class="n">data_xy</span><span class="p">)</span>
+    <span class="n">data_min</span> <span class="o">=</span> <span class="n">data_xy</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">data_min_xy</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+        <span class="k">if</span> <span class="n">data_xy</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">&lt;</span> <span class="n">data_min</span><span class="p">:</span>
+            <span class="n">data_min</span> <span class="o">=</span> <span class="n">data_xy</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">data_min_xy</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">data_min</span>
+    <span class="c1"># Plot best-so-far history</span>
+    <span class="n">axes</span><span class="o">.</span><span class="n">plot</span><span class="p">(</span><span class="n">data_min_xy</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">],</span> <span class="n">data_min_xy</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">],</span> <span class="n">color</span><span class="o">=</span><span class="s1">&#39;#EE7733&#39;</span><span class="p">,</span>
+              <span class="n">label</span><span class="o">=</span><span class="s1">&#39;Best-so-far&#39;</span><span class="p">,</span> <span class="n">linestyle</span><span class="o">=</span><span class="s1">&#39;-&#39;</span><span class="p">)</span>
+    <span class="c1"># Plot best-so-far legend</span>
+    <span class="n">legend</span> <span class="o">=</span> <span class="n">axes</span><span class="o">.</span><span class="n">legend</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="s1">&#39;upper right&#39;</span><span class="p">,</span> <span class="n">frameon</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">fancybox</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                         <span class="n">facecolor</span><span class="o">=</span><span class="s1">&#39;inherit&#39;</span><span class="p">,</span> <span class="n">edgecolor</span><span class="o">=</span><span class="s1">&#39;inherit&#39;</span><span class="p">,</span> <span class="n">fontsize</span><span class="o">=</span><span class="mi">8</span><span class="p">,</span>
+                         <span class="n">framealpha</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+    <span class="n">legend</span><span class="o">.</span><span class="n">set_zorder</span><span class="p">(</span><span class="mi">10</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Display figure</span>
+    <span class="k">if</span> <span class="n">is_stdout_display</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set default figure name</span>
+    <span class="k">if</span> <span class="n">filename</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">filename</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;optimization_history_</span><span class="si">{</span><span class="n">optim_metric</span><span class="si">}</span><span class="s1">&#39;</span>
+    <span class="c1"># Save figure</span>
+    <span class="k">if</span> <span class="n">is_save_fig</span><span class="p">:</span>
+        <span class="n">save_figure</span><span class="p">(</span><span class="n">figure</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span><span class="p">,</span> <span class="n">save_dir</span><span class="o">=</span><span class="n">save_dir</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Close plot</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">figure</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">()</span> </div>
+<span class="c1"># =============================================================================</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s2">&quot;__main__&quot;</span><span class="p">:</span>
+    <span class="c1"># Set optimization processes</span>
+    <span class="n">optim_history</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">optim_history</span><span class="p">[</span><span class="s1">&#39;label&#39;</span><span class="p">]</span> <span class="o">=</span> \
+        <span class="p">(</span><span class="s1">&#39;/home/username/Documents/hyperparameter_opt/&#39;</span>
+         <span class="s1">&#39;optimize_gru_material_model_composite_rve/2025-01-23/18-56-06&#39;</span><span class="p">)</span>
+    <span class="c1"># Set plot directory</span>
+    <span class="n">save_dir</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;/home/username/Documents/hyperparameter_opt&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set optimization metric</span>
+    <span class="n">optim_metric</span> <span class="o">=</span> <span class="s1">&#39;objective&#39;</span>
+    <span class="c1"># Set optimization metric scale</span>
+    <span class="n">objective_scale</span> <span class="o">=</span> <span class="s1">&#39;linear&#39;</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Plot optimization process history.</span>
+    <span class="n">plot_optimization_history</span><span class="p">(</span><span class="n">optim_history</span><span class="p">,</span> <span class="n">optim_metric</span><span class="p">,</span>
+                              <span class="n">objective_scale</span><span class="o">=</span><span class="n">objective_scale</span><span class="p">,</span>
+                              <span class="n">save_dir</span><span class="o">=</span><span class="n">save_dir</span><span class="p">,</span> <span class="n">is_save_fig</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                              <span class="n">is_stdout_display</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_latex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

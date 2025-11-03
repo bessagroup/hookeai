@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>data_generation.strain_paths.interface &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../_autosummary/hookeai.html">Code</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">data_generation.strain_paths.interface</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for data_generation.strain_paths.interface</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Generation of synthetic strain loading paths.</span>
+
+<span class="sd">Classes</span>
+<span class="sd">-------</span>
+<span class="sd">StrainPathGenerator(ABC)</span>
+<span class="sd">    Strain loading path generator interface.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#                                                                       Modules</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Standard</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
+<span class="c1"># Third-party</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="c1"># Local</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ioput.plots</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_xy_data</span><span class="p">,</span> <span class="n">scatter_xy_data</span><span class="p">,</span> <span class="n">plot_histogram</span><span class="p">,</span> \
+    <span class="n">plot_histogram_2d</span><span class="p">,</span> <span class="n">plot_boxplots</span><span class="p">,</span> <span class="n">save_figure</span>
+<span class="c1">#</span>
+<span class="c1">#                                                          Authorship &amp; Credits</span>
+<span class="c1"># =============================================================================</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Bernardo Ferreira (bernardo_ferreira@brown.edu)&#39;</span>
+<span class="n">__credits__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Bernardo Ferreira&#39;</span><span class="p">,</span> <span class="p">]</span>
+<span class="n">__status__</span> <span class="o">=</span> <span class="s1">&#39;Stable&#39;</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="StrainPathGenerator"><a class="viewcode-back" href="../../../_autosummary/hookeai.miscellaneous.materials.compare_material_models.StrainPathGenerator.html#hookeai.data_generation.strain_paths.proportional_path.StrainPathGenerator">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">StrainPathGenerator</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Strain loading path generator interface.</span>
+<span class="sd">    </span>
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    _strain_formulation: {&#39;infinitesimal&#39;, &#39;finite&#39;}</span>
+<span class="sd">        Problem strain formulation.</span>
+<span class="sd">    _n_dim : int</span>
+<span class="sd">        Problem number of spatial dimensions.</span>
+<span class="sd">    _comp_order_sym : tuple[str]</span>
+<span class="sd">        Strain/Stress components symmetric order.</span>
+<span class="sd">    _comp_order_nsym : tuple[str]</span>
+<span class="sd">        Strain/Stress components nonsymmetric order.</span>
+<span class="sd">    </span>
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    generate_strain_path(self)</span>
+<span class="sd">        Generate strain path.</span>
+<span class="sd">    build_strain_tensor(n_dim, strain_comps, strain_comp_order, \</span>
+<span class="sd">                        is_symmetric=False)</span>
+<span class="sd">        Build second-order strain tensor from strain components.</span>
+<span class="sd">    plot_strain_path(strain_formulation, n_dim, strain_comps_order, \</span>
+<span class="sd">                     time_hist, strain_path, strain_axis_lims = None, \</span>
+<span class="sd">                     is_plot_strain_norm=False, \</span>
+<span class="sd">                     is_plot_inc_strain_norm=False, \</span>
+<span class="sd">                     filename=&#39;strain_path&#39;, save_dir=None, \</span>
+<span class="sd">                     is_save_fig=False, is_stdout_display=False, \</span>
+<span class="sd">                     is_latex=False)</span>
+<span class="sd">        Plot strain path.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="StrainPathGenerator.__init__"><a class="viewcode-back" href="../../../_autosummary/hookeai.miscellaneous.materials.compare_material_models.StrainPathGenerator.html#hookeai.data_generation.strain_paths.proportional_path.StrainPathGenerator.__init__">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">strain_formulation</span><span class="p">,</span> <span class="n">n_dim</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Constructor.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        strain_formulation: {&#39;infinitesimal&#39;, &#39;finite&#39;}</span>
+<span class="sd">            Problem strain formulation.</span>
+<span class="sd">        n_dim : int</span>
+<span class="sd">            Problem number of spatial dimensions.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Set problem strain formulation and number of spatial dimensions</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_strain_formulation</span> <span class="o">=</span> <span class="n">strain_formulation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_n_dim</span> <span class="o">=</span> <span class="n">n_dim</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set strain components order</span>
+        <span class="k">if</span> <span class="n">n_dim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_comp_order_sym</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;11&#39;</span><span class="p">,</span> <span class="s1">&#39;22&#39;</span><span class="p">,</span> <span class="s1">&#39;12&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_comp_order_nsym</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;11&#39;</span><span class="p">,</span> <span class="s1">&#39;21&#39;</span><span class="p">,</span> <span class="s1">&#39;12&#39;</span><span class="p">,</span> <span class="s1">&#39;22&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_comp_order_sym</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;11&#39;</span><span class="p">,</span> <span class="s1">&#39;22&#39;</span><span class="p">,</span> <span class="s1">&#39;33&#39;</span><span class="p">,</span> <span class="s1">&#39;12&#39;</span><span class="p">,</span> <span class="s1">&#39;23&#39;</span><span class="p">,</span> <span class="s1">&#39;13&#39;</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_comp_order_nsym</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;11&#39;</span><span class="p">,</span> <span class="s1">&#39;21&#39;</span><span class="p">,</span> <span class="s1">&#39;31&#39;</span><span class="p">,</span> <span class="s1">&#39;12&#39;</span><span class="p">,</span> <span class="s1">&#39;22&#39;</span><span class="p">,</span> <span class="s1">&#39;32&#39;</span><span class="p">,</span>
+                                     <span class="s1">&#39;13&#39;</span><span class="p">,</span> <span class="s1">&#39;23&#39;</span><span class="p">,</span> <span class="s1">&#39;33&#39;</span><span class="p">)</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="StrainPathGenerator.generate_strain_path"><a class="viewcode-back" href="../../../_autosummary/hookeai.miscellaneous.materials.compare_material_models.StrainPathGenerator.html#hookeai.data_generation.strain_paths.proportional_path.StrainPathGenerator.generate_strain_path">[docs]</a>    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">generate_strain_path</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate strain path.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        strain_comps_order : tuple[str]</span>
+<span class="sd">            Strain components order.</span>
+<span class="sd">        time_hist : numpy.ndarray(1d)</span>
+<span class="sd">            Discrete time history.</span>
+<span class="sd">        strain_path : numpy.ndarray(2d)</span>
+<span class="sd">            Strain path history stored as numpy.ndarray(2d) of shape</span>
+<span class="sd">            (sequence_length, n_strain_comps).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="StrainPathGenerator.build_strain_tensor"><a class="viewcode-back" href="../../../_autosummary/hookeai.miscellaneous.materials.compare_material_models.StrainPathGenerator.html#hookeai.data_generation.strain_paths.proportional_path.StrainPathGenerator.build_strain_tensor">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">build_strain_tensor</span><span class="p">(</span><span class="n">n_dim</span><span class="p">,</span> <span class="n">strain_comps</span><span class="p">,</span> <span class="n">strain_comp_order</span><span class="p">,</span>
+                            <span class="n">is_symmetric</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Build second-order strain tensor from strain components.</span>
+<span class="sd">        </span>
+<span class="sd">        All the components required to build the complete second-order strain</span>
+<span class="sd">        tensor must be provided.</span>
+
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        n_dim : int</span>
+<span class="sd">            Number of spatial dimensions.</span>
+<span class="sd">        strain_comps : np.ndarray(1d)</span>
+<span class="sd">            Strain tensor components sorted according with given components</span>
+<span class="sd">            order.</span>
+<span class="sd">        strain_comp_order : tuple[str]</span>
+<span class="sd">            Strain components order.</span>
+<span class="sd">        is_symmetric : bool, default=False</span>
+<span class="sd">            If True, then assembles off-diagonal strain components from</span>
+<span class="sd">            symmetric component.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        strain : np.ndarray(2d)</span>
+<span class="sd">            Strain tensor.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check strain tensor components</span>
+        <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">strain_comps</span><span class="o">.</span><span class="n">shape</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">1</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Strain tensor components must be provided as &#39;</span>
+                               <span class="s1">&#39;a np.ndarray(1d).&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Check input arguments</span>
+        <span class="k">if</span> <span class="nb">any</span><span class="p">([</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="ow">not</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_dim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)</span>
+                <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="nb">list</span><span class="p">(</span><span class="s1">&#39;&#39;</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">strain_comp_order</span><span class="p">))]):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Invalid component in strain components order.&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">any</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">comp</span><span class="p">)</span> <span class="o">!=</span> <span class="mi">2</span> <span class="k">for</span> <span class="n">comp</span> <span class="ow">in</span> <span class="n">strain_comp_order</span><span class="p">]):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Invalid component in strain order.&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="nb">set</span><span class="p">(</span><span class="n">strain_comp_order</span><span class="p">))</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">strain_comp_order</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Duplicated component in strain components &#39;</span>
+                               <span class="s1">&#39;order.&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Check strain components completeness</span>
+        <span class="k">if</span> <span class="n">is_symmetric</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">strain_comp_order</span><span class="p">)</span> <span class="o">!=</span> <span class="mf">0.5</span><span class="o">*</span><span class="n">n_dim</span><span class="o">*</span><span class="p">(</span><span class="n">n_dim</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Expecting </span><span class="si">{</span><span class="mf">0.5</span><span class="o">*</span><span class="n">n_dim</span><span class="p">(</span><span class="n">n_dim</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="p">)</span><span class="si">}</span><span class="s1"> independent &#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;strain components under symmetry, but &#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">strain_comp_order</span><span class="p">)</span><span class="si">}</span><span class="s1"> were provided.&#39;</span><span class="p">)</span>
+        <span class="k">elif</span> <span class="ow">not</span> <span class="n">is_symmetric</span> <span class="ow">and</span> <span class="nb">len</span><span class="p">(</span><span class="n">strain_comp_order</span><span class="p">)</span> <span class="o">!=</span> <span class="n">n_dim</span><span class="o">**</span><span class="mi">2</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Expecting </span><span class="si">{</span><span class="n">n_dim</span><span class="o">**</span><span class="mi">2</span><span class="si">}</span><span class="s1"> independent strain &#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;components, but </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">strain_comp_order</span><span class="p">)</span><span class="si">}</span><span class="s1"> were &#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;provided.&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize strain tensor</span>
+        <span class="n">strain</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_dim</span><span class="p">,</span> <span class="n">n_dim</span><span class="p">))</span>
+        <span class="c1"># Loop over components</span>
+        <span class="k">for</span> <span class="n">k</span><span class="p">,</span> <span class="n">comp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">strain_comp_order</span><span class="p">):</span>
+            <span class="c1"># Get component indexes</span>
+            <span class="n">i</span><span class="p">,</span> <span class="n">j</span> <span class="o">=</span> <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">comp</span><span class="p">]</span>
+            <span class="c1"># Assemble tensor component</span>
+            <span class="n">strain</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">strain_comps</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+            <span class="c1"># Assemble symmetric tensor component</span>
+            <span class="k">if</span> <span class="n">is_symmetric</span> <span class="ow">and</span> <span class="n">i</span> <span class="o">!=</span> <span class="n">j</span><span class="p">:</span>
+                <span class="n">strain</span><span class="p">[</span><span class="n">j</span><span class="p">,</span> <span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">strain_comps</span><span class="p">[</span><span class="n">k</span><span class="p">]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">strain</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="StrainPathGenerator.plot_strain_path"><a class="viewcode-back" href="../../../_autosummary/hookeai.miscellaneous.materials.compare_material_models.StrainPathGenerator.html#hookeai.data_generation.strain_paths.proportional_path.StrainPathGenerator.plot_strain_path">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">plot_strain_path</span><span class="p">(</span><span class="n">strain_formulation</span><span class="p">,</span> <span class="n">n_dim</span><span class="p">,</span> <span class="n">strain_comps_order</span><span class="p">,</span>
+                         <span class="n">time_hist</span><span class="p">,</span> <span class="n">strain_path</span><span class="p">,</span>
+                         <span class="n">is_plot_strain_path</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                         <span class="n">is_plot_strain_comp_hist</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                         <span class="n">is_plot_strain_norm</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                         <span class="n">is_plot_strain_norm_hist</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                         <span class="n">is_plot_inc_strain_norm</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                         <span class="n">is_plot_inc_strain_norm_hist</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                         <span class="n">is_plot_strain_path_pairs</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                         <span class="n">is_plot_strain_pairs_hist</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                         <span class="n">is_plot_strain_pairs_marginals</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                         <span class="n">is_plot_strain_comp_box</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                         <span class="n">strain_label</span><span class="o">=</span><span class="s1">&#39;Strain&#39;</span><span class="p">,</span>
+                         <span class="n">strain_units</span><span class="o">=</span><span class="s1">&#39;&#39;</span><span class="p">,</span>
+                         <span class="n">filename</span><span class="o">=</span><span class="s1">&#39;strain_path&#39;</span><span class="p">,</span>
+                         <span class="n">save_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_save_fig</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                         <span class="n">is_stdout_display</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_latex</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Plot strain path.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        strain_formulation: {&#39;infinitesimal&#39;, &#39;finite&#39;}</span>
+<span class="sd">            Problem strain formulation.</span>
+<span class="sd">        n_dim : int</span>
+<span class="sd">            Problem number of spatial dimensions.</span>
+<span class="sd">        strain_comps_order : tuple[str]</span>
+<span class="sd">            Strain components order.</span>
+<span class="sd">        time_hist : {numpy.ndarray(1d), list[numpy.ndarray(1d)]}</span>
+<span class="sd">            Discrete time history or list of multiple discrete time histories.</span>
+<span class="sd">        strain_path : {numpy.ndarray(2d), list[numpy.ndarray(2d)]}</span>
+<span class="sd">            Strain path history stored as numpy.ndarray(2d) of shape</span>
+<span class="sd">            (sequence_length, n_strain_comps) or list of multiple strain path</span>
+<span class="sd">            histories.</span>
+<span class="sd">        is_plot_strain_path : bool, default=False</span>
+<span class="sd">            Plot the strain components path. If multiple strain paths are</span>
+<span class="sd">            provided, the strain components path is only plotted for the first</span>
+<span class="sd">            three available paths.</span>
+<span class="sd">        is_plot_strain_comp_hist : bool, default=False</span>
+<span class="sd">            Plot a histogram for each strain component.</span>
+<span class="sd">        is_plot_strain_norm : bool, default=False</span>
+<span class="sd">            Plot strain norm path and distribution.</span>
+<span class="sd">        is_plot_strain_norm_hist : bool, default=False</span>
+<span class="sd">            Plot strain norm distribution.</span>
+<span class="sd">        is_plot_inc_strain_norm : bool, default=False</span>
+<span class="sd">            Plot incremental strain norm path.</span>
+<span class="sd">        is_plot_inc_strain_norm_hist : bool, default=False</span>
+<span class="sd">            Plot incremental strain norm distribution.</span>
+<span class="sd">        is_plot_strain_path_pairs : bool, default=False</span>
+<span class="sd">            Plot the strain path for pairs of strain components in the strain</span>
+<span class="sd">            space.</span>
+<span class="sd">        is_plot_strain_pairs_hist : bool, default=False</span>
+<span class="sd">            Plot the distribution for pairs of strain components in the strain</span>
+<span class="sd">            space.</span>
+<span class="sd">        is_plot_strain_pairs_marginals : bool, default=False</span>
+<span class="sd">            Plot the pairs of strain components in the strain space together</span>
+<span class="sd">            with the marginal distributions for each component.</span>
+<span class="sd">        is_plot_strain_comp_box : bool, default=False</span>
+<span class="sd">            If True, then plot a box plot including the different strain</span>
+<span class="sd">            components.</span>
+<span class="sd">        strain_label : str, default=&#39;Strain&#39;</span>
+<span class="sd">            Strain label.</span>
+<span class="sd">        strain_units : str, default=&#39;&#39;</span>
+<span class="sd">            Strain units label.</span>
+<span class="sd">        filename : str, default=&#39;strain_path&#39;</span>
+<span class="sd">            Figure name.</span>
+<span class="sd">        save_dir : str, default=None</span>
+<span class="sd">            Directory where figure is saved. If None, then figure is saved in</span>
+<span class="sd">            current working directory.</span>
+<span class="sd">        is_save_fig : bool, default=False</span>
+<span class="sd">            Save figure.</span>
+<span class="sd">        is_stdout_display : bool, default=False</span>
+<span class="sd">            True if displaying figure to standard output device, False</span>
+<span class="sd">            otherwise.</span>
+<span class="sd">        is_latex : bool, default=False</span>
+<span class="sd">            If True, then render all strings in LaTeX. If LaTex is not</span>
+<span class="sd">            available, then this option is silently set to False and all input</span>
+<span class="sd">            strings are processed to remove $(...)$ enclosure.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check strain paths data</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">time_hist</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="ow">or</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">strain_path</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+            <span class="c1"># Check multiple strain paths</span>
+            <span class="k">if</span> <span class="p">(</span><span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">time_hist</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
+                    <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">strain_path</span><span class="p">,</span> <span class="nb">list</span><span class="p">)):</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Inconsistent discrete time histories and &#39;</span>
+                                   <span class="s1">&#39;strain path histories when providing &#39;</span>
+                                   <span class="s1">&#39;multiple strain paths.&#39;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">time_hist</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">strain_path</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Inconsistent discrete time histories and &#39;</span>
+                                   <span class="s1">&#39;strain path histories when providing &#39;</span>
+                                   <span class="s1">&#39;multiple strain paths.&#39;</span><span class="p">)</span>
+            <span class="c1"># Get number of strain paths</span>
+            <span class="n">n_path</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">strain_path</span><span class="p">)</span>
+            <span class="c1"># Get longest strain path</span>
+            <span class="n">n_time_max</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">time_hist</span><span class="p">])</span>
+            <span class="c1"># Get minimum and maximum discrete times</span>
+            <span class="n">time_min</span> <span class="o">=</span> <span class="nb">min</span><span class="p">([</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">time_hist</span><span class="p">])</span>
+            <span class="n">time_max</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="n">x</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">time_hist</span><span class="p">])</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Set number of strain paths</span>
+            <span class="n">n_path</span> <span class="o">=</span> <span class="mi">1</span>
+            <span class="c1"># Set longest strain path</span>
+            <span class="n">n_time_max</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">time_hist</span><span class="p">)</span>
+            <span class="c1"># Set minimum and maximum discrete times</span>
+            <span class="n">time_min</span> <span class="o">=</span> <span class="n">time_hist</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="n">time_max</span> <span class="o">=</span> <span class="n">time_hist</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+            <span class="c1"># Store discrete time history and stress path in list</span>
+            <span class="n">time_hist</span> <span class="o">=</span> <span class="p">[</span><span class="n">time_hist</span><span class="p">,]</span>
+            <span class="n">strain_path</span> <span class="o">=</span> <span class="p">[</span><span class="n">strain_path</span><span class="p">,]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Plot strain path</span>
+        <span class="k">if</span> <span class="n">is_plot_strain_path</span><span class="p">:</span>
+            <span class="c1"># Loop over strain paths</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">n_path</span><span class="p">,</span> <span class="mi">5</span><span class="p">)):</span>
+                <span class="c1"># Set strain data array</span>
+                <span class="n">strain_data_xy</span> <span class="o">=</span> \
+                    <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_time_max</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="nb">len</span><span class="p">(</span><span class="n">strain_comps_order</span><span class="p">)))</span>
+                <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">strain_comps_order</span><span class="p">)):</span>
+                    <span class="n">strain_data_xy</span><span class="p">[:,</span> <span class="mi">2</span><span class="o">*</span><span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">time_hist</span><span class="p">[</span><span class="n">k</span><span class="p">]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+                    <span class="n">strain_data_xy</span><span class="p">[:,</span> <span class="mi">2</span><span class="o">*</span><span class="n">j</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">strain_path</span><span class="p">[</span><span class="n">k</span><span class="p">][:,</span> <span class="n">j</span><span class="p">]</span>
+                <span class="c1"># Set strain data labels</span>
+                <span class="n">data_labels</span> <span class="o">=</span> \
+                    <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">strain_label</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">strain_comps_order</span><span class="p">]</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Plot strain path</span>
+                <span class="n">figure</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">plot_xy_data</span><span class="p">(</span><span class="n">data_xy</span><span class="o">=</span><span class="n">strain_data_xy</span><span class="p">,</span>
+                                        <span class="n">data_labels</span><span class="o">=</span><span class="n">data_labels</span><span class="p">,</span>
+                                        <span class="n">x_lims</span><span class="o">=</span><span class="p">(</span><span class="n">time_min</span><span class="p">,</span> <span class="n">time_max</span><span class="p">),</span>
+                                        <span class="n">x_label</span><span class="o">=</span><span class="s1">&#39;Time&#39;</span><span class="p">,</span>
+                                        <span class="n">y_label</span><span class="o">=</span><span class="n">strain_label</span> <span class="o">+</span> <span class="n">strain_units</span><span class="p">,</span>
+                                        <span class="n">is_latex</span><span class="o">=</span><span class="n">is_latex</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Set figure name</span>
+                <span class="k">if</span> <span class="n">n_path</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                    <span class="n">figure_name</span> <span class="o">=</span> <span class="n">filename</span> <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;_sample_</span><span class="si">{</span><span class="n">k</span><span class="si">}</span><span class="s1">&#39;</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">figure_name</span> <span class="o">=</span> <span class="n">filename</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Display figure</span>
+                <span class="k">if</span> <span class="n">is_stdout_display</span><span class="p">:</span>
+                    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Save figure</span>
+                <span class="k">if</span> <span class="n">is_save_fig</span><span class="p">:</span>
+                    <span class="n">save_figure</span><span class="p">(</span><span class="n">figure</span><span class="p">,</span> <span class="n">figure_name</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span><span class="p">,</span>
+                                <span class="n">save_dir</span><span class="o">=</span><span class="n">save_dir</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Close plot</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="s1">&#39;all&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~        </span>
+        <span class="c1"># Plot strain component distribution</span>
+        <span class="k">if</span> <span class="n">is_plot_strain_comp_hist</span><span class="p">:</span>
+            <span class="c1"># Loop over strain components</span>
+            <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">comp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">strain_comps_order</span><span class="p">):</span>
+                <span class="c1"># Set strain data array</span>
+                <span class="n">strain_paths</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span><span class="n">path</span><span class="p">[:,</span> <span class="n">j</span><span class="p">]</span> <span class="k">for</span> <span class="n">path</span> <span class="ow">in</span> <span class="n">strain_path</span><span class="p">])</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Concatenate strain paths</span>
+                <span class="n">strain_paths</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">strain_paths</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Plot strain component distribution</span>
+                <span class="n">figure</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">plot_histogram</span><span class="p">(</span>
+                     <span class="n">strain_paths</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                     <span class="n">x_label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">strain_label</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">comp</span><span class="si">}</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">strain_units</span><span class="p">,</span>
+                     <span class="n">y_label</span><span class="o">=</span><span class="s1">&#39;Probability density&#39;</span><span class="p">,</span>
+                     <span class="n">is_latex</span><span class="o">=</span><span class="n">is_latex</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Display figure</span>
+                <span class="k">if</span> <span class="n">is_stdout_display</span><span class="p">:</span>
+                    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Save figure</span>
+                <span class="k">if</span> <span class="n">is_save_fig</span><span class="p">:</span>
+                    <span class="n">save_figure</span><span class="p">(</span><span class="n">figure</span><span class="p">,</span> <span class="n">filename</span> <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;_hist_</span><span class="si">{</span><span class="n">comp</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                                <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span><span class="p">,</span> <span class="n">save_dir</span><span class="o">=</span><span class="n">save_dir</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Close plot</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="s1">&#39;all&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Plot strain norm (path and distribution)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">is_plot_strain_norm</span> <span class="ow">or</span> <span class="n">is_plot_strain_norm_hist</span><span class="p">):</span>
+            <span class="c1"># Initialize strain norm data array</span>
+            <span class="n">strain_norm_data_xy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">n_time_max</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">n_path</span><span class="p">),</span>
+                                           <span class="n">fill_value</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+            <span class="c1"># Loop over strain paths</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_path</span><span class="p">):</span>     
+                <span class="c1"># Loop over time steps</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">time_hist</span><span class="p">[</span><span class="n">k</span><span class="p">])):</span>
+                    <span class="c1"># Assemble discrete time history</span>
+                    <span class="n">strain_norm_data_xy</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">time_hist</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+                    <span class="c1"># Get strain tensor</span>
+                    <span class="n">strain</span> <span class="o">=</span> <span class="n">StrainPathGenerator</span><span class="o">.</span><span class="n">build_strain_tensor</span><span class="p">(</span>
+                        <span class="n">n_dim</span><span class="p">,</span> <span class="n">strain_path</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">i</span><span class="p">,</span> <span class="p">:],</span> <span class="n">strain_comps_order</span><span class="p">,</span>
+                        <span class="n">is_symmetric</span><span class="o">=</span><span class="n">strain_formulation</span> <span class="o">==</span> <span class="s1">&#39;infinitesimal&#39;</span><span class="p">)</span>
+                    <span class="c1"># Compute strain norm</span>
+                    <span class="n">strain_norm_data_xy</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">k</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">strain</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Plot strain norm path</span>
+            <span class="k">if</span> <span class="n">is_plot_strain_norm</span><span class="p">:</span>
+                <span class="n">figure</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">plot_xy_data</span><span class="p">(</span><span class="n">data_xy</span><span class="o">=</span><span class="n">strain_norm_data_xy</span><span class="p">,</span>
+                                         <span class="n">x_lims</span><span class="o">=</span><span class="p">(</span><span class="n">time_min</span><span class="p">,</span> <span class="n">time_max</span><span class="p">),</span>
+                                         <span class="n">y_lims</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+                                         <span class="n">x_label</span><span class="o">=</span><span class="s1">&#39;Time&#39;</span><span class="p">,</span>
+                                         <span class="n">y_label</span><span class="o">=</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">strain_label</span><span class="si">}</span><span class="s1"> norm&#39;</span>
+                                                  <span class="o">+</span> <span class="n">strain_units</span><span class="p">),</span>
+                                         <span class="n">is_latex</span><span class="o">=</span><span class="n">is_latex</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Display figure</span>
+                <span class="k">if</span> <span class="n">is_stdout_display</span><span class="p">:</span>
+                    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Save figure</span>
+                <span class="k">if</span> <span class="n">is_save_fig</span><span class="p">:</span>
+                    <span class="n">save_figure</span><span class="p">(</span><span class="n">figure</span><span class="p">,</span> <span class="n">filename</span> <span class="o">+</span> <span class="s1">&#39;_norm&#39;</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span><span class="p">,</span>
+                                <span class="n">save_dir</span><span class="o">=</span><span class="n">save_dir</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Close plot</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="s1">&#39;all&#39;</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Plot strain norm distribution</span>
+            <span class="k">if</span> <span class="n">is_plot_strain_norm_hist</span><span class="p">:</span>
+                <span class="c1"># Set strain data array</span>
+                <span class="n">strain_paths_norm</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span><span class="n">strain_norm_data_xy</span><span class="p">[:,</span> <span class="mi">2</span><span class="o">*</span><span class="n">k</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+                                           <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_path</span><span class="p">)])</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Concatenate strain paths</span>
+                <span class="n">strain_paths_norm</span> <span class="o">=</span> \
+                    <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">strain_paths_norm</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="n">figure</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">plot_histogram</span><span class="p">(</span>
+                    <span class="n">strain_paths_norm</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="n">x_label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">strain_label</span><span class="si">}</span><span class="s1"> norm&#39;</span> <span class="o">+</span> <span class="n">strain_units</span><span class="p">,</span>
+                    <span class="n">y_label</span><span class="o">=</span><span class="s1">&#39;Probability density&#39;</span><span class="p">,</span>
+                    <span class="n">is_latex</span><span class="o">=</span><span class="n">is_latex</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Display figure</span>
+                <span class="k">if</span> <span class="n">is_stdout_display</span><span class="p">:</span>
+                    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Save figure</span>
+                <span class="k">if</span> <span class="n">is_save_fig</span><span class="p">:</span>
+                    <span class="n">save_figure</span><span class="p">(</span><span class="n">figure</span><span class="p">,</span> <span class="n">filename</span> <span class="o">+</span> <span class="s1">&#39;_norm_hist&#39;</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span><span class="p">,</span>
+                                <span class="n">save_dir</span><span class="o">=</span><span class="n">save_dir</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Close plot</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="s1">&#39;all&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Plot strain increment norm (path and distribution)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">is_plot_inc_strain_norm</span> <span class="ow">or</span> <span class="n">is_plot_inc_strain_norm_hist</span><span class="p">):</span>
+            <span class="c1"># Initialize strain increment norm data array</span>
+            <span class="n">inc_strain_norm_data_xy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_time_max</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">n_path</span><span class="p">))</span>
+            <span class="c1"># Loop over strain paths</span>
+            <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_path</span><span class="p">):</span>     
+                <span class="c1"># Loop over time steps</span>
+                <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">time_hist</span><span class="p">[</span><span class="n">k</span><span class="p">])):</span>
+                    <span class="c1"># Assemble discrete time history</span>
+                    <span class="n">inc_strain_norm_data_xy</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> <span class="n">time_hist</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+                    <span class="c1"># Get strain tensors</span>
+                    <span class="n">strain</span> <span class="o">=</span> <span class="n">StrainPathGenerator</span><span class="o">.</span><span class="n">build_strain_tensor</span><span class="p">(</span>
+                        <span class="n">n_dim</span><span class="p">,</span> <span class="n">strain_path</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">i</span><span class="p">,</span> <span class="p">:],</span> <span class="n">strain_comps_order</span><span class="p">,</span>
+                        <span class="n">is_symmetric</span><span class="o">=</span><span class="n">strain_formulation</span> <span class="o">==</span> <span class="s1">&#39;infinitesimal&#39;</span><span class="p">)</span>
+                    <span class="n">strain_old</span> <span class="o">=</span> <span class="n">StrainPathGenerator</span><span class="o">.</span><span class="n">build_strain_tensor</span><span class="p">(</span>
+                        <span class="n">n_dim</span><span class="p">,</span> <span class="n">strain_path</span><span class="p">[</span><span class="n">k</span><span class="p">][</span><span class="n">i</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:],</span> <span class="n">strain_comps_order</span><span class="p">,</span>
+                        <span class="n">is_symmetric</span><span class="o">=</span><span class="n">strain_formulation</span> <span class="o">==</span> <span class="s1">&#39;infinitesimal&#39;</span><span class="p">)</span>
+                    <span class="c1"># Compute strain increment</span>
+                    <span class="k">if</span> <span class="n">strain_formulation</span> <span class="o">==</span> <span class="s1">&#39;infinitesimal&#39;</span><span class="p">:</span>
+                        <span class="n">inc_strain</span> <span class="o">=</span> <span class="n">strain</span> <span class="o">-</span> <span class="n">strain_old</span>
+                    <span class="k">else</span><span class="p">:</span>
+                        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Not implemented.&#39;</span><span class="p">)</span>
+                    <span class="c1"># Compute strain increment norm</span>
+                    <span class="n">inc_strain_norm_data_xy</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">k</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> \
+                        <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">inc_strain</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Plot strain path increment norm</span>
+            <span class="k">if</span> <span class="n">is_plot_inc_strain_norm</span><span class="p">:</span>
+                <span class="n">figure</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">plot_xy_data</span><span class="p">(</span>
+                    <span class="n">data_xy</span><span class="o">=</span><span class="n">inc_strain_norm_data_xy</span><span class="p">,</span>
+                    <span class="n">x_lims</span><span class="o">=</span><span class="p">(</span><span class="n">time_min</span><span class="p">,</span> <span class="n">time_max</span><span class="p">),</span>
+                    <span class="n">y_lims</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span>
+                    <span class="n">x_label</span><span class="o">=</span><span class="s1">&#39;Time&#39;</span><span class="p">,</span>
+                    <span class="n">y_label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">strain_label</span><span class="si">}</span><span class="s1"> increment norm&#39;</span> <span class="o">+</span> <span class="n">strain_units</span><span class="p">,</span>
+                    <span class="n">is_latex</span><span class="o">=</span><span class="n">is_latex</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Display figure</span>
+                <span class="k">if</span> <span class="n">is_stdout_display</span><span class="p">:</span>
+                    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Save figure</span>
+                <span class="k">if</span> <span class="n">is_save_fig</span><span class="p">:</span>
+                    <span class="n">save_figure</span><span class="p">(</span><span class="n">figure</span><span class="p">,</span> <span class="n">filename</span> <span class="o">+</span> <span class="s1">&#39;_inc_norm&#39;</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span><span class="p">,</span>
+                                <span class="n">save_dir</span><span class="o">=</span><span class="n">save_dir</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Close plot</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="s1">&#39;all&#39;</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Plot strain increment norm distribution</span>
+            <span class="k">if</span> <span class="n">is_plot_inc_strain_norm_hist</span><span class="p">:</span>
+                <span class="c1"># Set strain data array</span>
+                <span class="n">inc_strain_paths_norm</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+                    <span class="p">[</span><span class="n">inc_strain_norm_data_xy</span><span class="p">[:</span><span class="nb">len</span><span class="p">(</span><span class="n">time_hist</span><span class="p">[</span><span class="n">k</span><span class="p">]),</span> <span class="mi">2</span><span class="o">*</span><span class="n">k</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span>
+                        <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_path</span><span class="p">)])</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Concatenate strain paths</span>
+                <span class="n">inc_strain_paths_norm</span> <span class="o">=</span> \
+                    <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span><span class="n">inc_strain_paths_norm</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">),)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="n">figure</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">plot_histogram</span><span class="p">(</span>
+                    <span class="n">inc_strain_paths_norm</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">50</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                    <span class="n">x_label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">strain_label</span><span class="si">}</span><span class="s1"> increment norm&#39;</span> <span class="o">+</span> <span class="n">strain_units</span><span class="p">,</span>
+                    <span class="n">y_label</span><span class="o">=</span><span class="s1">&#39;Probability density&#39;</span><span class="p">,</span>
+                    <span class="n">is_latex</span><span class="o">=</span><span class="n">is_latex</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Display figure</span>
+                <span class="k">if</span> <span class="n">is_stdout_display</span><span class="p">:</span>
+                    <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Save figure</span>
+                <span class="k">if</span> <span class="n">is_save_fig</span><span class="p">:</span>
+                    <span class="n">save_figure</span><span class="p">(</span><span class="n">figure</span><span class="p">,</span> <span class="n">filename</span> <span class="o">+</span> <span class="s1">&#39;_inc_norm_hist&#39;</span><span class="p">,</span>
+                                <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span><span class="p">,</span> <span class="n">save_dir</span><span class="o">=</span><span class="n">save_dir</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Close plot</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="s1">&#39;all&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Plot strain path in strain space (path and distribution)</span>
+        <span class="k">if</span> <span class="p">(</span><span class="n">is_plot_strain_path_pairs</span> <span class="ow">or</span> <span class="n">is_plot_strain_pairs_hist</span>
+                <span class="ow">or</span> <span class="n">is_plot_strain_pairs_marginals</span><span class="p">):</span>
+            <span class="c1"># Set strain component pairs according with strain formulation and</span>
+            <span class="c1"># number of spatial dimensions</span>
+            <span class="k">if</span> <span class="n">strain_formulation</span> <span class="o">==</span> <span class="s1">&#39;infinitesimal&#39;</span><span class="p">:</span>
+                <span class="k">if</span> <span class="n">n_dim</span> <span class="o">==</span> <span class="mi">2</span><span class="p">:</span>
+                    <span class="n">strain_pairs</span> <span class="o">=</span> <span class="p">((</span><span class="s1">&#39;11&#39;</span><span class="p">,</span> <span class="s1">&#39;22&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;11&#39;</span><span class="p">,</span> <span class="s1">&#39;12&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;22&#39;</span><span class="p">,</span> <span class="s1">&#39;12&#39;</span><span class="p">))</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="n">strain_pairs</span> <span class="o">=</span> <span class="p">((</span><span class="s1">&#39;11&#39;</span><span class="p">,</span> <span class="s1">&#39;22&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;11&#39;</span><span class="p">,</span> <span class="s1">&#39;33&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;22&#39;</span><span class="p">,</span> <span class="s1">&#39;33&#39;</span><span class="p">),</span>
+                                    <span class="p">(</span><span class="s1">&#39;11&#39;</span><span class="p">,</span> <span class="s1">&#39;12&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;11&#39;</span><span class="p">,</span> <span class="s1">&#39;23&#39;</span><span class="p">),</span> <span class="p">(</span><span class="s1">&#39;11&#39;</span><span class="p">,</span> <span class="s1">&#39;13&#39;</span><span class="p">))</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Not implemented.&#39;</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Loop over strain component pairs</span>
+            <span class="k">for</span> <span class="n">strain_pair</span> <span class="ow">in</span> <span class="n">strain_pairs</span><span class="p">:</span>
+                <span class="c1"># Get strain components indexes</span>
+                <span class="n">j_x</span> <span class="o">=</span> <span class="n">strain_comps_order</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">strain_pair</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+                <span class="n">j_y</span> <span class="o">=</span> <span class="n">strain_comps_order</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">strain_pair</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                <span class="c1"># Initialize strain data array</span>
+                <span class="n">strain_data_xy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">n_time_max</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">n_path</span><span class="p">),</span>
+                                            <span class="n">fill_value</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+                <span class="c1"># Loop over strain paths</span>
+                <span class="k">for</span> <span class="n">k</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_path</span><span class="p">):</span>
+                    <span class="c1"># Set strain data array</span>
+                    <span class="n">strain_data_xy</span><span class="p">[:</span><span class="nb">len</span><span class="p">(</span><span class="n">time_hist</span><span class="p">[</span><span class="n">k</span><span class="p">]),</span> <span class="mi">2</span><span class="o">*</span><span class="n">k</span><span class="p">]</span> <span class="o">=</span> \
+                        <span class="n">strain_path</span><span class="p">[</span><span class="n">k</span><span class="p">][:,</span> <span class="n">j_x</span><span class="p">]</span>
+                    <span class="n">strain_data_xy</span><span class="p">[:</span><span class="nb">len</span><span class="p">(</span><span class="n">time_hist</span><span class="p">[</span><span class="n">k</span><span class="p">]),</span> <span class="mi">2</span><span class="o">*</span><span class="n">k</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> \
+                        <span class="n">strain_path</span><span class="p">[</span><span class="n">k</span><span class="p">][:,</span> <span class="n">j_y</span><span class="p">]</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Plot strain path for strain components pair</span>
+                <span class="k">if</span> <span class="n">is_plot_strain_path_pairs</span><span class="p">:</span>
+                    <span class="n">figure</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">plot_xy_data</span><span class="p">(</span>
+                        <span class="n">data_xy</span><span class="o">=</span><span class="n">strain_data_xy</span><span class="p">,</span>
+                        <span class="n">x_label</span><span class="o">=</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">strain_label</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">strain_pair</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span>
+                                 <span class="o">+</span> <span class="n">strain_units</span><span class="p">),</span>
+                        <span class="n">y_label</span><span class="o">=</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">strain_label</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">strain_pair</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span>
+                                 <span class="o">+</span> <span class="n">strain_units</span><span class="p">),</span>
+                        <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">markersize</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">is_latex</span><span class="o">=</span><span class="n">is_latex</span><span class="p">)</span>
+                    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                    <span class="c1"># Display figure</span>
+                    <span class="k">if</span> <span class="n">is_stdout_display</span><span class="p">:</span>
+                        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+                    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                    <span class="c1"># Save figure</span>
+                    <span class="k">if</span> <span class="n">is_save_fig</span><span class="p">:</span>
+                        <span class="n">save_figure</span><span class="p">(</span><span class="n">figure</span><span class="p">,</span> <span class="n">filename</span>
+                                    <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;_</span><span class="si">{</span><span class="n">strain_pair</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1">v</span><span class="si">{</span><span class="n">strain_pair</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                                    <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span><span class="p">,</span> <span class="n">save_dir</span><span class="o">=</span><span class="n">save_dir</span><span class="p">)</span>
+                    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                    <span class="c1"># Close plot</span>
+                    <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="s1">&#39;all&#39;</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Plot strain components pair with marginal distributions</span>
+                <span class="k">if</span> <span class="n">is_plot_strain_pairs_marginals</span><span class="p">:</span>
+                    <span class="n">figure</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">scatter_xy_data</span><span class="p">(</span>
+                        <span class="n">data_xy</span><span class="o">=</span><span class="n">strain_data_xy</span><span class="p">,</span>
+                        <span class="n">x_label</span><span class="o">=</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">strain_label</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">strain_pair</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span>
+                                 <span class="o">+</span> <span class="n">strain_units</span><span class="p">),</span>
+                        <span class="n">y_label</span><span class="o">=</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">strain_label</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">strain_pair</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span>
+                                 <span class="o">+</span> <span class="n">strain_units</span><span class="p">),</span>
+                        <span class="n">is_marginal_dists</span> <span class="o">=</span> <span class="kc">True</span><span class="p">,</span>
+                        <span class="n">is_latex</span><span class="o">=</span><span class="n">is_latex</span><span class="p">)</span>
+                    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                    <span class="c1"># Display figure</span>
+                    <span class="k">if</span> <span class="n">is_stdout_display</span><span class="p">:</span>
+                        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+                    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                    <span class="c1"># Save figure</span>
+                    <span class="k">if</span> <span class="n">is_save_fig</span><span class="p">:</span>
+                        <span class="n">save_figure</span><span class="p">(</span><span class="n">figure</span><span class="p">,</span> <span class="n">filename</span> <span class="o">+</span> <span class="s1">&#39;_marginals&#39;</span>
+                                    <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;_</span><span class="si">{</span><span class="n">strain_pair</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1">v</span><span class="si">{</span><span class="n">strain_pair</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                                    <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span><span class="p">,</span> <span class="n">save_dir</span><span class="o">=</span><span class="n">save_dir</span><span class="p">)</span>
+                    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                    <span class="c1"># Close plot</span>
+                    <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="s1">&#39;all&#39;</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Plot strain components pair distribution</span>
+                <span class="k">if</span> <span class="n">is_plot_strain_pairs_hist</span><span class="p">:</span>
+                    <span class="c1"># Concatenate strain paths</span>
+                    <span class="n">strain_data_xy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span>
+                        <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">stack</span><span class="p">((</span><span class="n">x</span><span class="p">[:,</span> <span class="n">j_x</span><span class="p">],</span> <span class="n">x</span><span class="p">[:,</span> <span class="n">j_y</span><span class="p">]),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+                            <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">strain_path</span><span class="p">])</span>
+                    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                    <span class="n">figure</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">plot_histogram_2d</span><span class="p">(</span>
+                        <span class="n">strain_data_xy</span><span class="p">,</span> <span class="n">bins</span><span class="o">=</span><span class="mi">20</span><span class="p">,</span> <span class="n">density</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                        <span class="n">x_label</span><span class="o">=</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">strain_label</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">strain_pair</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span>
+                                 <span class="o">+</span> <span class="n">strain_units</span><span class="p">),</span>
+                        <span class="n">y_label</span><span class="o">=</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">strain_label</span><span class="si">}</span><span class="s1"> </span><span class="si">{</span><span class="n">strain_pair</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span>
+                                 <span class="o">+</span> <span class="n">strain_units</span><span class="p">),</span>
+                        <span class="n">is_latex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+                    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                    <span class="c1"># Display figure</span>
+                    <span class="k">if</span> <span class="n">is_stdout_display</span><span class="p">:</span>
+                        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+                    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                    <span class="c1"># Save figure</span>
+                    <span class="k">if</span> <span class="n">is_save_fig</span><span class="p">:</span>
+                        <span class="n">save_figure</span><span class="p">(</span><span class="n">figure</span><span class="p">,</span> <span class="n">filename</span> <span class="o">+</span> <span class="s1">&#39;_hist&#39;</span>
+                                    <span class="o">+</span> <span class="sa">f</span><span class="s1">&#39;_</span><span class="si">{</span><span class="n">strain_pair</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span><span class="si">}</span><span class="s1">v</span><span class="si">{</span><span class="n">strain_pair</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                                    <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span><span class="p">,</span> <span class="n">save_dir</span><span class="o">=</span><span class="n">save_dir</span><span class="p">)</span>
+                    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                    <span class="c1"># Close plot</span>
+                    <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="s1">&#39;all&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Plot strain components box plot</span>
+        <span class="k">if</span> <span class="n">is_plot_strain_comp_box</span><span class="p">:</span>
+            <span class="c1"># Set strain data labels</span>
+            <span class="n">data_labels</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">strain_comps_order</span><span class="p">]</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Concatenate strain paths</span>
+            <span class="n">strain_data</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span><span class="n">strain_path</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Plot strain components box plot</span>
+            <span class="n">figure</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">plot_boxplots</span><span class="p">(</span><span class="n">strain_data</span><span class="p">,</span> <span class="n">data_labels</span><span class="p">,</span>
+                                      <span class="n">x_label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">strain_label</span><span class="si">}</span><span class="s1"> components&#39;</span><span class="p">,</span>
+                                      <span class="n">y_label</span><span class="o">=</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">strain_label</span><span class="si">}</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">strain_units</span><span class="p">,</span>
+                                      <span class="n">is_latex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Display figure</span>
+            <span class="k">if</span> <span class="n">is_stdout_display</span><span class="p">:</span>
+                <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Save figure</span>
+            <span class="k">if</span> <span class="n">is_save_fig</span><span class="p">:</span>
+                <span class="n">save_figure</span><span class="p">(</span><span class="n">figure</span><span class="p">,</span> <span class="n">filename</span> <span class="o">+</span> <span class="s1">&#39;_boxplot&#39;</span><span class="p">,</span>
+                            <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;png&#39;</span><span class="p">,</span> <span class="n">save_dir</span><span class="o">=</span><span class="n">save_dir</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Close plot</span>
+            <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="s1">&#39;all&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Close plot</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="s1">&#39;all&#39;</span><span class="p">)</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

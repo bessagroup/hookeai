@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>hookeai.miscellaneous.materials.plot_yield_surface &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../_autosummary/hookeai.html">Code</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">hookeai.miscellaneous.materials.plot_yield_surface</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for hookeai.miscellaneous.materials.plot_yield_surface</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Plot yield surface of generic constitutive material models.</span>
+
+<span class="sd">Functions</span>
+<span class="sd">---------</span>
+<span class="sd">yield_function</span>
+<span class="sd">    Compute model yield function value from principal stresses.</span>
+<span class="sd">yf_von_mises</span>
+<span class="sd">    Yield function: Von Mises model with isotropic hardening.</span>
+<span class="sd">yf_drucker_prager</span>
+<span class="sd">    Yield function: Drucker-Prager model with isotropic hardening.</span>
+<span class="sd">yf_lou_zhang_yoon</span>
+<span class="sd">    Yield function: Lou-Zhang-Yoon model with isotropic strain hardening.</span>
+<span class="sd">get_stress_invariants</span>
+<span class="sd">    Compute invariants of stress and deviatoric stress.</span>
+<span class="sd">pi_to_principal</span>
+<span class="sd">    Convert pi-stress to principal stress.</span>
+<span class="sd">batched_yield_function</span>
+<span class="sd">    Compute model yield function from batch of stress points.</span>
+<span class="sd">plot_yield_surface</span>
+<span class="sd">    Plot constitutive material models yield surface.</span>
+<span class="sd">plot_yield_surface_pi_plane</span>
+<span class="sd">    Plot constitutive material models yield surface in pi-plane.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#                                                                       Modules</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Standard</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sys</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pathlib</span>
+<span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+<span class="c1"># Add project root directory to sys.path</span>
+<span class="n">root_dir</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">pathlib</span><span class="o">.</span><span class="n">Path</span><span class="p">(</span><span class="vm">__file__</span><span class="p">)</span><span class="o">.</span><span class="n">parents</span><span class="p">[</span><span class="mi">2</span><span class="p">])</span>
+<span class="k">if</span> <span class="n">root_dir</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="p">:</span>
+    <span class="n">sys</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">insert</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">root_dir</span><span class="p">)</span>
+<span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="c1"># Third-party</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pyvista</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">pv</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="c1"># Local</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ioput.plots</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_xy_data</span><span class="p">,</span> <span class="n">save_figure</span>
+<span class="c1">#</span>
+<span class="c1">#                                                          Authorship &amp; Credits</span>
+<span class="c1"># =============================================================================</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Bernardo Ferreira (bernardo_ferreira@brown.edu)&#39;</span>
+<span class="n">__credits__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Bernardo Ferreira&#39;</span><span class="p">,</span> <span class="p">]</span>
+<span class="n">__status__</span> <span class="o">=</span> <span class="s1">&#39;Stable&#39;</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Solving: AttributeError: module &#39;numpy&#39; has no attribute &#39;bool&#39;</span>
+<span class="c1"># Cause: vtk 9.0.3 requires numpy &lt; 1.24</span>
+<span class="n">np</span><span class="o">.</span><span class="n">bool</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">bool_</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="yield_function"><a class="viewcode-back" href="../../../../_autosummary/hookeai.miscellaneous.materials.plot_yield_surface.yield_function.html#hookeai.miscellaneous.materials.plot_yield_surface.yield_function">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">yield_function</span><span class="p">(</span><span class="n">s1</span><span class="p">,</span> <span class="n">s2</span><span class="p">,</span> <span class="n">s3</span><span class="p">,</span> <span class="n">sy</span><span class="p">,</span> <span class="n">model_name</span><span class="p">,</span> <span class="n">model_parameters</span><span class="p">,</span>
+                   <span class="n">is_normalize_sy</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute model yield function value from principal stresses.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    s1 : float</span>
+<span class="sd">        First principal stress.</span>
+<span class="sd">    s2 : float</span>
+<span class="sd">        Second principal stress.</span>
+<span class="sd">    s3 : float</span>
+<span class="sd">        Third principal stress.</span>
+<span class="sd">    sy : float</span>
+<span class="sd">        Yield stress.</span>
+<span class="sd">    model_name : str</span>
+<span class="sd">        Constitutive model for which yield function is computed.</span>
+<span class="sd">    model_parameters : dict</span>
+<span class="sd">        Constitutive model parameters required to compute yield function.</span>
+<span class="sd">    is_normalize_sy : bool, default=False</span>
+<span class="sd">        Normalize yield function value with yield stress.</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    phi : float</span>
+<span class="sd">        Yield function value.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get model yield function</span>
+    <span class="k">if</span> <span class="s1">&#39;von_mises&#39;</span> <span class="ow">in</span> <span class="n">model_name</span><span class="p">:</span>
+        <span class="n">yf</span> <span class="o">=</span> <span class="n">yf_von_mises</span>
+    <span class="k">elif</span> <span class="s1">&#39;drucker_prager&#39;</span> <span class="ow">in</span> <span class="n">model_name</span><span class="p">:</span>
+        <span class="n">yf</span> <span class="o">=</span> <span class="n">yf_drucker_prager</span>
+    <span class="k">elif</span> <span class="s1">&#39;lou_zhang_yoon&#39;</span> <span class="ow">in</span> <span class="n">model_name</span><span class="p">:</span>
+        <span class="n">yf</span> <span class="o">=</span> <span class="n">yf_lou_zhang_yoon</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Unknown constitutive model.&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Compute yield function value</span>
+    <span class="n">phi</span> <span class="o">=</span> <span class="n">yf</span><span class="p">(</span><span class="n">s1</span><span class="p">,</span> <span class="n">s2</span><span class="p">,</span> <span class="n">s3</span><span class="p">,</span> <span class="n">sy</span><span class="p">,</span> <span class="n">model_parameters</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Normalize yield function value</span>
+    <span class="k">if</span> <span class="n">is_normalize_sy</span><span class="p">:</span>
+        <span class="n">phi</span> <span class="o">=</span> <span class="n">phi</span><span class="o">/</span><span class="n">sy</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">phi</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="yf_von_mises"><a class="viewcode-back" href="../../../../_autosummary/hookeai.miscellaneous.materials.plot_yield_surface.yf_von_mises.html#hookeai.miscellaneous.materials.plot_yield_surface.yf_von_mises">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">yf_von_mises</span><span class="p">(</span><span class="n">s1</span><span class="p">,</span> <span class="n">s2</span><span class="p">,</span> <span class="n">s3</span><span class="p">,</span> <span class="n">sy</span><span class="p">,</span> <span class="n">model_parameters</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Yield function: Von Mises model with isotropic hardening.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    s1 : float</span>
+<span class="sd">        First principal stress.</span>
+<span class="sd">    s2 : float</span>
+<span class="sd">        Second principal stress.</span>
+<span class="sd">    s3 : float</span>
+<span class="sd">        Third principal stress.</span>
+<span class="sd">    sy : float</span>
+<span class="sd">        Yield stress.</span>
+<span class="sd">    model_parameters : dict</span>
+<span class="sd">        Constitutive model parameters required to compute yield function.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    phi : float</span>
+<span class="sd">        Yield function value.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Build stress tensor</span>
+    <span class="n">stress</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">((</span><span class="n">s1</span><span class="p">,</span> <span class="n">s2</span><span class="p">,</span> <span class="n">s3</span><span class="p">))</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Compute stress invariants</span>
+    <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">j2</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">get_stress_invariants</span><span class="p">(</span><span class="n">stress</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Add small perturbation to avoid numerical issues for null stress</span>
+    <span class="n">j2</span> <span class="o">+=</span> <span class="mf">1e-10</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Compute effective stress</span>
+    <span class="n">effective_stress</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mf">3.0</span><span class="o">*</span><span class="n">j2</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Compute yield function</span>
+    <span class="n">phi</span> <span class="o">=</span> <span class="n">effective_stress</span> <span class="o">-</span> <span class="n">sy</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">phi</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="yf_drucker_prager"><a class="viewcode-back" href="../../../../_autosummary/hookeai.miscellaneous.materials.plot_yield_surface.yf_drucker_prager.html#hookeai.miscellaneous.materials.plot_yield_surface.yf_drucker_prager">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">yf_drucker_prager</span><span class="p">(</span><span class="n">s1</span><span class="p">,</span> <span class="n">s2</span><span class="p">,</span> <span class="n">s3</span><span class="p">,</span> <span class="n">sy</span><span class="p">,</span> <span class="n">model_parameters</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Yield function: Drucker-Prager model with isotropic hardening.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    s1 : float</span>
+<span class="sd">        First principal stress.</span>
+<span class="sd">    s2 : float</span>
+<span class="sd">        Second principal stress.</span>
+<span class="sd">    s3 : float</span>
+<span class="sd">        Third principal stress.</span>
+<span class="sd">    sy : float</span>
+<span class="sd">        Yield stress.</span>
+<span class="sd">    model_parameters : dict</span>
+<span class="sd">        Constitutive model parameters required to compute yield function.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    phi : float</span>
+<span class="sd">        Yield function value.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get frictional angle</span>
+    <span class="n">friction_angle</span> <span class="o">=</span> <span class="n">model_parameters</span><span class="p">[</span><span class="s1">&#39;friction_angle&#39;</span><span class="p">]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Build stress tensor</span>
+    <span class="n">stress</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">((</span><span class="n">s1</span><span class="p">,</span> <span class="n">s2</span><span class="p">,</span> <span class="n">s3</span><span class="p">))</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Compute stress invariants</span>
+    <span class="n">i1</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">j2</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">get_stress_invariants</span><span class="p">(</span><span class="n">stress</span><span class="p">)</span>
+    <span class="c1"># Compute hydrostatic stress</span>
+    <span class="n">p</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span><span class="o">*</span><span class="n">i1</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Add small perturbation to avoid numerical issues for null stress</span>
+    <span class="n">j2</span> <span class="o">+=</span> <span class="mf">1e-10</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Compute yield surface cohesion parameter</span>
+    <span class="n">xi</span> <span class="o">=</span> <span class="p">(</span><span class="mf">2.0</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">cos</span><span class="p">(</span><span class="n">friction_angle</span><span class="p">)</span>
+    <span class="c1"># Set yield pressure parameter</span>
+    <span class="n">eta</span> <span class="o">=</span> <span class="p">(</span><span class="mf">3.0</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">sin</span><span class="p">(</span><span class="n">friction_angle</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set cohesion</span>
+    <span class="n">cy</span> <span class="o">=</span> <span class="n">sy</span><span class="o">/</span><span class="n">xi</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Compute effective stress</span>
+    <span class="n">effective_stress</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="n">j2</span><span class="p">)</span> <span class="o">+</span> <span class="n">eta</span><span class="o">*</span><span class="n">p</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Compute yield function</span>
+    <span class="n">phi</span> <span class="o">=</span> <span class="n">effective_stress</span> <span class="o">-</span> <span class="n">xi</span><span class="o">*</span><span class="n">cy</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">phi</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="yf_lou_zhang_yoon"><a class="viewcode-back" href="../../../../_autosummary/hookeai.miscellaneous.materials.plot_yield_surface.yf_lou_zhang_yoon.html#hookeai.miscellaneous.materials.plot_yield_surface.yf_lou_zhang_yoon">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">yf_lou_zhang_yoon</span><span class="p">(</span><span class="n">s1</span><span class="p">,</span> <span class="n">s2</span><span class="p">,</span> <span class="n">s3</span><span class="p">,</span> <span class="n">sy</span><span class="p">,</span> <span class="n">model_parameters</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Yield function: Lou-Zhang-Yoon model with isotropic strain hardening.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    s1 : float</span>
+<span class="sd">        First principal stress.</span>
+<span class="sd">    s2 : float</span>
+<span class="sd">        Second principal stress.</span>
+<span class="sd">    s3 : float</span>
+<span class="sd">        Third principal stress.</span>
+<span class="sd">    sy : float</span>
+<span class="sd">        Yield stress.</span>
+<span class="sd">    model_parameters : dict</span>
+<span class="sd">        Constitutive model parameters required to compute yield function.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    phi : float</span>
+<span class="sd">        Yield function value.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get yielding parameters</span>
+    <span class="n">yield_a</span> <span class="o">=</span> <span class="n">model_parameters</span><span class="p">[</span><span class="s1">&#39;yield_a&#39;</span><span class="p">]</span>
+    <span class="n">yield_b</span> <span class="o">=</span> <span class="n">model_parameters</span><span class="p">[</span><span class="s1">&#39;yield_b&#39;</span><span class="p">]</span>
+    <span class="n">yield_c</span> <span class="o">=</span> <span class="n">model_parameters</span><span class="p">[</span><span class="s1">&#39;yield_c&#39;</span><span class="p">]</span>
+    <span class="n">yield_d</span> <span class="o">=</span> <span class="n">model_parameters</span><span class="p">[</span><span class="s1">&#39;yield_d&#39;</span><span class="p">]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Build stress tensor</span>
+    <span class="n">stress</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">diag</span><span class="p">((</span><span class="n">s1</span><span class="p">,</span> <span class="n">s2</span><span class="p">,</span> <span class="n">s3</span><span class="p">))</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Compute stress invariants</span>
+    <span class="n">i1</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">_</span><span class="p">,</span> <span class="n">j2</span><span class="p">,</span> <span class="n">j3</span> <span class="o">=</span> <span class="n">get_stress_invariants</span><span class="p">(</span><span class="n">stress</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Add small perturbation to avoid numerical issues for null stress</span>
+    <span class="n">j2</span> <span class="o">+=</span> <span class="mf">1e-10</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Compute auxiliary terms</span>
+    <span class="n">aux_1</span> <span class="o">=</span> <span class="n">yield_b</span><span class="o">*</span><span class="n">i1</span>
+    <span class="n">aux_2</span> <span class="o">=</span> <span class="n">j2</span><span class="o">**</span><span class="mi">3</span> <span class="o">-</span> <span class="n">yield_c</span><span class="o">*</span><span class="p">(</span><span class="n">j3</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span>
+    <span class="n">aux_3</span> <span class="o">=</span> <span class="n">yield_d</span><span class="o">*</span><span class="n">j3</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Compute effective stress</span>
+    <span class="n">effective_stress</span> <span class="o">=</span> <span class="n">yield_a</span><span class="o">*</span><span class="p">(</span><span class="n">aux_1</span> <span class="o">+</span> <span class="p">(</span><span class="n">aux_2</span><span class="o">**</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="n">aux_3</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="p">))</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Compute yield function</span>
+    <span class="n">phi</span> <span class="o">=</span> <span class="n">effective_stress</span> <span class="o">-</span> <span class="n">sy</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">phi</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="get_stress_invariants"><a class="viewcode-back" href="../../../../_autosummary/hookeai.miscellaneous.materials.plot_yield_surface.get_stress_invariants.html#hookeai.miscellaneous.materials.plot_yield_surface.get_stress_invariants">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">get_stress_invariants</span><span class="p">(</span><span class="n">stress</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute invariants of stress and deviatoric stress.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    stress : torch.Tensor(2d)</span>
+<span class="sd">        Stress.</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    i1 : torch.Tensor(0d)</span>
+<span class="sd">        First (principal) invariant of stress tensor.</span>
+<span class="sd">    i2 : torch.Tensor(0d)</span>
+<span class="sd">        Second (principal) invariant of stress tensor.</span>
+<span class="sd">    i3 : torch.Tensor(0d)</span>
+<span class="sd">        Third (principal) invariant of stress tensor.</span>
+<span class="sd">    j1 : torch.Tensor(0d)</span>
+<span class="sd">        First invariant of deviatoric stress tensor.</span>
+<span class="sd">    j2 : torch.Tensor(0d)</span>
+<span class="sd">        Second invariant of deviatoric stress tensor.</span>
+<span class="sd">    j3 : torch.Tensor(0d)</span>
+<span class="sd">        Third invariant of deviatoric stress tensor.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Compute first (principal) invariant of stress tensor.</span>
+    <span class="n">i1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">stress</span><span class="p">)</span>
+    <span class="c1"># Compute second (principal) invariant of stress tensor.</span>
+    <span class="n">i2</span> <span class="o">=</span> <span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">stress</span><span class="p">)</span><span class="o">**</span><span class="mi">2</span>
+                <span class="o">-</span> <span class="n">np</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">stress</span><span class="p">,</span> <span class="n">stress</span><span class="p">)))</span>
+    <span class="c1"># Compute third (principal) invariant of stress tensor.</span>
+    <span class="n">i3</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">det</span><span class="p">(</span><span class="n">stress</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Compute first invariant of deviatoric stress tensor</span>
+    <span class="n">j1</span> <span class="o">=</span> <span class="n">i1</span>
+    <span class="c1"># Compute second invariant of deviatoric stress tensor</span>
+    <span class="n">j2</span> <span class="o">=</span> <span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">i1</span><span class="o">**</span><span class="mi">2</span><span class="p">)</span> <span class="o">-</span> <span class="n">i2</span>
+    <span class="c1"># Compute third invariant of deviatoric stress tensor</span>
+    <span class="n">j3</span> <span class="o">=</span> <span class="p">(</span><span class="mi">2</span><span class="o">/</span><span class="mi">27</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">i1</span><span class="o">**</span><span class="mi">3</span><span class="p">)</span> <span class="o">-</span> <span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="p">)</span><span class="o">*</span><span class="n">i1</span><span class="o">*</span><span class="n">i2</span> <span class="o">+</span> <span class="n">i3</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">i1</span><span class="p">,</span> <span class="n">i2</span><span class="p">,</span> <span class="n">i3</span><span class="p">,</span> <span class="n">j1</span><span class="p">,</span> <span class="n">j2</span><span class="p">,</span> <span class="n">j3</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="pi_to_principal"><a class="viewcode-back" href="../../../../_autosummary/hookeai.miscellaneous.materials.plot_yield_surface.pi_to_principal.html#hookeai.miscellaneous.materials.plot_yield_surface.pi_to_principal">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">pi_to_principal</span><span class="p">(</span><span class="n">pi1</span><span class="p">,</span> <span class="n">pi2</span><span class="p">,</span> <span class="n">pi3</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Convert pi-stress to principal stress.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    pi1 : float</span>
+<span class="sd">        First pi-stress.</span>
+<span class="sd">    pi2 : float</span>
+<span class="sd">        Second pi-stress.</span>
+<span class="sd">    pi3 : float</span>
+<span class="sd">        Third pi-stress.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    s1 : float</span>
+<span class="sd">        First principal stress.</span>
+<span class="sd">    s2 : float</span>
+<span class="sd">        Second principal stress.</span>
+<span class="sd">    s3 : float</span>
+<span class="sd">        Third principal stress.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Set rotation matrix (from principal stress coordinates to pi-stress</span>
+    <span class="c1"># coordinates)</span>
+    <span class="n">rotation_matrix</span> <span class="o">=</span> \
+        <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([[</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">2</span><span class="o">/</span><span class="mi">3</span><span class="p">),</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">6</span><span class="p">),</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">6</span><span class="p">)],</span>
+                  <span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">2</span><span class="p">),</span> <span class="o">-</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">2</span><span class="p">)],</span>
+                  <span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="p">),</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">1</span><span class="o">/</span><span class="mi">3</span><span class="p">)]])</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Compute principal stresses</span>
+    <span class="n">s1</span><span class="p">,</span> <span class="n">s2</span><span class="p">,</span> <span class="n">s3</span> <span class="o">=</span>  <span class="n">np</span><span class="o">.</span><span class="n">matmul</span><span class="p">(</span><span class="n">rotation_matrix</span><span class="o">.</span><span class="n">T</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">((</span><span class="n">pi1</span><span class="p">,</span> <span class="n">pi2</span><span class="p">,</span> <span class="n">pi3</span><span class="p">)))</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">s1</span><span class="p">,</span> <span class="n">s2</span><span class="p">,</span> <span class="n">s3</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="batched_yield_function"><a class="viewcode-back" href="../../../../_autosummary/hookeai.miscellaneous.materials.plot_yield_surface.batched_yield_function.html#hookeai.miscellaneous.materials.plot_yield_surface.batched_yield_function">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">batched_yield_function</span><span class="p">(</span><span class="n">pi_stress_points</span><span class="p">,</span> <span class="n">sy</span><span class="p">,</span> <span class="n">model_name</span><span class="p">,</span> <span class="n">model_parameters</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute model yield function from batch of stress points.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    pi_stress_points : np.ndarray(2d)</span>
+<span class="sd">        Pi-stress points stored as numpy.ndarray(2d) of shape (n_point, 3).</span>
+<span class="sd">    sy : float</span>
+<span class="sd">        Yield stress.</span>
+<span class="sd">    model_name : str</span>
+<span class="sd">        Constitutive model for which yield function is computed.</span>
+<span class="sd">    model_parameters : dict</span>
+<span class="sd">        Constitutive model parameters required to compute yield function.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    phi_points : np.ndarray(1d)</span>
+<span class="sd">        Yield function values for each pi-stress point stored as</span>
+<span class="sd">        numpy.ndarray(1d) of shape (n_point,).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get number of stress points</span>
+    <span class="n">n_point</span> <span class="o">=</span> <span class="n">pi_stress_points</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize yield function values</span>
+    <span class="n">phi_points</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># Loop over stress points</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_point</span><span class="p">):</span>
+        <span class="c1"># Get pi-stress coordinates</span>
+        <span class="n">pi1</span><span class="p">,</span> <span class="n">pi2</span><span class="p">,</span> <span class="n">pi3</span> <span class="o">=</span> <span class="n">pi_stress_points</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Compute principal stress coordinates</span>
+        <span class="n">s1</span><span class="p">,</span> <span class="n">s2</span><span class="p">,</span> <span class="n">s3</span> <span class="o">=</span> <span class="n">pi_to_principal</span><span class="p">(</span><span class="n">pi1</span><span class="p">,</span> <span class="n">pi2</span><span class="p">,</span> <span class="n">pi3</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Compute yield function value</span>
+        <span class="n">phi</span> <span class="o">=</span> <span class="n">yield_function</span><span class="p">(</span><span class="n">s1</span><span class="p">,</span> <span class="n">s2</span><span class="p">,</span> <span class="n">s3</span><span class="p">,</span> <span class="n">sy</span><span class="p">,</span> <span class="n">model_name</span><span class="p">,</span> <span class="n">model_parameters</span><span class="p">,</span>
+                             <span class="n">is_normalize_sy</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Store yield function value</span>
+        <span class="n">phi_points</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">phi</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Convert to array</span>
+    <span class="n">phi_points</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">(</span><span class="n">phi_points</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">phi_points</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="plot_yield_surface"><a class="viewcode-back" href="../../../../_autosummary/hookeai.miscellaneous.materials.plot_yield_surface.plot_yield_surface.html#hookeai.miscellaneous.materials.plot_yield_surface.plot_yield_surface">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">plot_yield_surface</span><span class="p">(</span><span class="n">models_names</span><span class="p">,</span> <span class="n">models_parameters</span><span class="p">,</span> <span class="n">models_sy</span><span class="p">,</span>
+                       <span class="n">models_labels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_null_planes</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                       <span class="n">is_pi_plane_only</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                       <span class="n">filename</span><span class="o">=</span><span class="s1">&#39;yield_surfaces&#39;</span><span class="p">,</span> <span class="n">save_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                       <span class="n">is_save_fig</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_stdout_display</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot constitutive material models yield surface.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    models_names : tuple[str]</span>
+<span class="sd">        Constitutive models for which the yield surface is plotted.</span>
+<span class="sd">    models_parameters : dict</span>
+<span class="sd">        Constitutive model parameters (item, dict) required to compute each</span>
+<span class="sd">        model (key, str) yield surface.</span>
+<span class="sd">    models_sy : dict</span>
+<span class="sd">        Constitutive model yield stress (item, float) required to compute each</span>
+<span class="sd">        model (key, str) yield surface.</span>
+<span class="sd">    models_labels : dict, default=None</span>
+<span class="sd">        Constitutive model label (item, str) for each model (key, str).</span>
+<span class="sd">    is_null_planes : bool, default=False</span>
+<span class="sd">        If True, then plot null pi-stress planes.</span>
+<span class="sd">    is_pi_plane_only : bool, default=False</span>
+<span class="sd">        If True, then plot only yield surfaces slice at the pi-plane.</span>
+<span class="sd">    filename : str, default=&#39;yield_surfaces&#39;</span>
+<span class="sd">        Figure name.</span>
+<span class="sd">    save_dir : str, default=None</span>
+<span class="sd">        Directory where figure is saved.</span>
+<span class="sd">    is_save_fig : bool, default=False</span>
+<span class="sd">        Save figure.</span>
+<span class="sd">    is_stdout_display : bool, default=False</span>
+<span class="sd">        True if displaying figure to standard output device, False</span>
+<span class="sd">        otherwise.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Set pi-stress range factor (bounding box)</span>
+    <span class="n">pi_stress_factor</span> <span class="o">=</span> <span class="mf">2.0</span>
+    <span class="c1"># Get maximum yield stress among all models</span>
+    <span class="n">max_sy</span> <span class="o">=</span> <span class="nb">max</span><span class="p">(</span><span class="n">models_sy</span><span class="o">.</span><span class="n">values</span><span class="p">())</span>
+    <span class="c1"># Set pi-stress range</span>
+    <span class="n">pi_min</span> <span class="o">=</span> <span class="o">-</span><span class="n">pi_stress_factor</span><span class="o">*</span><span class="n">max_sy</span>
+    <span class="n">pi_max</span> <span class="o">=</span> <span class="n">pi_stress_factor</span><span class="o">*</span><span class="n">max_sy</span>
+    <span class="n">pi_range</span> <span class="o">=</span> <span class="n">pi_max</span> <span class="o">-</span> <span class="n">pi_min</span>
+    <span class="c1"># Set bounding box padding</span>
+    <span class="n">bbox_padding</span> <span class="o">=</span> <span class="mf">0.0</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set number of points along each uniform grid dimension</span>
+    <span class="n">dimensions</span><span class="o">=</span><span class="p">(</span><span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">,</span> <span class="mi">50</span><span class="p">)</span>
+    <span class="c1"># Set period along each uniform grid dimension</span>
+    <span class="n">spacing</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span><span class="n">pi_range</span><span class="o">/</span><span class="n">x</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">dimensions</span><span class="p">])</span>
+    <span class="c1"># Set uniform grid origin (minimum starting point of grid)</span>
+    <span class="n">origin</span> <span class="o">=</span> <span class="p">(</span><span class="n">pi_min</span><span class="p">,</span> <span class="n">pi_min</span><span class="p">,</span> <span class="n">pi_min</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Create uniform grid</span>
+    <span class="n">grid</span> <span class="o">=</span> <span class="n">pv</span><span class="o">.</span><span class="n">ImageData</span><span class="p">(</span><span class="n">dimensions</span><span class="o">=</span><span class="n">dimensions</span><span class="p">,</span> <span class="n">spacing</span><span class="o">=</span><span class="n">spacing</span><span class="p">,</span> <span class="n">origin</span><span class="o">=</span><span class="n">origin</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get grid bounds</span>
+    <span class="n">grid_bounds</span> <span class="o">=</span> <span class="n">grid</span><span class="o">.</span><span class="n">bounds</span>
+    <span class="c1"># Extract grid bounds along each dimension</span>
+    <span class="n">grid_bounds_dim</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+        <span class="p">[(</span><span class="n">grid_bounds</span><span class="p">[</span><span class="n">i</span><span class="p">],</span> <span class="n">grid_bounds</span><span class="p">[</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">])</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)])</span>
+    <span class="c1"># Get grid range along each dimension</span>
+    <span class="n">grid_range_dim</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+        <span class="p">[</span><span class="n">grid_bounds_dim</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">grid_bounds_dim</span><span class="p">[</span><span class="n">i</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">)])</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Collect grid points (pi-stress points)</span>
+    <span class="n">pi_stress_points</span> <span class="o">=</span> <span class="n">grid</span><span class="o">.</span><span class="n">points</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize constitutive models pi-plane yield function</span>
+    <span class="n">models_phi_pi_plane</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize plotter</span>
+    <span class="n">plotter</span> <span class="o">=</span> <span class="n">pv</span><span class="o">.</span><span class="n">Plotter</span><span class="p">(</span><span class="n">lighting</span><span class="o">=</span><span class="s1">&#39;light kit&#39;</span><span class="p">,</span> <span class="n">polygon_smoothing</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set light</span>
+    <span class="n">light</span> <span class="o">=</span> <span class="n">pv</span><span class="o">.</span><span class="n">Light</span><span class="p">(</span><span class="n">position</span><span class="o">=</span><span class="p">(</span><span class="n">pi_max</span><span class="p">,</span> <span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="n">pi_min</span> <span class="o">+</span> <span class="n">pi_max</span><span class="p">),</span> <span class="n">pi_max</span><span class="p">),</span>
+                     <span class="n">focal_point</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">),</span> <span class="n">intensity</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+    <span class="c1"># Add light</span>
+    <span class="n">plotter</span><span class="o">.</span><span class="n">add_light</span><span class="p">(</span><span class="n">light</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Loop over constitutive models</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">model_name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">models_names</span><span class="p">):</span>
+        <span class="c1"># Get model parameters</span>
+        <span class="n">model_parameters</span> <span class="o">=</span> <span class="n">models_parameters</span><span class="p">[</span><span class="n">model_name</span><span class="p">]</span>
+        <span class="c1"># Get model yield stress</span>
+        <span class="n">sy</span> <span class="o">=</span> <span class="n">models_sy</span><span class="p">[</span><span class="n">model_name</span><span class="p">]</span>
+        <span class="c1"># Get model label</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">models_labels</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="n">model_name</span> <span class="ow">in</span> <span class="n">models_labels</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">models_labels</span><span class="p">[</span><span class="n">model_name</span><span class="p">]</span> <span class="ow">is</span> <span class="kc">None</span>
+                    <span class="ow">or</span> <span class="n">models_labels</span><span class="p">[</span><span class="n">model_name</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">):</span>
+                <span class="n">model_label</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">model_label</span> <span class="o">=</span> <span class="n">models_labels</span><span class="p">[</span><span class="n">model_name</span><span class="p">]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">model_label</span> <span class="o">=</span> <span class="s1">&#39;&#39;</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Compute model yield function</span>
+        <span class="n">phi_points</span> <span class="o">=</span> <span class="n">batched_yield_function</span><span class="p">(</span>
+            <span class="n">pi_stress_points</span><span class="p">,</span> <span class="n">sy</span><span class="o">=</span><span class="n">sy</span><span class="p">,</span> <span class="n">model_name</span><span class="o">=</span><span class="n">model_name</span><span class="p">,</span>
+            <span class="n">model_parameters</span><span class="o">=</span><span class="n">model_parameters</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set isosurface threshold</span>
+        <span class="n">isosurfaces</span> <span class="o">=</span> <span class="p">[</span><span class="mf">0.0</span><span class="p">]</span>
+        <span class="c1"># Set VTK filter to create isosurface</span>
+        <span class="n">contour_method</span> <span class="o">=</span> <span class="s1">&#39;marching_cubes&#39;</span>
+        <span class="c1"># Build yield surface</span>
+        <span class="n">surface_mesh</span> <span class="o">=</span> \
+            <span class="n">grid</span><span class="o">.</span><span class="n">contour</span><span class="p">(</span><span class="n">isosurfaces</span><span class="p">,</span> <span class="n">phi_points</span><span class="p">,</span> <span class="n">method</span><span class="o">=</span><span class="n">contour_method</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set mesh label</span>
+        <span class="n">mesh_label</span> <span class="o">=</span> <span class="n">model_label</span>
+        <span class="c1"># Set mesh style</span>
+        <span class="n">mesh_style</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;surface&#39;</span><span class="p">,</span> <span class="s1">&#39;wireframe&#39;</span><span class="p">,</span> <span class="s1">&#39;points&#39;</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># Set mesh color</span>
+        <span class="n">mesh_color</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;#4477AA&#39;</span><span class="p">,</span> <span class="s1">&#39;#EE6677&#39;</span><span class="p">,</span> <span class="s1">&#39;#228833&#39;</span><span class="p">,</span> <span class="s1">&#39;#CCBB44&#39;</span><span class="p">,</span> <span class="s1">&#39;#66CCEE&#39;</span><span class="p">,</span>
+                      <span class="s1">&#39;#AA3377&#39;</span><span class="p">,</span> <span class="s1">&#39;#BBBBBB&#39;</span><span class="p">,</span> <span class="s1">&#39;#EE7733&#39;</span><span class="p">,</span> <span class="s1">&#39;#009988&#39;</span><span class="p">,</span> <span class="s1">&#39;#CC3311&#39;</span><span class="p">,</span>
+                      <span class="s1">&#39;#DDAA33&#39;</span><span class="p">,</span> <span class="s1">&#39;#999933&#39;</span><span class="p">,</span> <span class="s1">&#39;#DDCC77&#39;</span><span class="p">,</span> <span class="s1">&#39;#882255&#39;</span><span class="p">)[</span><span class="n">i</span><span class="p">]</span>
+        <span class="c1"># Set show edges and edges color</span>
+        <span class="n">mesh_show_edges</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="c1"># Set surface opacity</span>
+        <span class="n">mesh_opacity</span> <span class="o">=</span> <span class="mf">1.0</span>
+        <span class="c1"># Set smooth shading</span>
+        <span class="n">mesh_smooth_shading</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get yield surface slice at pi-plane</span>
+        <span class="n">pi_plane</span> <span class="o">=</span> <span class="n">surface_mesh</span><span class="o">.</span><span class="n">slice</span><span class="p">(</span><span class="n">normal</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">origin</span><span class="o">=</span><span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.0</span><span class="p">))</span>
+        <span class="c1"># Store model yield surface slice at pi-plane</span>
+        <span class="n">models_phi_pi_plane</span><span class="p">[</span><span class="n">model_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">pi_plane</span><span class="o">.</span><span class="n">points</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">:</span><span class="mi">2</span><span class="p">]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Add yield surface to plot</span>
+        <span class="k">if</span> <span class="n">is_pi_plane_only</span><span class="p">:</span>
+            <span class="c1"># Add yield surface slice mesh to plot</span>
+            <span class="n">_</span> <span class="o">=</span> <span class="n">plotter</span><span class="o">.</span><span class="n">add_mesh</span><span class="p">(</span><span class="n">pi_plane</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">mesh_label</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">mesh_color</span><span class="p">,</span>
+                                 <span class="n">line_width</span><span class="o">=</span><span class="mf">4.0</span><span class="p">)</span> 
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Clip yield surface</span>
+            <span class="c1">#surface_mesh = surface_mesh.clip(</span>
+            <span class="c1">#   normal=(1, 0, 0), origin=(0, 0, 0), invert=True)</span>
+            <span class="c1"># Add yield surface mesh to plot</span>
+            <span class="n">_</span> <span class="o">=</span> <span class="n">plotter</span><span class="o">.</span><span class="n">add_mesh</span><span class="p">(</span><span class="n">surface_mesh</span><span class="p">,</span> <span class="n">label</span><span class="o">=</span><span class="n">mesh_label</span><span class="p">,</span>
+                                 <span class="n">color</span><span class="o">=</span><span class="n">mesh_color</span><span class="p">,</span> <span class="n">style</span><span class="o">=</span><span class="n">mesh_style</span><span class="p">,</span>
+                                 <span class="n">show_edges</span><span class="o">=</span><span class="n">mesh_show_edges</span><span class="p">,</span>
+                                 <span class="n">opacity</span><span class="o">=</span><span class="n">mesh_opacity</span><span class="p">,</span>
+                                 <span class="n">smooth_shading</span><span class="o">=</span><span class="n">mesh_smooth_shading</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Plot null pi-stress planes</span>
+    <span class="k">if</span> <span class="n">is_null_planes</span><span class="p">:</span>
+        <span class="c1"># Loop over null pi-stress planes</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">):</span>
+            <span class="c1"># Get plane normal direction</span>
+            <span class="n">direction</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="mi">1</span> <span class="k">if</span> <span class="n">j</span> <span class="o">==</span> <span class="n">i</span> <span class="k">else</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">j</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">3</span><span class="p">))</span>
+            <span class="c1"># Get plane size indexes</span>
+            <span class="n">size_indexes</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="nb">set</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span> <span class="o">-</span> <span class="nb">set</span><span class="p">((</span><span class="n">i</span><span class="p">,)))</span>
+            <span class="c1"># Get plane color</span>
+            <span class="n">plane_color</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;lightgrey&#39;</span><span class="p">,</span> <span class="s1">&#39;lightgrey&#39;</span><span class="p">,</span> <span class="s1">&#39;lightgrey&#39;</span><span class="p">)[</span><span class="n">i</span><span class="p">]</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Compute null pi-stress plane</span>
+            <span class="n">null_pi_plane</span> <span class="o">=</span> <span class="n">pv</span><span class="o">.</span><span class="n">Plane</span><span class="p">(</span>
+                <span class="n">direction</span><span class="o">=</span><span class="n">direction</span><span class="p">,</span> <span class="n">i_size</span><span class="o">=</span><span class="n">grid_range_dim</span><span class="p">[</span><span class="n">size_indexes</span><span class="p">[</span><span class="mi">0</span><span class="p">]],</span>
+                <span class="n">j_size</span><span class="o">=</span><span class="n">grid_range_dim</span><span class="p">[</span><span class="n">size_indexes</span><span class="p">[</span><span class="mi">1</span><span class="p">]])</span>
+            <span class="c1"># Add null pi-stress plane</span>
+            <span class="n">plotter</span><span class="o">.</span><span class="n">add_mesh</span><span class="p">(</span><span class="n">null_pi_plane</span><span class="p">,</span> <span class="n">color</span><span class="o">=</span><span class="n">plane_color</span><span class="p">,</span> <span class="n">opacity</span><span class="o">=</span><span class="mf">0.5</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Add legend to plot</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">models_labels</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="n">plotter</span><span class="o">.</span><span class="n">add_legend</span><span class="p">(</span><span class="n">border</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">size</span><span class="o">=</span><span class="p">(</span><span class="mf">0.15</span><span class="p">,</span> <span class="mf">0.15</span><span class="p">),</span> <span class="n">loc</span><span class="o">=</span><span class="s1">&#39;upper right&#39;</span><span class="p">,</span>
+                           <span class="n">face</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span> <span class="n">font_family</span><span class="o">=</span><span class="s1">&#39;arial&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set axes titles</span>
+    <span class="n">xtitle</span> <span class="o">=</span> <span class="s1">&#39;Pi-Stress 1 (MPa)&#39;</span>
+    <span class="n">ytitle</span> <span class="o">=</span> <span class="s1">&#39;Pi-Stress 2 (MPa)&#39;</span>
+    <span class="n">ztitle</span> <span class="o">=</span> <span class="s1">&#39;Pi-Stress 3 (MPa)&#39;</span>
+    <span class="c1"># Set axes labels</span>
+    <span class="n">show_xlabels</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">show_ylabels</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="n">show_zlabels</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="c1"># Set axes tick labels</span>
+    <span class="n">is_show_tick_labels</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="k">if</span> <span class="n">is_show_tick_labels</span><span class="p">:</span>
+        <span class="n">fmt</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">fmt</span> <span class="o">=</span> <span class="s1">&#39; &#39;</span>
+    <span class="c1"># Plot bounding box</span>
+    <span class="n">plotter</span><span class="o">.</span><span class="n">show_bounds</span><span class="p">(</span><span class="n">grid</span><span class="o">=</span><span class="s2">&quot;back&quot;</span><span class="p">,</span> <span class="n">location</span><span class="o">=</span><span class="s2">&quot;outer&quot;</span><span class="p">,</span> <span class="n">bounds</span><span class="o">=</span><span class="n">grid</span><span class="o">.</span><span class="n">bounds</span><span class="p">,</span>
+                        <span class="n">font_family</span><span class="o">=</span><span class="s1">&#39;arial&#39;</span><span class="p">,</span> <span class="n">use_3d_text</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">font_size</span><span class="o">=</span><span class="mi">16</span><span class="p">,</span>
+                        <span class="n">fmt</span><span class="o">=</span><span class="n">fmt</span><span class="p">,</span> <span class="n">xtitle</span><span class="o">=</span><span class="n">xtitle</span><span class="p">,</span> <span class="n">ytitle</span><span class="o">=</span><span class="n">ytitle</span><span class="p">,</span> <span class="n">ztitle</span><span class="o">=</span><span class="n">ztitle</span><span class="p">,</span>
+                        <span class="n">show_xlabels</span><span class="o">=</span><span class="n">show_xlabels</span><span class="p">,</span> <span class="n">show_ylabels</span><span class="o">=</span><span class="n">show_ylabels</span><span class="p">,</span>
+                        <span class="n">show_zlabels</span><span class="o">=</span><span class="n">show_zlabels</span><span class="p">,</span> <span class="n">padding</span><span class="o">=</span><span class="n">bbox_padding</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Display plot</span>
+    <span class="k">if</span> <span class="n">is_stdout_display</span><span class="p">:</span>
+        <span class="n">plotter</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Save plot</span>
+    <span class="k">if</span> <span class="n">is_save_fig</span><span class="p">:</span>
+        <span class="c1"># Set plot file path</span>
+        <span class="n">plot_file_path</span> <span class="o">=</span> \
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">save_dir</span><span class="p">),</span> <span class="n">filename</span> <span class="o">+</span> <span class="s1">&#39;.png&#39;</span><span class="p">)</span>
+        <span class="c1"># Save figure</span>
+        <span class="n">plotter</span><span class="o">.</span><span class="n">screenshot</span><span class="p">(</span><span class="n">plot_file_path</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Plot constitutive material models yield surface in pi-plane</span>
+    <span class="n">plot_yield_surface_pi_plane</span><span class="p">(</span><span class="n">models_names</span><span class="p">,</span> <span class="n">models_phi_pi_plane</span><span class="p">,</span>
+                                <span class="n">models_labels</span><span class="o">=</span><span class="n">models_labels</span><span class="p">,</span>
+                                <span class="n">save_dir</span><span class="o">=</span><span class="n">save_dir</span><span class="p">,</span> <span class="n">is_save_fig</span><span class="o">=</span><span class="n">is_save_fig</span><span class="p">,</span>
+                                <span class="n">is_stdout_display</span><span class="o">=</span><span class="n">is_stdout_display</span><span class="p">,</span>
+                                <span class="n">is_latex</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span> </div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="plot_yield_surface_pi_plane"><a class="viewcode-back" href="../../../../_autosummary/hookeai.miscellaneous.materials.plot_yield_surface.plot_yield_surface_pi_plane.html#hookeai.miscellaneous.materials.plot_yield_surface.plot_yield_surface_pi_plane">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">plot_yield_surface_pi_plane</span><span class="p">(</span><span class="n">models_names</span><span class="p">,</span> <span class="n">models_phi_pi_plane</span><span class="p">,</span>
+                                <span class="n">models_labels</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                <span class="n">filename</span><span class="o">=</span><span class="s1">&#39;yield_surfaces_pi_plane&#39;</span><span class="p">,</span>
+                                <span class="n">save_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_save_fig</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                <span class="n">is_stdout_display</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_latex</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot constitutive material models yield surface in pi-plane.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    models_names : tuple[str]</span>
+<span class="sd">        Constitutive models for which the yield surface is plotted.</span>
+<span class="sd">    models_phi_pi_plane : dict</span>
+<span class="sd">        For each constitutive material model (key, str), store the</span>
+<span class="sd">        corresponding yield function points in the pi-plane</span>
+<span class="sd">        (item, numpy.ndarray(2d)). Each point should be stored as (pi1, pi2),</span>
+<span class="sd">        where pi1 and pi2 are the first and second pi-stress coordinates.</span>
+<span class="sd">    models_labels : dict, default=None</span>
+<span class="sd">        Constitutive model label (item, str) for each model (key, str).</span>
+<span class="sd">    filename : str, default=&#39;yield_surfaces_pi_plane&#39;</span>
+<span class="sd">        Figure name.</span>
+<span class="sd">    save_dir : str, default=None</span>
+<span class="sd">        Directory where data set plots are saved.</span>
+<span class="sd">    is_save_fig : bool, default=False</span>
+<span class="sd">        Save figure.</span>
+<span class="sd">    is_stdout_display : bool, default=False</span>
+<span class="sd">        True if displaying figure to standard output device, False otherwise.</span>
+<span class="sd">    is_latex : bool, default=False</span>
+<span class="sd">        If True, then render all strings in LaTeX. If LaTex is not available,</span>
+<span class="sd">        then this option is silently set to False and all input strings are</span>
+<span class="sd">        processed to remove $(...)$ enclosure.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get number of models</span>
+    <span class="n">n_model</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">models_names</span><span class="p">)</span>
+    <span class="c1"># Get maximum number of points</span>
+    <span class="n">n_point_max</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="n">models_phi_pi_plane</span><span class="p">[</span><span class="n">model_name</span><span class="p">]</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                       <span class="k">for</span> <span class="n">model_name</span> <span class="ow">in</span> <span class="n">models_names</span><span class="p">])</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize data array</span>
+    <span class="n">data_xy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">n_point_max</span><span class="o">+</span><span class="mi">1</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">n_model</span><span class="p">),</span> <span class="n">fill_value</span><span class="o">=</span><span class="n">np</span><span class="o">.</span><span class="n">nan</span><span class="p">)</span>
+    <span class="c1"># Initialize data labels</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">models_labels</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="n">data_labels</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">data_labels</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Loop over constitutive models</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">model_name</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">models_names</span><span class="p">):</span>
+        <span class="c1"># Get constitutive model yield function points</span>
+        <span class="n">phi_pi_plane</span> <span class="o">=</span> <span class="n">models_phi_pi_plane</span><span class="p">[</span><span class="n">model_name</span><span class="p">]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Compute centroid</span>
+        <span class="n">centroid</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">phi_pi_plane</span><span class="p">,</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="c1"># Compute angles relative to centroid</span>
+        <span class="n">angles</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arctan2</span><span class="p">(</span><span class="n">phi_pi_plane</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">centroid</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                            <span class="n">phi_pi_plane</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="n">centroid</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+        <span class="c1"># Sort yield function points in counter-clockwise order</span>
+        <span class="n">phi_pi_plane</span> <span class="o">=</span> <span class="n">phi_pi_plane</span><span class="p">[</span><span class="n">np</span><span class="o">.</span><span class="n">argsort</span><span class="p">(</span><span class="n">angles</span><span class="p">)]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Close yield surface</span>
+        <span class="n">phi_pi_plane</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">phi_pi_plane</span><span class="p">,</span> <span class="n">phi_pi_plane</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="mi">1</span><span class="p">,</span> <span class="p">:],</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get number of yield function points</span>
+        <span class="n">n_point</span> <span class="o">=</span> <span class="n">phi_pi_plane</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+        <span class="c1"># Store model yield function points</span>
+        <span class="n">data_xy</span><span class="p">[:</span><span class="n">n_point</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">i</span><span class="p">:</span><span class="mi">2</span><span class="o">*</span><span class="n">i</span><span class="o">+</span><span class="mi">2</span><span class="p">]</span> <span class="o">=</span> <span class="n">phi_pi_plane</span>
+        <span class="c1"># Store model label</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">models_labels</span><span class="p">,</span> <span class="nb">dict</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="n">model_name</span> <span class="ow">in</span> <span class="n">models_labels</span><span class="o">.</span><span class="n">keys</span><span class="p">()):</span>
+            <span class="k">if</span> <span class="n">models_labels</span><span class="p">[</span><span class="n">model_name</span><span class="p">]</span> <span class="o">==</span> <span class="s1">&#39;&#39;</span><span class="p">:</span>
+                <span class="n">model_label</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">model_label</span> <span class="o">=</span> <span class="n">models_labels</span><span class="p">[</span><span class="n">model_name</span><span class="p">]</span>
+            <span class="n">data_labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">model_label</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set axes labels</span>
+    <span class="n">x_label</span> <span class="o">=</span> <span class="s1">&#39;Pi-Stress 1 (MPa)&#39;</span>
+    <span class="n">y_label</span> <span class="o">=</span> <span class="s1">&#39;Pi-Stress 2 (MPa)&#39;</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Plot constitutive material models yield surface in pi-plane</span>
+    <span class="n">figure</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plot_xy_data</span><span class="p">(</span>
+        <span class="n">data_xy</span><span class="p">,</span> <span class="n">data_labels</span><span class="o">=</span><span class="n">data_labels</span><span class="p">,</span> <span class="n">x_label</span><span class="o">=</span><span class="n">x_label</span><span class="p">,</span> <span class="n">y_label</span><span class="o">=</span><span class="n">y_label</span><span class="p">,</span>
+        <span class="n">x_scale</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">,</span> <span class="n">y_scale</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">,</span> <span class="n">is_latex</span><span class="o">=</span><span class="n">is_latex</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Enforce equal axis scaling</span>
+    <span class="n">axes</span><span class="o">.</span><span class="n">set_aspect</span><span class="p">(</span><span class="s2">&quot;equal&quot;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Save figure</span>
+    <span class="k">if</span> <span class="n">is_save_fig</span><span class="p">:</span>
+        <span class="n">save_figure</span><span class="p">(</span><span class="n">figure</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span><span class="p">,</span> <span class="n">save_dir</span><span class="o">=</span><span class="n">save_dir</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Display figure</span>
+    <span class="k">if</span> <span class="n">is_stdout_display</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Close plot</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="s1">&#39;all&#39;</span><span class="p">)</span></div>
+<span class="c1"># =============================================================================</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="c1"># Set processes</span>
+    <span class="n">process</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;default&#39;</span><span class="p">,</span> <span class="s1">&#39;parametric&#39;</span><span class="p">,</span> <span class="s1">&#39;convexity&#39;</span><span class="p">,</span> <span class="s1">&#39;equivalence&#39;</span><span class="p">,</span> <span class="s1">&#39;hybrid&#39;</span>
+               <span class="p">)[</span><span class="mi">4</span><span class="p">]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set models data</span>
+    <span class="k">if</span> <span class="n">process</span> <span class="o">==</span> <span class="s1">&#39;parametric&#39;</span><span class="p">:</span>
+        <span class="c1"># Set number of parametric models</span>
+        <span class="n">n_model</span> <span class="o">=</span> <span class="mi">4</span>
+        <span class="c1"># Set default model parameters</span>
+        <span class="n">default_parameters</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;yield_a&#39;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+                              <span class="s1">&#39;yield_b&#39;</span><span class="p">:</span> <span class="mf">0.05</span><span class="p">,</span>
+                              <span class="s1">&#39;yield_c&#39;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+                              <span class="s1">&#39;yield_d&#39;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">}</span>
+        <span class="c1"># Set parametric values and labels</span>
+        <span class="n">parametric_name</span> <span class="o">=</span> <span class="s1">&#39;yield_d&#39;</span>
+        <span class="n">parametric_label</span> <span class="o">=</span> <span class="s1">&#39;d&#39;</span>
+        <span class="n">parametric_values</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;yield_a&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.8</span><span class="p">,</span> <span class="mf">1.2</span><span class="p">,</span> <span class="mf">1.5</span><span class="p">),</span>
+                             <span class="s1">&#39;yield_b&#39;</span><span class="p">:</span> <span class="p">(</span><span class="mf">0.0</span><span class="p">,</span> <span class="mf">0.03</span><span class="p">,</span> <span class="mf">0.07</span><span class="p">,</span> <span class="mf">0.1</span><span class="p">),</span>
+                             <span class="s1">&#39;yield_c&#39;</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="mf">3.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="mf">2.0</span><span class="p">),</span>
+                             <span class="s1">&#39;yield_d&#39;</span><span class="p">:</span> <span class="p">(</span><span class="o">-</span><span class="mf">1.0</span><span class="p">,</span> <span class="o">-</span><span class="mf">0.5</span><span class="p">,</span> <span class="mf">0.5</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">)}</span>
+        <span class="n">parametric_labels</span> <span class="o">=</span> <span class="p">[</span><span class="sa">f</span><span class="s1">&#39;$</span><span class="si">{</span><span class="n">parametric_label</span><span class="si">}</span><span class="s1"> = </span><span class="si">{</span><span class="n">x</span><span class="si">}</span><span class="s1">$&#39;</span>
+                             <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">parametric_values</span><span class="p">[</span><span class="n">parametric_name</span><span class="p">]]</span>
+        <span class="c1"># Initialize models data</span>
+        <span class="n">models_names</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">models_parameters</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">models_sy</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">models_labels</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># Loop over models</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_model</span><span class="p">):</span>
+            <span class="c1"># Set model name</span>
+            <span class="n">model_name</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;lou_zhang_yoon_</span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="n">models_names</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">model_name</span><span class="p">)</span>
+            <span class="c1"># Initialize model parameters (default)</span>
+            <span class="n">models_parameters</span><span class="p">[</span><span class="n">model_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">default_parameters</span><span class="o">.</span><span class="n">copy</span><span class="p">()</span>
+            <span class="c1"># Set model parameters</span>
+            <span class="n">models_parameters</span><span class="p">[</span><span class="n">model_name</span><span class="p">][</span><span class="n">parametric_name</span><span class="p">]</span> <span class="o">=</span> \
+                <span class="n">parametric_values</span><span class="p">[</span><span class="n">parametric_name</span><span class="p">][</span><span class="n">i</span><span class="p">]</span>
+            <span class="c1"># Set model label</span>
+            <span class="n">models_labels</span><span class="p">[</span><span class="n">model_name</span><span class="p">]</span> <span class="o">=</span> <span class="n">parametric_labels</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+            <span class="c1"># Set model initial yield stress</span>
+            <span class="n">models_sy</span><span class="p">[</span><span class="n">model_name</span><span class="p">]</span> <span class="o">=</span> <span class="mi">900</span>
+    <span class="k">elif</span> <span class="n">process</span> <span class="o">==</span> <span class="s1">&#39;convexity&#39;</span><span class="p">:</span>
+        <span class="c1"># Set models names</span>
+        <span class="n">models_names</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;lou_zhang_yoon_brm&#39;</span><span class="p">,</span> <span class="s1">&#39;lou_zhang_yoon_arm&#39;</span><span class="p">)</span>
+        <span class="c1"># Set models parameters</span>
+        <span class="n">models_parameters</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">models_parameters</span><span class="p">[</span><span class="s1">&#39;lou_zhang_yoon_brm&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="p">{</span><span class="s1">&#39;yield_a&#39;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+             <span class="s1">&#39;yield_b&#39;</span><span class="p">:</span> <span class="mf">0.05</span><span class="p">,</span>
+             <span class="s1">&#39;yield_c&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mf">2.5</span><span class="p">,</span>
+             <span class="s1">&#39;yield_d&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mf">1.25</span><span class="p">}</span>
+        <span class="n">models_parameters</span><span class="p">[</span><span class="s1">&#39;lou_zhang_yoon_arm&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="p">{</span><span class="s1">&#39;yield_a&#39;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+             <span class="s1">&#39;yield_b&#39;</span><span class="p">:</span> <span class="mf">0.05</span><span class="p">,</span>
+             <span class="s1">&#39;yield_c&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mf">1.390837550163269</span><span class="p">,</span>
+             <span class="s1">&#39;yield_d&#39;</span><span class="p">:</span> <span class="o">-</span><span class="mf">0.6954185962677002</span><span class="p">}</span>
+        <span class="c1"># Set models yield stress</span>
+        <span class="n">models_sy</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;lou_zhang_yoon_brm&#39;</span><span class="p">:</span> <span class="mi">900</span><span class="p">,</span>
+                     <span class="s1">&#39;lou_zhang_yoon_arm&#39;</span><span class="p">:</span> <span class="mi">900</span><span class="p">}</span>
+        <span class="c1"># Set models labels</span>
+        <span class="n">models_labels</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;lou_zhang_yoon_brm&#39;</span><span class="p">:</span> <span class="s1">&#39;Before return-mapping&#39;</span><span class="p">,</span>
+                         <span class="s1">&#39;lou_zhang_yoon_arm&#39;</span><span class="p">:</span> <span class="s1">&#39;After return-mapping&#39;</span><span class="p">}</span>
+    <span class="k">elif</span> <span class="n">process</span> <span class="o">==</span> <span class="s1">&#39;equivalence&#39;</span><span class="p">:</span>
+        <span class="c1"># Set models names</span>
+        <span class="n">models_names</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;von_mises&#39;</span><span class="p">,</span> <span class="s1">&#39;drucker_prager&#39;</span><span class="p">,</span> <span class="s1">&#39;lou_zhang_yoon&#39;</span><span class="p">)</span>
+        <span class="c1"># Set models parameters</span>
+        <span class="n">models_parameters</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">models_parameters</span><span class="p">[</span><span class="s1">&#39;von_mises&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">models_parameters</span><span class="p">[</span><span class="s1">&#39;drucker_prager&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="p">{</span><span class="s1">&#39;friction_angle&#39;</span><span class="p">:</span> <span class="mf">0.08671116054780224</span><span class="p">}</span>
+        <span class="n">models_parameters</span><span class="p">[</span><span class="s1">&#39;lou_zhang_yoon&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;yield_a&#39;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+                                               <span class="s1">&#39;yield_b&#39;</span><span class="p">:</span> <span class="mf">0.05</span><span class="p">,</span>
+                                               <span class="s1">&#39;yield_c&#39;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+                                               <span class="s1">&#39;yield_d&#39;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">}</span>
+        <span class="c1"># Set models yield stress</span>
+        <span class="c1"># Note: Must enforce cy = sy/xi on yf_drucker_prager!</span>
+        <span class="n">models_sy</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;von_mises&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">*</span><span class="mi">900</span><span class="p">,</span>
+                     <span class="s1">&#39;drucker_prager&#39;</span><span class="p">:</span> <span class="mi">900</span><span class="p">,</span>
+                     <span class="s1">&#39;lou_zhang_yoon&#39;</span><span class="p">:</span> <span class="mi">900</span><span class="p">}</span>
+        <span class="c1"># Set models labels</span>
+        <span class="n">models_labels</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;von_mises&#39;</span><span class="p">:</span> <span class="s1">&#39;Von Mises&#39;</span><span class="p">,</span>
+                         <span class="s1">&#39;drucker_prager&#39;</span><span class="p">:</span> <span class="s1">&#39;Drucker-Prager&#39;</span><span class="p">,</span>
+                         <span class="s1">&#39;lou_zhang_yoon&#39;</span><span class="p">:</span> <span class="s1">&#39;Lou-Zhang_Yoon&#39;</span><span class="p">}</span>
+    <span class="k">elif</span> <span class="n">process</span> <span class="o">==</span> <span class="s1">&#39;hybrid&#39;</span><span class="p">:</span>
+        <span class="c1"># Set models names</span>
+        <span class="n">models_names</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;lou_zhang_yoon&#39;</span><span class="p">,</span> <span class="s1">&#39;drucker_prager_4d97&#39;</span><span class="p">,</span>
+                        <span class="s1">&#39;drucker_prager_2d50&#39;</span><span class="p">,</span> <span class="s1">&#39;von_mises&#39;</span><span class="p">)</span>
+        <span class="c1"># Set models parameters</span>
+        <span class="n">models_parameters</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">models_parameters</span><span class="p">[</span><span class="s1">&#39;lou_zhang_yoon&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="p">{</span><span class="s1">&#39;yield_a&#39;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+             <span class="s1">&#39;yield_b&#39;</span><span class="p">:</span> <span class="mf">0.05</span><span class="p">,</span>
+             <span class="s1">&#39;yield_c&#39;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+             <span class="s1">&#39;yield_d&#39;</span><span class="p">:</span> <span class="mf">0.5</span><span class="p">}</span>
+        <span class="n">models_parameters</span><span class="p">[</span><span class="s1">&#39;drucker_prager_4d97&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="p">{</span><span class="s1">&#39;friction_angle&#39;</span><span class="p">:</span> <span class="mf">0.08671116054780224</span><span class="p">}</span>
+        <span class="n">models_parameters</span><span class="p">[</span><span class="s1">&#39;drucker_prager_2d50&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="p">{</span><span class="s1">&#39;friction_angle&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">deg2rad</span><span class="p">(</span><span class="mf">2.5</span><span class="p">)}</span>
+        <span class="n">models_parameters</span><span class="p">[</span><span class="s1">&#39;von_mises&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># Set models yield stress</span>
+        <span class="c1"># Note: Must enforce cy = sy/xi on yf_drucker_prager!</span>
+        <span class="n">models_sy</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;lou_zhang_yoon&#39;</span><span class="p">:</span> <span class="mi">900</span><span class="p">,</span>
+                     <span class="s1">&#39;drucker_prager_4d97&#39;</span><span class="p">:</span> <span class="mi">900</span><span class="p">,</span>
+                     <span class="s1">&#39;drucker_prager_2d50&#39;</span><span class="p">:</span> <span class="mi">900</span><span class="p">,</span>
+                     <span class="s1">&#39;von_mises&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">*</span><span class="mi">900</span><span class="p">}</span>
+        <span class="c1"># Set models labels</span>
+        <span class="n">models_labels</span> <span class="o">=</span> \
+            <span class="p">{</span><span class="s1">&#39;lou_zhang_yoon&#39;</span><span class="p">:</span> <span class="s1">&#39;Ground-truth (LZY)&#39;</span><span class="p">,</span>
+             <span class="s1">&#39;drucker_prager_4d97&#39;</span><span class="p">:</span> <span class="s1">&#39;D-P ($\phi</span><span class="se">\\</span><span class="s1">approx4.97^{\circ}$)&#39;</span><span class="p">,</span>
+             <span class="s1">&#39;drucker_prager_2d50&#39;</span><span class="p">:</span> <span class="s1">&#39;D-P ($\phi=2.50^{\circ}$)&#39;</span><span class="p">,</span>
+             <span class="s1">&#39;von_mises&#39;</span><span class="p">:</span> <span class="s1">&#39;VM&#39;</span><span class="p">}</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Set models names</span>
+        <span class="n">models_names</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;von_mises&#39;</span><span class="p">,</span> <span class="s1">&#39;drucker_prager&#39;</span><span class="p">,</span> <span class="s1">&#39;lou_zhang_yoon&#39;</span><span class="p">)</span>
+        <span class="c1"># Set models parameters</span>
+        <span class="n">models_parameters</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">models_parameters</span><span class="p">[</span><span class="s1">&#39;von_mises&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="n">models_parameters</span><span class="p">[</span><span class="s1">&#39;drucker_prager&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="p">{</span><span class="s1">&#39;friction_angle&#39;</span><span class="p">:</span> <span class="mf">0.08671116054780224</span><span class="p">}</span>
+        <span class="n">models_parameters</span><span class="p">[</span><span class="s1">&#39;lou_zhang_yoon&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;yield_a&#39;</span><span class="p">:</span> <span class="mf">1.0</span><span class="p">,</span>
+                                               <span class="s1">&#39;yield_b&#39;</span><span class="p">:</span> <span class="mf">0.05</span><span class="p">,</span>
+                                               <span class="s1">&#39;yield_c&#39;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">,</span>
+                                               <span class="s1">&#39;yield_d&#39;</span><span class="p">:</span> <span class="mf">0.0</span><span class="p">}</span>
+        <span class="c1"># Set models yield stress</span>
+        <span class="n">models_sy</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;von_mises&#39;</span><span class="p">:</span> <span class="n">np</span><span class="o">.</span><span class="n">sqrt</span><span class="p">(</span><span class="mi">3</span><span class="p">)</span><span class="o">*</span><span class="mi">900</span><span class="p">,</span>
+                     <span class="s1">&#39;drucker_prager&#39;</span><span class="p">:</span> <span class="mi">900</span><span class="p">,</span>
+                     <span class="s1">&#39;lou_zhang_yoon&#39;</span><span class="p">:</span> <span class="mi">900</span><span class="p">}</span>
+        <span class="c1"># Set models labels</span>
+        <span class="n">models_labels</span> <span class="o">=</span> <span class="p">{</span><span class="s1">&#39;von_mises&#39;</span><span class="p">:</span> <span class="s1">&#39;Von Mises&#39;</span><span class="p">,</span>
+                        <span class="s1">&#39;drucker_prager&#39;</span><span class="p">:</span> <span class="s1">&#39;Drucker-Prager&#39;</span><span class="p">,</span>
+                        <span class="s1">&#39;lou_zhang_yoon&#39;</span><span class="p">:</span> <span class="s1">&#39;Lou-Zhang_Yoon&#39;</span><span class="p">}</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Plot constitutive material models yield surface</span>
+    <span class="n">plot_yield_surface</span><span class="p">(</span><span class="n">models_names</span><span class="p">,</span> <span class="n">models_parameters</span><span class="p">,</span> <span class="n">models_sy</span><span class="p">,</span>
+                       <span class="n">models_labels</span><span class="p">,</span> <span class="n">is_null_planes</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                       <span class="n">is_pi_plane_only</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">save_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                       <span class="n">is_save_fig</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_stdout_display</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

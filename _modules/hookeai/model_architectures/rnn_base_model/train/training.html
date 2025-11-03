@@ -1,0 +1,952 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>hookeai.model_architectures.rnn_base_model.train.training &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../../" id="documentation_options" src="../../../../../_static/documentation_options.js"></script>
+        <script src="../../../../../_static/doctools.js"></script>
+        <script src="../../../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../_autosummary/hookeai.html">Code</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">hookeai.model_architectures.rnn_base_model.train.training</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for hookeai.model_architectures.rnn_base_model.train.training</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Training of recurrent neural network model.</span>
+
+<span class="sd">Classes</span>
+<span class="sd">-------</span>
+<span class="sd">EarlyStopper</span>
+<span class="sd">    Early stopping procedure (implicit regularizaton).</span>
+
+<span class="sd">Functions</span>
+<span class="sd">---------</span>
+<span class="sd">train_model</span>
+<span class="sd">    Training of recurrent neural network model.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#                                                                       Modules</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Standard</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="c1"># Third-party</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="c1"># Local</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">time_series_data.time_dataset</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_time_series_data_loader</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">model_architectures.rnn_base_model.model.gru_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">GRURNNModel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">model_architectures.rnn_base_model.predict.prediction</span><span class="w"> </span><span class="kn">import</span> <span class="n">predict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">model_architectures.procedures.model_training</span><span class="w"> </span><span class="kn">import</span> \
+    <span class="n">save_training_state</span><span class="p">,</span> <span class="n">save_loss_history</span><span class="p">,</span> <span class="n">write_training_summary_file</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">model_architectures.procedures.model_summary</span><span class="w"> </span><span class="kn">import</span> \
+    <span class="n">get_model_summary</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">model_architectures.procedures.model_state_files</span><span class="w"> </span><span class="kn">import</span> \
+    <span class="n">save_model_state</span><span class="p">,</span> <span class="n">load_model_state</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">model_architectures.procedures.model_data_scaling</span><span class="w"> </span><span class="kn">import</span> \
+    <span class="n">fit_data_scalers</span><span class="p">,</span> <span class="n">data_scaler_transform</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utilities.loss_functions</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_pytorch_loss</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utilities.optimizers</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_pytorch_optimizer</span><span class="p">,</span> \
+    <span class="n">get_learning_rate_scheduler</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utilities.data_loaders</span><span class="w"> </span><span class="kn">import</span> <span class="n">seed_worker</span>
+<span class="c1">#</span>
+<span class="c1">#                                                          Authorship &amp; Credits</span>
+<span class="c1"># =============================================================================</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Bernardo Ferreira (bernardo_ferreira@brown.edu)&#39;</span>
+<span class="n">__credits__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Bernardo Ferreira&#39;</span><span class="p">,</span> <span class="p">]</span>
+<span class="n">__status__</span> <span class="o">=</span> <span class="s1">&#39;Stable&#39;</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="train_model"><a class="viewcode-back" href="../../../../../_autosummary/hookeai.model_architectures.rnn_base_model.train.training.train_model.html#hookeai.model_architectures.rnn_base_model.train.training.train_model">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">train_model</span><span class="p">(</span><span class="n">n_max_epochs</span><span class="p">,</span> <span class="n">dataset</span><span class="p">,</span> <span class="n">model_init_args</span><span class="p">,</span> <span class="n">lr_init</span><span class="p">,</span>
+                <span class="n">opt_algorithm</span><span class="o">=</span><span class="s1">&#39;adam&#39;</span><span class="p">,</span> <span class="n">lr_scheduler_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">lr_scheduler_kwargs</span><span class="o">=</span><span class="p">{},</span> <span class="n">loss_nature</span><span class="o">=</span><span class="s1">&#39;features_out&#39;</span><span class="p">,</span>
+                <span class="n">loss_type</span><span class="o">=</span><span class="s1">&#39;mse&#39;</span><span class="p">,</span> <span class="n">loss_kwargs</span><span class="o">=</span><span class="p">{},</span>
+                <span class="n">batch_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">data_scaling_type</span><span class="o">=</span><span class="s1">&#39;mean-std&#39;</span><span class="p">,</span>
+                <span class="n">data_scaling_parameters</span><span class="o">=</span><span class="p">{},</span> <span class="n">is_sampler_shuffle</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                <span class="n">is_early_stopping</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">early_stopping_kwargs</span><span class="o">=</span><span class="p">{},</span>
+                <span class="n">model_load_state</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">save_every</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">dataset_file_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">device_type</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Training of recurrent neural network model.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    n_max_epochs : int</span>
+<span class="sd">        Maximum number of training epochs.</span>
+<span class="sd">    dataset : torch.utils.data.Dataset</span>
+<span class="sd">        Time series data set. Each sample is stored as a dictionary where</span>
+<span class="sd">        each feature (key, str) data is a torch.Tensor(2d) of shape</span>
+<span class="sd">        (sequence_length, n_features).</span>
+<span class="sd">    model_init_args : dict</span>
+<span class="sd">        Recurrent neural network model class initialization parameters (check</span>
+<span class="sd">        class GRURNNModel).</span>
+<span class="sd">    lr_init : float</span>
+<span class="sd">        Initial value optimizer learning rate. Constant learning rate value if</span>
+<span class="sd">        no learning rate scheduler is specified (lr_scheduler_type=None).</span>
+<span class="sd">    opt_algorithm : {&#39;adam&#39;,}, default=&#39;adam&#39;</span>
+<span class="sd">        Optimization algorithm:</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;adam&#39;  : Adam (torch.optim.Adam)</span>
+<span class="sd">        </span>
+<span class="sd">    lr_scheduler_type : {&#39;steplr&#39;, &#39;explr&#39;, &#39;linlr&#39;}, default=None</span>
+<span class="sd">        Type of learning rate scheduler:</span>
+
+<span class="sd">        &#39;steplr&#39;  : Step-based decay (torch.optim.lr_scheduler.SetpLR)</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;explr&#39;   : Exponential decay (torch.optim.lr_scheduler.ExponentialLR)</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;linlr&#39;   : Linear decay (torch.optim.lr_scheduler.LinearLR)</span>
+
+<span class="sd">    lr_scheduler_kwargs : dict, default={}</span>
+<span class="sd">        Arguments of torch.optim.lr_scheduler.LRScheduler initializer.</span>
+<span class="sd">    loss_nature : {&#39;features_out&#39;,}, default=&#39;features_out&#39;</span>
+<span class="sd">        Loss nature:</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;features_out&#39; : Based on output features</span>
+
+<span class="sd">    loss_type : {&#39;mse&#39;,}, default=&#39;mse&#39;</span>
+<span class="sd">        Loss function type:</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;mse&#39;  : MSE (torch.nn.MSELoss)</span>
+<span class="sd">        </span>
+<span class="sd">    loss_kwargs : dict, default={}</span>
+<span class="sd">        Arguments of torch.nn._Loss initializer.</span>
+<span class="sd">    batch_size : int, default=1</span>
+<span class="sd">        Number of samples loaded per batch.</span>
+<span class="sd">    data_scaling_type : {&#39;min-max&#39;, &#39;mean-std&#39;}, default=&#39;mean-std&#39;</span>
+<span class="sd">        Type of data scaling. Min-Max scaling (&#39;min-max&#39;) or</span>
+<span class="sd">        standardization (&#39;mean-std&#39;). Only effective if model input or output</span>
+<span class="sd">        features are normalized.</span>
+<span class="sd">    data_scaling_parameters : dict, default={}</span>
+<span class="sd">        Data scaling parameters (item, dict) for each features type</span>
+<span class="sd">        (key, str). For &#39;min-max&#39; data scaling, the parameters are the</span>
+<span class="sd">        &#39;minimum&#39; and &#39;maximum&#39; features normalization tensors, as well as</span>
+<span class="sd">        the &#39;norm_minimum&#39; and &#39;norm_maximum&#39; normalization bounds. For</span>
+<span class="sd">        &#39;mean-std&#39; data scaling, the parameters are the &#39;mean&#39; and &#39;std&#39;</span>
+<span class="sd">        features normalization tensors. Only effective if model input or output</span>
+<span class="sd">        features are normalized.</span>
+<span class="sd">    is_sampler_shuffle : bool, default=False</span>
+<span class="sd">        If True, shuffles data set samples at every epoch.</span>
+<span class="sd">    is_early_stopping : bool, default=False</span>
+<span class="sd">        If True, then training process is halted when early stopping criterion</span>
+<span class="sd">        is triggered.</span>
+<span class="sd">    early_stopping_kwargs : dict, default={}</span>
+<span class="sd">        Early stopping criterion parameters (key, str, item, value).</span>
+<span class="sd">    model_load_state : {&#39;default&#39;, &#39;init&#39;, int, &#39;best&#39;, &#39;last&#39;},</span>
+<span class="sd">                       default=&#39;default&#39;</span>
+<span class="sd">        Available model state to be loaded from the model directory.</span>
+<span class="sd">        Options:</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;default&#39;   : Model default state file</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;init&#39;      : Model initial state</span>
+<span class="sd">        </span>
+<span class="sd">        int         : Model state of given training epoch</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;best&#39;      : Model state of best performance</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;last&#39;      : Model state of latest training epoch</span>
+
+<span class="sd">    save_every : int, default=None</span>
+<span class="sd">        Save model every save_every epochs. If None, then saves only initial,</span>
+<span class="sd">        last epoch and best performance states.</span>
+<span class="sd">    dataset_file_path : str, default=None</span>
+<span class="sd">        Time series data set file path if such file exists. Only used for</span>
+<span class="sd">        output purposes.</span>
+<span class="sd">    device_type : {&#39;cpu&#39;, &#39;cuda&#39;}, default=&#39;cpu&#39;</span>
+<span class="sd">        Type of device on which torch.Tensor is allocated.</span>
+<span class="sd">    seed : int, default=None</span>
+<span class="sd">        Seed used to initialize the random number generators of Python and</span>
+<span class="sd">        other libraries (e.g., NumPy, PyTorch) for all devices to preserve</span>
+<span class="sd">        reproducibility. Does also set workers seed in PyTorch data loaders.</span>
+<span class="sd">    is_verbose : bool, default=False</span>
+<span class="sd">        If True, enable verbose output.</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    model : torch.nn.Module</span>
+<span class="sd">        Recurrent neural network model.</span>
+<span class="sd">    best_loss : float</span>
+<span class="sd">        Best loss during training process.</span>
+<span class="sd">    best_training_epoch : int</span>
+<span class="sd">        Training epoch corresponding to best loss during training process.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Set random number generators initialization for reproducibility</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">seed</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+        <span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+        <span class="n">generator</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">Generator</span><span class="p">()</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set device</span>
+    <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="n">device_type</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="n">start_time_sec</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Recurrent Neural Network model training&#39;</span>
+              <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">---------------------------------------&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize recurrent neural network model state</span>
+    <span class="k">if</span> <span class="n">model_load_state</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&gt; Initializing model...&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize recurrent neural network model</span>
+        <span class="c1"># (includes loading of data scalers)</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">GRURNNModel</span><span class="o">.</span><span class="n">init_model_from_file</span><span class="p">(</span>
+            <span class="n">model_directory</span><span class="o">=</span><span class="n">model_init_args</span><span class="p">[</span><span class="s1">&#39;model_directory&#39;</span><span class="p">])</span>
+        <span class="c1"># Set model device</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">set_device</span><span class="p">(</span><span class="n">device_type</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get model input and output features normalization</span>
+        <span class="n">is_model_in_normalized</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">is_model_in_normalized</span>
+        <span class="n">is_model_out_normalized</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">is_model_out_normalized</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&gt; Loading model state...&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Load recurrent neural network model state</span>
+        <span class="n">_</span> <span class="o">=</span> <span class="n">load_model_state</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">model_load_state</span><span class="o">=</span><span class="n">model_load_state</span><span class="p">,</span>
+                             <span class="n">is_remove_posterior</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&gt; Initializing model...&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize recurrent neural network model</span>
+        <span class="n">model</span> <span class="o">=</span> <span class="n">GRURNNModel</span><span class="p">(</span><span class="o">**</span><span class="n">model_init_args</span><span class="p">)</span>    
+        <span class="c1"># Set model device</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">set_device</span><span class="p">(</span><span class="n">device_type</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get model input and output features normalization</span>
+        <span class="n">is_model_in_normalized</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">is_model_in_normalized</span>
+        <span class="n">is_model_out_normalized</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">is_model_out_normalized</span>
+        <span class="c1"># Fit model data scalers</span>
+        <span class="k">if</span> <span class="n">is_model_in_normalized</span> <span class="ow">or</span> <span class="n">is_model_out_normalized</span><span class="p">:</span>
+            <span class="n">fit_data_scalers</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">dataset</span><span class="p">,</span> <span class="n">scaling_type</span><span class="o">=</span><span class="n">data_scaling_type</span><span class="p">,</span>
+                             <span class="n">scaling_parameters</span><span class="o">=</span><span class="n">data_scaling_parameters</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  </span>
+    <span class="c1"># Save model initial state</span>
+    <span class="n">save_model_state</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">state_type</span><span class="o">=</span><span class="s1">&#39;init&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get model parameters</span>
+    <span class="n">model_parameters</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(</span><span class="n">recurse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~  </span>
+    <span class="c1"># Move model to device</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+    <span class="c1"># Set model in training mode</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize learning rate</span>
+    <span class="n">learning_rate</span> <span class="o">=</span> <span class="n">lr_init</span>
+    <span class="c1"># Set optimizer    </span>
+    <span class="k">if</span> <span class="n">opt_algorithm</span> <span class="o">==</span> <span class="s1">&#39;adam&#39;</span><span class="p">:</span>
+        <span class="c1"># Initialize optimizer, specifying the model (and submodels) parameters</span>
+        <span class="c1"># that should be optimized. By default, model parameters gradient flag</span>
+        <span class="c1"># is set to True, meaning that gradients with respect to the parameters</span>
+        <span class="c1"># are required (operations on the parameters are recorded for automatic</span>
+        <span class="c1"># differentiation)</span>
+        <span class="n">optimizer</span> <span class="o">=</span> <span class="n">get_pytorch_optimizer</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="n">opt_algorithm</span><span class="p">,</span>
+                                          <span class="n">params</span><span class="o">=</span><span class="n">model_parameters</span><span class="p">,</span>
+                                          <span class="o">**</span><span class="p">{</span><span class="s1">&#39;lr&#39;</span><span class="p">:</span> <span class="n">learning_rate</span><span class="p">})</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Unknown optimization algorithm&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize learning rate scheduler</span>
+    <span class="n">is_lr_scheduler</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="n">lr_scheduler_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">is_lr_scheduler</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">lr_scheduler</span> <span class="o">=</span> <span class="n">get_learning_rate_scheduler</span><span class="p">(</span>
+            <span class="n">optimizer</span><span class="o">=</span><span class="n">optimizer</span><span class="p">,</span> <span class="n">scheduler_type</span><span class="o">=</span><span class="n">lr_scheduler_type</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">lr_scheduler_kwargs</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize loss function</span>
+    <span class="n">loss_function</span> <span class="o">=</span> <span class="n">get_pytorch_loss</span><span class="p">(</span><span class="n">loss_type</span><span class="p">,</span> <span class="o">**</span><span class="n">loss_kwargs</span><span class="p">)</span>
+    <span class="c1"># Initialize loss and learning rate histories (per epoch)</span>
+    <span class="n">loss_history_epochs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">lr_history_epochs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># Initialize loss and learning rate histories (per training step)</span>
+    <span class="n">loss_history_steps</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">lr_history_steps</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize training flag</span>
+    <span class="n">is_keep_training</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="c1"># Initialize number of training epochs</span>
+    <span class="n">epoch</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="c1"># Initialize number of training steps</span>
+    <span class="n">step</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize validation loss history</span>
+    <span class="n">validation_loss_history</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1"># Initialize early stopping criterion</span>
+    <span class="k">if</span> <span class="n">is_early_stopping</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&gt; Initializing early stopping criterion...&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize early stopping criterion</span>
+        <span class="n">early_stopper</span> <span class="o">=</span> <span class="n">EarlyStopper</span><span class="p">(</span><span class="o">**</span><span class="n">early_stopping_kwargs</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize early stopping flag</span>
+        <span class="n">is_stop_training</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&gt; Training data set size: </span><span class="si">{</span><span class="nb">len</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set data loader</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">seed</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="n">data_loader</span> <span class="o">=</span> <span class="n">get_time_series_data_loader</span><span class="p">(</span>
+            <span class="n">dataset</span><span class="o">=</span><span class="n">dataset</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>
+            <span class="n">is_shuffle</span><span class="o">=</span><span class="n">is_sampler_shuffle</span><span class="p">,</span>
+            <span class="n">kwargs</span><span class="o">=</span><span class="p">{</span><span class="s1">&#39;worker_init_fn&#39;</span><span class="p">:</span> <span class="n">seed_worker</span><span class="p">,</span> <span class="s1">&#39;generator&#39;</span><span class="p">:</span> <span class="n">generator</span><span class="p">})</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">data_loader</span> <span class="o">=</span> <span class="n">get_time_series_data_loader</span><span class="p">(</span>
+            <span class="n">dataset</span><span class="o">=</span><span class="n">dataset</span><span class="p">,</span> <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>
+            <span class="n">is_shuffle</span><span class="o">=</span><span class="n">is_sampler_shuffle</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+        <span class="n">input_normalization_str</span> <span class="o">=</span> <span class="s1">&#39;Yes&#39;</span> <span class="k">if</span> <span class="n">is_model_in_normalized</span> <span class="k">else</span> <span class="s1">&#39;No&#39;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&gt; Input data normalization (</span><span class="si">{</span><span class="n">data_scaling_type</span><span class="si">}</span><span class="s1">): &#39;</span>
+              <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">input_normalization_str</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">output_normalization_str</span> <span class="o">=</span> <span class="s1">&#39;Yes&#39;</span> <span class="k">if</span> <span class="n">is_model_out_normalized</span> <span class="k">else</span> <span class="s1">&#39;No&#39;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&gt; Output data normalization (</span><span class="si">{</span><span class="n">data_scaling_type</span><span class="si">}</span><span class="s1">): &#39;</span>
+              <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">output_normalization_str</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">&gt; Starting training process...</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Loop over training iterations</span>
+    <span class="k">while</span> <span class="n">is_keep_training</span><span class="p">:</span>
+        <span class="c1"># Store epoch initial training step</span>
+        <span class="n">epoch_init_step</span> <span class="o">=</span> <span class="n">step</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Loop over batches</span>
+        <span class="k">for</span> <span class="n">batch</span> <span class="ow">in</span> <span class="n">data_loader</span><span class="p">:</span>
+            <span class="c1"># Move batch to device</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">batch</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">batch</span><span class="p">[</span><span class="n">key</span><span class="p">]</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Get input features</span>
+            <span class="k">if</span> <span class="n">is_model_in_normalized</span><span class="p">:</span>
+                <span class="c1"># Normalize features ground-truth</span>
+                <span class="n">features_in</span> <span class="o">=</span> \
+                    <span class="n">data_scaler_transform</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">tensor</span><span class="o">=</span><span class="n">batch</span><span class="p">[</span><span class="s1">&#39;features_in&#39;</span><span class="p">],</span>
+                                          <span class="n">features_type</span><span class="o">=</span><span class="s1">&#39;features_in&#39;</span><span class="p">,</span>
+                                          <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;normalize&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">features_in</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;features_in&#39;</span><span class="p">]</span>
+            <span class="c1"># Get initial hidden state features</span>
+            <span class="k">if</span> <span class="s1">&#39;hidden_features_in&#39;</span> <span class="ow">in</span> <span class="n">batch</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">hidden_features_in</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;hidden_features_in&#39;</span><span class="p">]</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">hidden_features_in</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Get output features ground-truth</span>
+            <span class="k">if</span> <span class="n">is_model_out_normalized</span><span class="p">:</span>
+                <span class="c1"># Normalize features ground-truth</span>
+                <span class="n">targets</span> <span class="o">=</span> \
+                    <span class="n">data_scaler_transform</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">tensor</span><span class="o">=</span><span class="n">batch</span><span class="p">[</span><span class="s1">&#39;features_out&#39;</span><span class="p">],</span>
+                                          <span class="n">features_type</span><span class="o">=</span><span class="s1">&#39;features_out&#39;</span><span class="p">,</span>
+                                          <span class="n">mode</span><span class="o">=</span><span class="s1">&#39;normalize&#39;</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">targets</span> <span class="o">=</span> <span class="n">batch</span><span class="p">[</span><span class="s1">&#39;features_out&#39;</span><span class="p">]</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Compute output features predictions (forward propagation).</span>
+            <span class="c1"># During the foward pass, PyTorch creates a computation graph for</span>
+            <span class="c1"># the tensors that require gradients (gradient flag set to True) to</span>
+            <span class="c1"># keep track of the operations on these tensors, i.e., the model</span>
+            <span class="c1"># parameters. In addition, PyTorch additionally stores the</span>
+            <span class="c1"># corresponding &#39;gradient functions&#39; (mathematical operator) of the</span>
+            <span class="c1"># executed operations to the output tensor, stored in the .grad_fn</span>
+            <span class="c1"># attribute of the corresponding tensors. Tensor.grad_fn is set to</span>
+            <span class="c1"># None for tensors corresponding to leaf-nodes of the computation</span>
+            <span class="c1"># graph or for tensors with the gradient flag set to False.</span>
+            <span class="k">if</span> <span class="n">loss_nature</span> <span class="o">==</span> <span class="s1">&#39;features_out&#39;</span><span class="p">:</span>
+                <span class="c1"># Get output features</span>
+                <span class="n">features_out</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">features_in</span><span class="p">,</span> <span class="n">hidden_features_in</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~                </span>
+                <span class="c1"># Compute loss</span>
+                <span class="n">loss</span> <span class="o">=</span> <span class="n">loss_function</span><span class="p">(</span><span class="n">features_out</span><span class="p">,</span> <span class="n">targets</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Unknown loss nature.&#39;</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Initialize gradients (set to zero)</span>
+            <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+            <span class="c1"># Compute gradients with respect to model parameters (backward</span>
+            <span class="c1"># propagation). PyTorch backpropagates recursively through the</span>
+            <span class="c1"># computation graph of loss and computes the gradients with respect</span>
+            <span class="c1"># to the model parameters. On each Tensor, PyTorch computes the</span>
+            <span class="c1"># local gradients using the previously stored .grad_fn mathematical</span>
+            <span class="c1"># operators and combines them with the incoming gradients to</span>
+            <span class="c1"># compute the complete gradient (i.e., building the</span>
+            <span class="c1"># differentiation chain rule). The backward propagation recursive</span>
+            <span class="c1"># path stops when a leaf-node is reached (e.g., a model parameter),</span>
+            <span class="c1"># where .grad_fn is set to None. Gradients are cumulatively stored</span>
+            <span class="c1"># in the .grad attribute of the corresponding tensors</span>
+            <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+            <span class="c1"># Perform optimization step. Gradients are stored in the .grad</span>
+            <span class="c1"># attribute of model parameters</span>
+            <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+                <span class="n">total_time_sec</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time_sec</span>
+                <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;&gt; Epoch: {:</span><span class="si">{width}</span><span class="s1">d}/</span><span class="si">{:d}</span><span class="s1"> | Training step: </span><span class="si">{:d}</span><span class="s1"> | &#39;</span>
+                      <span class="s1">&#39;Loss: </span><span class="si">{:.8e}</span><span class="s1"> | Elapsed time (s): </span><span class="si">{:}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                      <span class="n">epoch</span><span class="p">,</span> <span class="n">n_max_epochs</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">loss</span><span class="p">,</span>
+                      <span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">total_time_sec</span><span class="p">))),</span>
+                      <span class="n">width</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">n_max_epochs</span><span class="p">))),</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\r</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Save training step loss and learning rate</span>
+            <span class="n">loss_history_steps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">loss</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">())</span>
+            <span class="k">if</span> <span class="n">is_lr_scheduler</span><span class="p">:</span>
+                <span class="n">lr_history_steps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lr_scheduler</span><span class="o">.</span><span class="n">get_last_lr</span><span class="p">())</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">lr_history_steps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lr_init</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Increment training step counter</span>
+            <span class="n">step</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Update optimizer learning rate</span>
+        <span class="k">if</span> <span class="n">is_lr_scheduler</span><span class="p">:</span>
+            <span class="n">lr_scheduler</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Save training epoch loss (epoch average loss value)</span>
+        <span class="n">epoch_avg_loss</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">loss_history_steps</span><span class="p">[</span><span class="n">epoch_init_step</span><span class="p">:])</span>
+        <span class="n">loss_history_epochs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">epoch_avg_loss</span><span class="p">)</span>
+        <span class="c1"># Save training epoch learning rate (epoch last value)</span>
+        <span class="k">if</span> <span class="n">is_lr_scheduler</span><span class="p">:</span>
+            <span class="n">lr_history_epochs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lr_scheduler</span><span class="o">.</span><span class="n">get_last_lr</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">lr_history_epochs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lr_init</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Save model and optimizer current states</span>
+        <span class="k">if</span> <span class="n">save_every</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">epoch</span> <span class="o">%</span> <span class="n">save_every</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">save_training_state</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="n">optimizer</span><span class="p">,</span>
+                                <span class="n">state_type</span><span class="o">=</span><span class="s1">&#39;epoch&#39;</span><span class="p">,</span> <span class="n">epoch</span><span class="o">=</span><span class="n">epoch</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Save model and optimizer best performance state corresponding to</span>
+        <span class="c1"># minimum training loss</span>
+        <span class="k">if</span> <span class="n">epoch_avg_loss</span> <span class="o">&lt;=</span> <span class="nb">min</span><span class="p">(</span><span class="n">loss_history_epochs</span><span class="p">):</span>
+            <span class="n">save_training_state</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="n">optimizer</span><span class="p">,</span>
+                                <span class="n">state_type</span><span class="o">=</span><span class="s1">&#39;best&#39;</span><span class="p">,</span> <span class="n">epoch</span><span class="o">=</span><span class="n">epoch</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Check early stopping criterion</span>
+        <span class="k">if</span> <span class="n">is_early_stopping</span><span class="p">:</span>
+            <span class="c1"># Evaluate early stopping criterion</span>
+            <span class="k">if</span> <span class="n">early_stopper</span><span class="o">.</span><span class="n">is_evaluate_criterion</span><span class="p">(</span><span class="n">epoch</span><span class="p">):</span>
+                <span class="n">is_stop_training</span> <span class="o">=</span> <span class="n">early_stopper</span><span class="o">.</span><span class="n">evaluate_criterion</span><span class="p">(</span>
+                    <span class="n">model</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">epoch</span><span class="p">,</span> <span class="n">loss_nature</span><span class="o">=</span><span class="n">loss_nature</span><span class="p">,</span>
+                    <span class="n">loss_type</span><span class="o">=</span><span class="n">loss_type</span><span class="p">,</span> <span class="n">loss_kwargs</span><span class="o">=</span><span class="n">loss_kwargs</span><span class="p">,</span>
+                    <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">device_type</span><span class="o">=</span><span class="n">device_type</span><span class="p">)</span>
+            <span class="c1"># If early stopping is triggered, save model and optimizer best</span>
+            <span class="c1"># performance corresponding to early stopping criterion</span>
+            <span class="k">if</span> <span class="n">is_stop_training</span><span class="p">:</span>
+                <span class="c1"># Load best performance model and optimizer states</span>
+                <span class="n">best_epoch</span> <span class="o">=</span> <span class="n">early_stopper</span><span class="o">.</span><span class="n">load_best_performance_state</span><span class="p">(</span>
+                    <span class="n">model</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">)</span>
+                <span class="c1"># Save model and optimizer best performance states</span>
+                <span class="n">save_training_state</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="n">optimizer</span><span class="p">,</span>
+                                    <span class="n">state_type</span><span class="o">=</span><span class="s1">&#39;best&#39;</span><span class="p">,</span> <span class="n">epoch</span><span class="o">=</span><span class="n">best_epoch</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Check training process flow</span>
+        <span class="k">if</span> <span class="n">epoch</span> <span class="o">&gt;=</span> <span class="n">n_max_epochs</span><span class="p">:</span>
+            <span class="c1"># Completed maximum number of epochs</span>
+            <span class="n">is_keep_training</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">break</span>
+        <span class="k">elif</span> <span class="n">is_early_stopping</span> <span class="ow">and</span> <span class="n">is_stop_training</span><span class="p">:</span>
+            <span class="c1"># Early stopping criterion triggered</span>
+            <span class="n">is_keep_training</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">break</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Increment epoch counter</span>
+            <span class="n">epoch</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">is_early_stopping</span> <span class="ow">and</span> <span class="n">is_stop_training</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">&gt; Early stopping has been triggered!&#39;</span><span class="p">,</span>
+                  <span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">&gt; Finished training process!&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">&gt; Finished training process!&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get validation loss history</span>
+    <span class="k">if</span> <span class="n">is_early_stopping</span><span class="p">:</span>
+        <span class="n">validation_loss_history</span> <span class="o">=</span> \
+            <span class="n">early_stopper</span><span class="o">.</span><span class="n">get_validation_loss_history</span><span class="p">()</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Save model and optimizer final states</span>
+    <span class="n">save_training_state</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="n">optimizer</span><span class="p">,</span>
+                        <span class="n">state_type</span><span class="o">=</span><span class="s1">&#39;epoch&#39;</span><span class="p">,</span> <span class="n">epoch</span><span class="o">=</span><span class="n">epoch</span><span class="p">)</span>
+    <span class="c1"># Save loss and learning rate histories</span>
+    <span class="n">save_loss_history</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">n_max_epochs</span><span class="p">,</span> <span class="n">loss_nature</span><span class="p">,</span> <span class="n">loss_type</span><span class="p">,</span>
+                      <span class="n">loss_history_epochs</span><span class="p">,</span> <span class="n">lr_scheduler_type</span><span class="o">=</span><span class="n">lr_scheduler_type</span><span class="p">,</span>
+                      <span class="n">lr_history_epochs</span><span class="o">=</span><span class="n">lr_history_epochs</span><span class="p">,</span>
+                      <span class="n">validation_loss_history</span><span class="o">=</span><span class="n">validation_loss_history</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get best loss and corresponding training epoch</span>
+    <span class="n">best_loss</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">loss_history_epochs</span><span class="p">))</span>
+    <span class="n">best_training_epoch</span> <span class="o">=</span> <span class="n">loss_history_epochs</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">best_loss</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">is_model_out_normalized</span><span class="p">:</span>
+            <span class="n">min_loss_str</span> <span class="o">=</span> <span class="s1">&#39;Minimum training loss (normalized)&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">min_loss_str</span> <span class="o">=</span> <span class="s1">&#39;Minimum training loss&#39;</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">&gt; </span><span class="si">{</span><span class="n">min_loss_str</span><span class="si">}</span><span class="s1">: </span><span class="si">{</span><span class="n">best_loss</span><span class="si">:</span><span class="s1">.8e</span><span class="si">}</span><span class="s1"> | &#39;</span>
+              <span class="sa">f</span><span class="s1">&#39;Epoch: </span><span class="si">{</span><span class="n">best_training_epoch</span><span class="si">:</span><span class="s1">d</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Compute total training time and average training time per epoch</span>
+    <span class="n">total_time_sec</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time_sec</span>
+    <span class="n">avg_time_epoch</span> <span class="o">=</span> <span class="n">total_time_sec</span><span class="o">/</span><span class="n">epoch</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&gt; Model directory: </span><span class="si">{</span><span class="n">model</span><span class="o">.</span><span class="n">model_directory</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">total_time_sec</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time_sec</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&gt; Total training time: &#39;</span>
+              <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">total_time_sec</span><span class="p">)))</span><span class="si">}</span><span class="s1"> | &#39;</span>
+              <span class="sa">f</span><span class="s1">&#39;Avg. training time per epoch: &#39;</span>
+              <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">avg_time_epoch</span><span class="p">)))</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get summary of PyTorch model</span>
+    <span class="n">model_statistics</span> <span class="o">=</span> <span class="n">get_model_summary</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">device_type</span><span class="o">=</span><span class="n">device_type</span><span class="p">)</span>
+    <span class="c1"># Write summary data file for model training process</span>
+    <span class="n">write_training_summary_file</span><span class="p">(</span>
+        <span class="n">device_type</span><span class="p">,</span> <span class="n">seed</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">model_directory</span><span class="p">,</span> <span class="n">model_load_state</span><span class="p">,</span>
+        <span class="n">n_max_epochs</span><span class="p">,</span> <span class="n">is_model_in_normalized</span><span class="p">,</span> <span class="n">is_model_out_normalized</span><span class="p">,</span>
+        <span class="n">batch_size</span><span class="p">,</span> <span class="n">is_sampler_shuffle</span><span class="p">,</span> <span class="n">loss_nature</span><span class="p">,</span> <span class="n">loss_type</span><span class="p">,</span> <span class="n">loss_kwargs</span><span class="p">,</span>
+        <span class="n">opt_algorithm</span><span class="p">,</span> <span class="n">lr_init</span><span class="p">,</span> <span class="n">lr_scheduler_type</span><span class="p">,</span> <span class="n">lr_scheduler_kwargs</span><span class="p">,</span> <span class="n">epoch</span><span class="p">,</span>
+        <span class="n">dataset_file_path</span><span class="p">,</span> <span class="n">dataset</span><span class="p">,</span> <span class="n">best_loss</span><span class="p">,</span> <span class="n">best_training_epoch</span><span class="p">,</span>
+        <span class="n">total_time_sec</span><span class="p">,</span> <span class="n">avg_time_epoch</span><span class="p">,</span>
+        <span class="n">torchinfo_summary</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">model_statistics</span><span class="p">))</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">model</span><span class="p">,</span> <span class="n">best_loss</span><span class="p">,</span> <span class="n">best_training_epoch</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="EarlyStopper"><a class="viewcode-back" href="../../../../../_autosummary/hookeai.model_architectures.rnn_base_model.train.training.EarlyStopper.html#hookeai.model_architectures.rnn_base_model.train.training.EarlyStopper">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">EarlyStopper</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Early stopping procedure (implicit regularizaton).</span>
+<span class="sd">    </span>
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    _validation_dataset : torch.utils.data.Dataset</span>
+<span class="sd">        Time series data set. Each sample is stored as a dictionary where</span>
+<span class="sd">        each feature (key, str) data is a torch.Tensor(2d) of shape</span>
+<span class="sd">        (sequence_length, n_features).</span>
+<span class="sd">    _validation_frequency : int</span>
+<span class="sd">        Frequency of validation procedures, i.e., frequency with respect to</span>
+<span class="sd">        training epochs at which model is validated to evaluate early stopping</span>
+<span class="sd">        criterion.</span>
+<span class="sd">    _trigger_tolerance : int</span>
+<span class="sd">        Number of consecutive model validation procedures without performance</span>
+<span class="sd">        improvement to trigger early stopping.</span>
+<span class="sd">    _improvement_tolerance : float</span>
+<span class="sd">        Minimum relative improvement required to count as a performance</span>
+<span class="sd">        improvement.</span>
+<span class="sd">    _validation_steps_history : list</span>
+<span class="sd">        Validation steps history.</span>
+<span class="sd">    _validation_loss_history : list</span>
+<span class="sd">        Validation loss history.</span>
+<span class="sd">    _min_validation_loss : float</span>
+<span class="sd">        Minimum validation loss.</span>
+<span class="sd">    _n_not_improve : int</span>
+<span class="sd">        Number of consecutive model validations without improvement.</span>
+<span class="sd">    _best_model_state : dict</span>
+<span class="sd">        Model state corresponding to the best performance.</span>
+<span class="sd">    _best_optimizer_state : dict</span>
+<span class="sd">        Optimizer state corresponding to the best performance.</span>
+<span class="sd">    _best_training_epoch : int</span>
+<span class="sd">        Training epoch corresponding to the best performance.</span>
+<span class="sd">            </span>
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    get_validation_loss_history(self)</span>
+<span class="sd">        Get validation loss history.</span>
+<span class="sd">    is_evaluate_criterion(self, epoch)</span>
+<span class="sd">        Check whether to evaluate early stopping criterion.</span>
+<span class="sd">    evaluate_criterion(self, model, optimizer, epoch, \</span>
+<span class="sd">                       loss_nature=&#39;node_features_out&#39;, loss_type=&#39;mse&#39;, \</span>
+<span class="sd">                       loss_kwargs={}, batch_size=1, device_type=&#39;cpu&#39;)</span>
+<span class="sd">        Evaluate early stopping criterion.</span>
+<span class="sd">    _validate_model(self, model, optimizer, epoch,</span>
+<span class="sd">                    loss_nature=&#39;node_features_out&#39;, loss_type=&#39;mse&#39;,</span>
+<span class="sd">                    loss_kwargs={}, batch_size=1, device_type=&#39;cpu&#39;)</span>
+<span class="sd">        Perform model validation.</span>
+<span class="sd">    load_best_performance_state(self, model, optimizer)</span>
+<span class="sd">        Load minimum validation loss model and optimizer states.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="EarlyStopper.__init__"><a class="viewcode-back" href="../../../../../_autosummary/hookeai.model_architectures.rnn_base_model.train.training.EarlyStopper.html#hookeai.model_architectures.rnn_base_model.train.training.EarlyStopper.__init__">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">validation_dataset</span><span class="p">,</span> <span class="n">validation_frequency</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                 <span class="n">trigger_tolerance</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">improvement_tolerance</span><span class="o">=</span><span class="mf">1e-2</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Constructor.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        validation_dataset : torch.utils.data.Dataset</span>
+<span class="sd">            Time series data set. Each sample is stored as a dictionary where</span>
+<span class="sd">            each feature (key, str) data is a torch.Tensor(2d) of shape</span>
+<span class="sd">            (sequence_length, n_features).</span>
+<span class="sd">        validation_frequency : int, default=1</span>
+<span class="sd">            Frequency of validation procedures, i.e., frequency with respect to</span>
+<span class="sd">            training epochs at which model is validated to evaluate early</span>
+<span class="sd">            stopping criterion.</span>
+<span class="sd">        trigger_tolerance : int, default=1</span>
+<span class="sd">            Number of consecutive model validation procedures without</span>
+<span class="sd">            performance improvement to trigger early stopping.</span>
+<span class="sd">        improvement_tolerance : float, default=1e-2</span>
+<span class="sd">            Minimum relative improvement required to count as a performance</span>
+<span class="sd">            improvement.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Set validation data set</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_validation_dataset</span> <span class="o">=</span> <span class="n">validation_dataset</span>
+        <span class="c1"># Set validation frequency</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_validation_frequency</span> <span class="o">=</span> <span class="n">validation_frequency</span>
+        <span class="c1"># Set early stopping trigger tolerance</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_trigger_tolerance</span> <span class="o">=</span> <span class="n">trigger_tolerance</span>
+        <span class="c1"># Set minimum relative improvement tolerance</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_improvement_tolerance</span> <span class="o">=</span> <span class="n">improvement_tolerance</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize validation training steps history</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_validation_steps_history</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># Initialize validation loss history</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_validation_loss_history</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># Initialize minimum validation loss</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_min_validation_loss</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">inf</span>
+        <span class="c1"># Initialize number of consecutive model validations without</span>
+        <span class="c1"># improvement</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_n_not_improve</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize minimum validation loss state (best performance)</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_best_model_state</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_best_optimizer_state</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_best_training_epoch</span> <span class="o">=</span> <span class="kc">None</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="EarlyStopper.get_validation_loss_history"><a class="viewcode-back" href="../../../../../_autosummary/hookeai.model_architectures.rnn_base_model.train.training.EarlyStopper.html#hookeai.model_architectures.rnn_base_model.train.training.EarlyStopper.get_validation_loss_history">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_validation_loss_history</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get validation loss history.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        validation_loss_history : list[float]</span>
+<span class="sd">            Validation loss history.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_validation_loss_history</span><span class="p">)</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="EarlyStopper.is_evaluate_criterion"><a class="viewcode-back" href="../../../../../_autosummary/hookeai.model_architectures.rnn_base_model.train.training.EarlyStopper.html#hookeai.model_architectures.rnn_base_model.train.training.EarlyStopper.is_evaluate_criterion">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">is_evaluate_criterion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">epoch</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Check whether to evaluate early stopping criterion.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        epoch : int</span>
+<span class="sd">            Training epoch.</span>
+<span class="sd">            </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        is_evaluate_criterion : bool</span>
+<span class="sd">            If True, then early stopping criterion should be evaluated, False</span>
+<span class="sd">            otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="n">epoch</span> <span class="o">%</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validation_frequency</span> <span class="o">==</span> <span class="mi">0</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="EarlyStopper.evaluate_criterion"><a class="viewcode-back" href="../../../../../_autosummary/hookeai.model_architectures.rnn_base_model.train.training.EarlyStopper.html#hookeai.model_architectures.rnn_base_model.train.training.EarlyStopper.evaluate_criterion">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">evaluate_criterion</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">epoch</span><span class="p">,</span>
+                           <span class="n">loss_nature</span><span class="o">=</span><span class="s1">&#39;features_out&#39;</span><span class="p">,</span> <span class="n">loss_type</span><span class="o">=</span><span class="s1">&#39;mse&#39;</span><span class="p">,</span>
+                           <span class="n">loss_kwargs</span><span class="o">=</span><span class="p">{},</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">device_type</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Evaluate early stopping criterion.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        model : torch.nn.Module</span>
+<span class="sd">            Recurrent neural network model.</span>
+<span class="sd">        optimizer : torch.optim.Optimizer</span>
+<span class="sd">            PyTorch optimizer.</span>
+<span class="sd">        epoch : int</span>
+<span class="sd">            Training epoch.</span>
+<span class="sd">        loss_nature : {&#39;features_out&#39;,}, default=&#39;features_out&#39;</span>
+<span class="sd">            Loss nature:</span>
+<span class="sd">            </span>
+<span class="sd">            &#39;features_out&#39; : Based on output features</span>
+
+<span class="sd">        loss_type : {&#39;mse&#39;,}, default=&#39;mse&#39;</span>
+<span class="sd">            Loss function type:</span>
+<span class="sd">            </span>
+<span class="sd">            &#39;mse&#39;  : MSE (torch.nn.MSELoss)</span>
+<span class="sd">            </span>
+<span class="sd">        loss_kwargs : dict, default={}</span>
+<span class="sd">            Arguments of torch.nn._Loss initializer.</span>
+<span class="sd">        batch_size : int, default=1</span>
+<span class="sd">            Number of samples loaded per batch.</span>
+<span class="sd">        device_type : {&#39;cpu&#39;, &#39;cuda&#39;}, default=&#39;cpu&#39;</span>
+<span class="sd">            Type of device on which torch.Tensor is allocated.</span>
+<span class="sd">            </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        is_stop_training : bool</span>
+<span class="sd">            True if early stopping criterion has been triggered, False</span>
+<span class="sd">            otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Set early stopping flag</span>
+        <span class="n">is_stop_training</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Perform model validation</span>
+        <span class="n">avg_valid_loss_sample</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_validate_model</span><span class="p">(</span>
+            <span class="n">model</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">epoch</span><span class="p">,</span> <span class="n">loss_nature</span><span class="o">=</span><span class="n">loss_nature</span><span class="p">,</span>
+            <span class="n">loss_type</span><span class="o">=</span><span class="n">loss_type</span><span class="p">,</span> <span class="n">loss_kwargs</span><span class="o">=</span><span class="n">loss_kwargs</span><span class="p">,</span>
+            <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">device_type</span><span class="o">=</span><span class="n">device_type</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Update minimum validation loss and performance counter</span>
+        <span class="k">if</span> <span class="n">avg_valid_loss_sample</span> <span class="o">&lt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_min_validation_loss</span><span class="p">:</span>
+            <span class="c1"># Check relative performance improvement with respect to minimum</span>
+            <span class="c1"># validation loss</span>
+            <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_validation_steps_history</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">1</span><span class="p">:</span>
+                <span class="c1"># Compute relative performance improvement</span>
+                <span class="n">relative_improvement</span> <span class="o">=</span> \
+                    <span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_min_validation_loss</span> <span class="o">-</span> <span class="n">avg_valid_loss_sample</span><span class="p">)</span><span class="o">/</span> \
+                    <span class="n">np</span><span class="o">.</span><span class="n">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_min_validation_loss</span><span class="p">)</span>
+                <span class="c1"># Update performance counter</span>
+                <span class="k">if</span> <span class="n">relative_improvement</span> <span class="o">&gt;</span> <span class="bp">self</span><span class="o">.</span><span class="n">_improvement_tolerance</span><span class="p">:</span>
+                    <span class="c1"># Reset performance counter (significant improvement)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_n_not_improve</span> <span class="o">=</span> <span class="mi">0</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="c1"># Reset performance counter (not significant improvement)</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_n_not_improve</span> <span class="o">+=</span> <span class="mi">1</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Update minimum validation loss</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_min_validation_loss</span> <span class="o">=</span> <span class="n">avg_valid_loss_sample</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Save best performance state (minimum validation loss)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_best_model_state</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">state_dict</span><span class="p">())</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_best_optimizer_state</span> <span class="o">=</span> \
+                <span class="nb">dict</span><span class="p">(</span><span class="n">state</span><span class="o">=</span><span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">optimizer</span><span class="o">.</span><span class="n">state_dict</span><span class="p">()),</span> <span class="n">epoch</span><span class="o">=</span><span class="n">epoch</span><span class="p">)</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_best_training_epoch</span> <span class="o">=</span> <span class="n">epoch</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Increment performance counter</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_n_not_improve</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Evaluate early stopping criterion</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_n_not_improve</span> <span class="o">&gt;=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_trigger_tolerance</span><span class="p">:</span>
+            <span class="c1"># Trigger early stopping</span>
+            <span class="n">is_stop_training</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">is_stop_training</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="EarlyStopper._validate_model"><a class="viewcode-back" href="../../../../../_autosummary/hookeai.model_architectures.rnn_base_model.train.training.EarlyStopper.html#hookeai.model_architectures.rnn_base_model.train.training.EarlyStopper._validate_model">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">_validate_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">epoch</span><span class="p">,</span>
+                        <span class="n">loss_nature</span><span class="o">=</span><span class="s1">&#39;features_out&#39;</span><span class="p">,</span> <span class="n">loss_type</span><span class="o">=</span><span class="s1">&#39;mse&#39;</span><span class="p">,</span>
+                        <span class="n">loss_kwargs</span><span class="o">=</span><span class="p">{},</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">device_type</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Perform model validation.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        model : torch.nn.Module</span>
+<span class="sd">            Recurrent neural network model.</span>
+<span class="sd">        optimizer : torch.optim.Optimizer</span>
+<span class="sd">            PyTorch optimizer.</span>
+<span class="sd">        epoch : int</span>
+<span class="sd">            Training epoch.</span>
+<span class="sd">        loss_nature : {&#39;features_out&#39;,}, default=&#39;features_out&#39;</span>
+<span class="sd">            Loss nature:</span>
+<span class="sd">            </span>
+<span class="sd">            &#39;features_out&#39; : Based on output features</span>
+
+<span class="sd">        loss_type : {&#39;mse&#39;,}, default=&#39;mse&#39;</span>
+<span class="sd">            Loss function type:</span>
+<span class="sd">            </span>
+<span class="sd">            &#39;mse&#39;  : MSE (torch.nn.MSELoss)</span>
+<span class="sd">            </span>
+<span class="sd">        loss_kwargs : dict, default={}</span>
+<span class="sd">            Arguments of torch.nn._Loss initializer.</span>
+<span class="sd">        batch_size : int, default=1</span>
+<span class="sd">            Number of samples loaded per batch.</span>
+<span class="sd">        device_type : {&#39;cpu&#39;, &#39;cuda&#39;}, default=&#39;cpu&#39;</span>
+<span class="sd">            Type of device on which torch.Tensor is allocated.</span>
+<span class="sd">            </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        avg_predict_loss : float</span>
+<span class="sd">            Average prediction loss per sample.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Set model state file name and path</span>
+        <span class="n">model_state_file</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">model_name</span> <span class="o">+</span> <span class="s1">&#39;-&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">epoch</span><span class="p">))</span>
+        <span class="c1"># Set model state file path</span>
+        <span class="n">model_state_path</span> <span class="o">=</span> \
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">model_directory</span><span class="p">,</span> <span class="n">model_state_file</span> <span class="o">+</span> <span class="s1">&#39;.pt&#39;</span><span class="p">)</span>
+        <span class="c1"># Set optimizer state file name and path</span>
+        <span class="n">optimizer_state_file</span> <span class="o">=</span> \
+            <span class="n">model</span><span class="o">.</span><span class="n">model_name</span> <span class="o">+</span> <span class="s1">&#39;_optim&#39;</span> <span class="o">+</span> <span class="s1">&#39;-&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">epoch</span><span class="p">))</span>
+        <span class="n">optimizer_state_path</span> <span class="o">=</span> \
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">model_directory</span><span class="p">,</span> <span class="n">optimizer_state_file</span> <span class="o">+</span> <span class="s1">&#39;.pt&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize temporary state files flag</span>
+        <span class="n">is_state_file_temp</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="c1"># Save model and optimizer state files (required for validation)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">model_state_path</span><span class="p">):</span>
+            <span class="c1"># Update temporary state files flag</span>
+            <span class="n">is_state_file_temp</span> <span class="o">=</span> <span class="kc">True</span>
+            <span class="c1"># Save state files</span>
+            <span class="n">save_training_state</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="n">optimizer</span><span class="p">,</span>
+                                <span class="n">state_type</span><span class="o">=</span><span class="s1">&#39;epoch&#39;</span><span class="p">,</span> <span class="n">epoch</span><span class="o">=</span><span class="n">epoch</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Prediction with model</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">avg_valid_loss_sample</span> <span class="o">=</span> <span class="n">predict</span><span class="p">(</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_validation_dataset</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">model_directory</span><span class="p">,</span>
+            <span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">predict_directory</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">model_load_state</span><span class="o">=</span><span class="n">epoch</span><span class="p">,</span>
+            <span class="n">loss_nature</span><span class="o">=</span><span class="n">loss_nature</span><span class="p">,</span> <span class="n">loss_type</span><span class="o">=</span><span class="n">loss_type</span><span class="p">,</span>
+            <span class="n">loss_kwargs</span><span class="o">=</span><span class="n">loss_kwargs</span><span class="p">,</span>
+            <span class="n">is_normalized_loss</span><span class="o">=</span><span class="n">model</span><span class="o">.</span><span class="n">is_model_out_normalized</span><span class="p">,</span>
+            <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span>
+            <span class="n">device_type</span><span class="o">=</span><span class="n">device_type</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set model in training mode</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Update validation epochs history</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_validation_steps_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">epoch</span><span class="p">)</span>
+        <span class="c1"># Propagate last validation loss until current epoch</span>
+        <span class="n">history_length</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_validation_loss_history</span><span class="p">)</span>
+        <span class="n">history_gap</span> <span class="o">=</span> <span class="n">epoch</span> <span class="o">-</span> <span class="n">history_length</span>
+        <span class="k">if</span> <span class="n">history_length</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_validation_loss_history</span> <span class="o">+=</span> \
+                <span class="n">history_gap</span><span class="o">*</span><span class="p">[</span><span class="bp">self</span><span class="o">.</span><span class="n">_validation_loss_history</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],]</span>
+        <span class="c1"># Append validation loss</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_validation_loss_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">avg_valid_loss_sample</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Remove model and optimizer state files (required for validation)</span>
+        <span class="k">if</span> <span class="n">is_state_file_temp</span><span class="p">:</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">model_state_path</span><span class="p">)</span>
+            <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">optimizer_state_path</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">avg_valid_loss_sample</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="EarlyStopper.load_best_performance_state"><a class="viewcode-back" href="../../../../../_autosummary/hookeai.model_architectures.rnn_base_model.train.training.EarlyStopper.html#hookeai.model_architectures.rnn_base_model.train.training.EarlyStopper.load_best_performance_state">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">load_best_performance_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Load minimum validation loss model and optimizer states.</span>
+<span class="sd">        </span>
+<span class="sd">        Both model and optimizer are updated &#39;in-place&#39; with stored state data.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        model : torch.nn.Module</span>
+<span class="sd">            Recurrent neural network model.</span>
+<span class="sd">        optimizer : torch.optim.Optimizer</span>
+<span class="sd">            PyTorch optimizer.</span>
+<span class="sd">            </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        best_training_epoch : int</span>
+<span class="sd">            Training epoch corresponding to the best performance.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check best performance states</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_best_model_state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The best performance model state has not been &#39;</span>
+                               <span class="s1">&#39;stored.&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_best_optimizer_state</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The best performance optimization state has &#39;</span>
+                               <span class="s1">&#39;not been stored.&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Load model state</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_best_model_state</span><span class="p">)</span>
+        <span class="c1"># Set loaded optimizer state</span>
+        <span class="n">optimizer</span><span class="o">.</span><span class="n">load_state_dict</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_best_optimizer_state</span><span class="p">[</span><span class="s1">&#39;state&#39;</span><span class="p">])</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_best_training_epoch</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

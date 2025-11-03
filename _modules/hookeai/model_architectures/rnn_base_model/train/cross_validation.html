@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>hookeai.model_architectures.rnn_base_model.train.cross_validation &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../../" id="documentation_options" src="../../../../../_static/documentation_options.js"></script>
+        <script src="../../../../../_static/doctools.js"></script>
+        <script src="../../../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../_autosummary/hookeai.html">Code</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">hookeai.model_architectures.rnn_base_model.train.cross_validation</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for hookeai.model_architectures.rnn_base_model.train.cross_validation</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Cross-validation of recurrent neural network model.</span>
+
+<span class="sd">Functions</span>
+<span class="sd">---------</span>
+<span class="sd">kfold_cross_validation</span>
+<span class="sd">    k-fold cross validation of recurrent neural network model.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#                                                                       Modules</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Standard</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
+<span class="c1"># Third-party</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">sklearn.model_selection</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="c1"># Local</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">model_architectures.rnn_base_model.train.training</span><span class="w"> </span><span class="kn">import</span> <span class="n">train_model</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">model_architectures.rnn_base_model.predict.prediction</span><span class="w"> </span><span class="kn">import</span> <span class="n">predict</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">model_architectures.procedures.model_training</span><span class="w"> </span><span class="kn">import</span> \
+    <span class="n">write_cross_validation_summary_file</span>    
+<span class="kn">from</span><span class="w"> </span><span class="nn">ioput.iostandard</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_directory</span>
+<span class="c1">#</span>
+<span class="c1">#                                                          Authorship &amp; Credits</span>
+<span class="c1"># =============================================================================</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Bernardo Ferreira (bernardo_ferreira@brown.edu)&#39;</span>
+<span class="n">__credits__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Bernardo Ferreira&#39;</span><span class="p">,</span> <span class="p">]</span>
+<span class="n">__status__</span> <span class="o">=</span> <span class="s1">&#39;Beta&#39;</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="kfold_cross_validation"><a class="viewcode-back" href="../../../../../_autosummary/hookeai.model_architectures.rnn_base_model.train.cross_validation.kfold_cross_validation.html#hookeai.model_architectures.rnn_base_model.train.cross_validation.kfold_cross_validation">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">kfold_cross_validation</span><span class="p">(</span><span class="n">cross_validation_dir</span><span class="p">,</span> <span class="n">n_fold</span><span class="p">,</span> <span class="n">n_max_epochs</span><span class="p">,</span>
+                           <span class="n">dataset</span><span class="p">,</span> <span class="n">model_init_args</span><span class="p">,</span> <span class="n">lr_init</span><span class="p">,</span>
+                           <span class="n">opt_algorithm</span><span class="o">=</span><span class="s1">&#39;adam&#39;</span><span class="p">,</span> <span class="n">lr_scheduler_type</span><span class="o">=</span><span class="s1">&#39;steplr&#39;</span><span class="p">,</span>
+                           <span class="n">lr_scheduler_kwargs</span><span class="o">=</span><span class="p">{},</span>
+                           <span class="n">loss_nature</span><span class="o">=</span><span class="s1">&#39;node_features_out&#39;</span><span class="p">,</span>
+                           <span class="n">loss_type</span><span class="o">=</span><span class="s1">&#39;mse&#39;</span><span class="p">,</span> <span class="n">loss_kwargs</span><span class="o">=</span><span class="p">{},</span> <span class="n">batch_size</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span>
+                           <span class="n">is_sampler_shuffle</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                           <span class="n">is_early_stopping</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">early_stopping_kwargs</span><span class="o">=</span><span class="p">{},</span>
+                           <span class="n">dataset_file_path</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">device_type</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">,</span>
+                           <span class="n">is_verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;k-fold cross validation of recurrent neural network model.</span>
+<span class="sd">    </span>
+<span class="sd">    Data set is split into k consecutive folds. The first n_samples % n_splits</span>
+<span class="sd">    folds have size n_samples // n_splits + 1, other folds have size</span>
+<span class="sd">    n_samples // n_splits, where n_samples is the number of samples. Each fold</span>
+<span class="sd">    is then used once as a validation set while the k - 1 remaining folds form</span>
+<span class="sd">    the training set.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    cross_validation_dir : dir</span>
+<span class="sd">        Directory where cross-validation process data is stored.</span>
+<span class="sd">    n_fold : int</span>
+<span class="sd">        Number of folds into which the data set is split to perform</span>
+<span class="sd">        cross-validation.</span>
+<span class="sd">    n_max_epochs : int</span>
+<span class="sd">        Maximum number of training epochs.</span>
+<span class="sd">    dataset : torch.utils.data.Dataset</span>
+<span class="sd">        Time series data set. Each sample is stored as a dictionary where</span>
+<span class="sd">        each feature (key, str) data is a torch.Tensor(2d) of shape</span>
+<span class="sd">        (sequence_length, n_features).</span>
+<span class="sd">    model_init_args : dict</span>
+<span class="sd">        Recurrent neural network model class initialization parameters (check</span>
+<span class="sd">        class GRURNNModel).</span>
+<span class="sd">    lr_init : float</span>
+<span class="sd">        Initial value optimizer learning rate. Constant learning rate value if</span>
+<span class="sd">        no learning rate scheduler is specified (lr_scheduler_type=None).</span>
+<span class="sd">    opt_algorithm : {&#39;adam&#39;,}, default=&#39;adam&#39;</span>
+<span class="sd">        Optimization algorithm:</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;adam&#39;  : Adam (torch.optim.Adam)</span>
+<span class="sd">        </span>
+<span class="sd">    lr_scheduler_type : {&#39;steplr&#39;, &#39;explr&#39;, &#39;linlr&#39;}, default=None</span>
+<span class="sd">        Type of learning rate scheduler:</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;steplr&#39;  : Step-based decay (torch.optim.lr_scheduler.SetpLR)</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;explr&#39;   : Exponential decay (torch.optim.lr_scheduler.ExponentialLR)</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;linlr&#39;   : Linear decay (torch.optim.lr_scheduler.LinearLR)</span>
+
+<span class="sd">    lr_scheduler_kwargs : dict, default={}</span>
+<span class="sd">        Arguments of torch.optim.lr_scheduler.LRScheduler initializer.</span>
+<span class="sd">    loss_nature : {&#39;node_features_out&#39;, &#39;global_features_out&#39;}, \</span>
+<span class="sd">                  default=&#39;node_features_out&#39;</span>
+<span class="sd">        Loss nature:</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;node_features_out&#39; : Based on node output features</span>
+
+<span class="sd">        &#39;global_features_out&#39; : Based on global output features</span>
+
+<span class="sd">    loss_type : {&#39;mse&#39;,}, default=&#39;mse&#39;</span>
+<span class="sd">        Loss function type:</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;mse&#39;  : MSE (torch.nn.MSELoss)</span>
+
+<span class="sd">    loss_kwargs : dict, default={}</span>
+<span class="sd">        Arguments of torch.nn._Loss initializer.</span>
+<span class="sd">    batch_size : int, default=1</span>
+<span class="sd">        Number of samples loaded per batch.</span>
+<span class="sd">    is_sampler_shuffle : bool, default=False</span>
+<span class="sd">        If True, shuffles data set samples at every epoch.</span>
+<span class="sd">    is_early_stopping : bool, default=False</span>
+<span class="sd">        If True, then training process is halted when early stopping criterion</span>
+<span class="sd">        is triggered. By default, 20% of the training data set is allocated for</span>
+<span class="sd">        the underlying validation procedures.</span>
+<span class="sd">    early_stopping_kwargs : dict, default={}</span>
+<span class="sd">        Early stopping criterion parameters (key, str, item, value).</span>
+<span class="sd">    dataset_file_path : str, default=None</span>
+<span class="sd">        Time series data set file path if such file exists. Only used for</span>
+<span class="sd">        output purposes.</span>
+<span class="sd">    device_type : {&#39;cpu&#39;, &#39;cuda&#39;}, default=&#39;cpu&#39;</span>
+<span class="sd">        Type of device on which torch.Tensor is allocated.</span>
+<span class="sd">    is_verbose : bool, default=False</span>
+<span class="sd">        If True, enable verbose output.</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    k_fold_loss_array : numpy.ndarray(2d)</span>
+<span class="sd">        k-fold cross-validation loss array. For the i-th fold,</span>
+<span class="sd">        data_array[i, 0] stores the best training loss and data_array[i, 1]</span>
+<span class="sd">        stores the average prediction loss per sample.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Recurrent Neural Network model: k-fold cross-validation&#39;</span>
+              <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">-------------------------------------------------------&#39;</span><span class="p">)</span>
+        <span class="n">start_time_sec</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Check cross-validation directory</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isdir</span><span class="p">(</span><span class="n">cross_validation_dir</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The cross-validation directory has not been &#39;</span>
+                           <span class="s1">&#39;found:</span><span class="se">\n\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">cross_validation_dir</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&gt; Number of folds: </span><span class="si">{</span><span class="n">n_fold</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize folder</span>
+    <span class="n">k_folder</span> <span class="o">=</span> <span class="n">sklearn</span><span class="o">.</span><span class="n">model_selection</span><span class="o">.</span><span class="n">KFold</span><span class="p">(</span><span class="n">n_splits</span><span class="o">=</span><span class="n">n_fold</span><span class="p">,</span> <span class="n">shuffle</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                             <span class="n">random_state</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="c1"># Set number of samples dummy array</span>
+    <span class="n">n_sample_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">dataset</span><span class="p">),</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="c1"># Get cross-validation folds data set indexes</span>
+    <span class="n">folds_indexes</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="p">(</span><span class="n">train_ids</span><span class="p">,</span> <span class="n">valid_ids</span><span class="p">)</span> <span class="ow">in</span> <span class="n">k_folder</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="n">n_sample_array</span><span class="p">):</span>
+        <span class="n">folds_indexes</span><span class="o">.</span><span class="n">append</span><span class="p">((</span><span class="n">train_ids</span><span class="p">,</span> <span class="n">valid_ids</span><span class="p">))</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize k-fold cross-validation loss array</span>
+    <span class="n">k_fold_loss_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">empty</span><span class="p">((</span><span class="mi">0</span><span class="p">,</span> <span class="mi">2</span><span class="p">))</span>
+    <span class="c1"># Initialize cross-validation training and validation losses</span>
+    <span class="n">folds_training_losses</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">folds_validation_losses</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get model input and output features normalization</span>
+    <span class="n">is_model_in_normalized</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">is_model_in_normalized</span>
+    <span class="n">is_model_out_normalized</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">is_model_out_normalized</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">&gt; Starting k-fold cross-validation process...&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Loop over cross-validation folds</span>
+    <span class="k">for</span> <span class="n">fold</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_fold</span><span class="p">):</span>
+        <span class="c1"># Create cross-validation fold directory</span>
+        <span class="n">fold_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">cross_validation_dir</span><span class="p">),</span>
+                                <span class="sa">f</span><span class="s1">&#39;fold_</span><span class="si">{</span><span class="n">fold</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">make_directory</span><span class="p">(</span><span class="n">fold_dir</span><span class="p">,</span> <span class="n">is_overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># Create cross-validation fold model subdirectory</span>
+        <span class="n">fold_model_dir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">fold_dir</span><span class="p">),</span> <span class="s1">&#39;model&#39;</span><span class="p">)</span>
+        <span class="n">make_directory</span><span class="p">(</span><span class="n">fold_model_dir</span><span class="p">,</span> <span class="n">is_overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># Create cross-validation fold validation subdirectory</span>
+        <span class="n">fold_validation_dir</span> <span class="o">=</span> \
+            <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">normpath</span><span class="p">(</span><span class="n">fold_dir</span><span class="p">),</span> <span class="s1">&#39;validation&#39;</span><span class="p">)</span>
+        <span class="n">make_directory</span><span class="p">(</span><span class="n">fold_validation_dir</span><span class="p">,</span> <span class="n">is_overwrite</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get fold training data set</span>
+        <span class="n">training_ids</span> <span class="o">=</span> <span class="n">folds_indexes</span><span class="p">[</span><span class="n">fold</span><span class="p">][</span><span class="mi">0</span><span class="p">]</span>
+        <span class="n">training_dataset</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Subset</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">training_ids</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get fold validation data set</span>
+        <span class="n">validation_ids</span> <span class="o">=</span> <span class="n">folds_indexes</span><span class="p">[</span><span class="n">fold</span><span class="p">][</span><span class="mi">1</span><span class="p">]</span>
+        <span class="n">validation_dataset</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">utils</span><span class="o">.</span><span class="n">data</span><span class="o">.</span><span class="n">Subset</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">validation_ids</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set model directory</span>
+        <span class="n">model_init_args</span><span class="p">[</span><span class="s1">&#39;model_directory&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">fold_model_dir</span>
+        <span class="c1"># Training of recurrent neural network model</span>
+        <span class="n">model</span><span class="p">,</span> <span class="n">best_training_loss</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">train_model</span><span class="p">(</span>
+            <span class="n">n_max_epochs</span><span class="p">,</span> <span class="n">training_dataset</span><span class="p">,</span> <span class="n">model_init_args</span><span class="p">,</span> <span class="n">lr_init</span><span class="p">,</span>
+            <span class="n">opt_algorithm</span><span class="o">=</span><span class="n">opt_algorithm</span><span class="p">,</span> <span class="n">lr_scheduler_type</span><span class="o">=</span><span class="n">lr_scheduler_type</span><span class="p">,</span>
+            <span class="n">lr_scheduler_kwargs</span><span class="o">=</span><span class="n">lr_scheduler_kwargs</span><span class="p">,</span> <span class="n">loss_nature</span><span class="o">=</span><span class="n">loss_nature</span><span class="p">,</span>
+            <span class="n">loss_type</span><span class="o">=</span><span class="n">loss_type</span><span class="p">,</span> <span class="n">loss_kwargs</span><span class="o">=</span><span class="n">loss_kwargs</span><span class="p">,</span>
+            <span class="n">batch_size</span><span class="o">=</span><span class="n">batch_size</span><span class="p">,</span> <span class="n">is_sampler_shuffle</span><span class="o">=</span><span class="n">is_sampler_shuffle</span><span class="p">,</span>
+            <span class="n">is_early_stopping</span><span class="o">=</span><span class="n">is_early_stopping</span><span class="p">,</span>
+            <span class="n">early_stopping_kwargs</span><span class="o">=</span><span class="n">early_stopping_kwargs</span><span class="p">,</span>
+            <span class="n">device_type</span><span class="o">=</span><span class="n">device_type</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Prediction with recurrent neural network model</span>
+        <span class="n">_</span><span class="p">,</span> <span class="n">avg_valid_loss_sample</span> <span class="o">=</span> <span class="n">predict</span><span class="p">(</span>
+            <span class="n">validation_dataset</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">model_directory</span><span class="p">,</span>
+            <span class="n">predict_directory</span><span class="o">=</span><span class="n">fold_validation_dir</span><span class="p">,</span> <span class="n">model_load_state</span><span class="o">=</span><span class="s1">&#39;best&#39;</span><span class="p">,</span>
+            <span class="n">loss_nature</span><span class="o">=</span><span class="n">loss_nature</span><span class="p">,</span> <span class="n">loss_type</span><span class="o">=</span><span class="n">loss_type</span><span class="p">,</span>
+            <span class="n">loss_kwargs</span><span class="o">=</span><span class="n">loss_kwargs</span><span class="p">,</span>
+            <span class="n">is_normalized_loss</span><span class="o">=</span><span class="n">is_model_out_normalized</span><span class="p">,</span>
+            <span class="n">device_type</span><span class="o">=</span><span class="n">device_type</span><span class="p">,</span> <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+        <span class="c1"># Check average validation loss</span>
+        <span class="k">if</span> <span class="n">avg_valid_loss_sample</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The average validation loss for fold &#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">fold</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s1"> could not be computed because &#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;the ground-truth is not available for all &#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;validation data set samples.&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Assemble fold losses</span>
+        <span class="n">k_fold_loss_array</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">vstack</span><span class="p">(</span>
+            <span class="p">(</span><span class="n">k_fold_loss_array</span><span class="p">,</span> <span class="p">(</span><span class="n">best_training_loss</span><span class="p">,</span> <span class="n">avg_valid_loss_sample</span><span class="p">)))</span>
+        <span class="c1"># Store fold losses</span>
+        <span class="n">folds_training_losses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">best_training_loss</span><span class="p">)</span>
+        <span class="n">folds_validation_losses</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">avg_valid_loss_sample</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+            <span class="c1"># Set losses output format</span>
+            <span class="n">train_loss_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">best_training_loss</span><span class="si">:</span><span class="s1">.8e</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="n">valid_loss_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">avg_valid_loss_sample</span><span class="si">:</span><span class="s1">.8e</span><span class="si">}</span><span class="s1">&#39;</span>
+            <span class="k">if</span> <span class="n">is_model_out_normalized</span><span class="p">:</span>
+                <span class="n">train_loss_str</span> <span class="o">+=</span> <span class="s1">&#39; (normalized)&#39;</span>
+                <span class="n">valid_loss_str</span> <span class="o">+=</span> <span class="s1">&#39; (normalized)&#39;</span>
+            <span class="c1"># Display fold losses</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&gt; Fold </span><span class="si">{</span><span class="n">fold</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s1">/</span><span class="si">{</span><span class="n">n_fold</span><span class="si">}</span><span class="s1">:</span><span class="se">\n</span><span class="s1">&#39;</span>
+                  <span class="sa">f</span><span class="s1">&#39;  &gt; Best training loss:   </span><span class="si">{</span><span class="n">train_loss_str</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span>
+                  <span class="sa">f</span><span class="s1">&#39;  &gt; Avg. validation loss: </span><span class="si">{</span><span class="n">valid_loss_str</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&gt; Finished k-fold cross-validation process!</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Compute cross-validation average training loss</span>
+    <span class="n">avg_best_training_loss</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">folds_training_losses</span><span class="p">)</span>
+    <span class="c1"># Compute cross-validation average validation loss</span>
+    <span class="n">avg_validation_loss</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">folds_validation_losses</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+        <span class="c1"># Set losses output format</span>
+        <span class="n">train_loss_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">avg_best_training_loss</span><span class="si">:</span><span class="s1">.8e</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="n">valid_loss_str</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">avg_validation_loss</span><span class="si">:</span><span class="s1">.8e</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="k">if</span> <span class="n">is_model_out_normalized</span><span class="p">:</span>
+            <span class="n">train_loss_str</span> <span class="o">+=</span> <span class="s1">&#39; (normalized)&#39;</span>
+            <span class="n">valid_loss_str</span> <span class="o">+=</span> <span class="s1">&#39; (normalized)&#39;</span>
+        <span class="c1"># Display cross-validation losses</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&gt; k-fold cross-validation results:&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">  &gt; Average training loss:   </span><span class="si">{</span><span class="n">train_loss_str</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">  &gt; Average validation loss: </span><span class="si">{</span><span class="n">valid_loss_str</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Compute total cross-validation time and average cross-validation time per</span>
+    <span class="c1"># fold</span>
+    <span class="n">total_time_sec</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time_sec</span>
+    <span class="n">avg_time_fold</span> <span class="o">=</span> <span class="n">total_time_sec</span><span class="o">/</span><span class="n">n_fold</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&gt; Cross-validation directory: </span><span class="si">{</span><span class="n">cross_validation_dir</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&gt; Total cross-validation time: &#39;</span>
+              <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">total_time_sec</span><span class="p">)))</span><span class="si">}</span><span class="s1"> | &#39;</span>
+              <span class="sa">f</span><span class="s1">&#39;Avg. time per fold: &#39;</span>
+              <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">avg_time_fold</span><span class="p">)))</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Write summary data file for model cross-validation</span>
+    <span class="n">write_cross_validation_summary_file</span><span class="p">(</span>
+        <span class="n">cross_validation_dir</span><span class="p">,</span> <span class="n">device_type</span><span class="p">,</span> <span class="n">n_fold</span><span class="p">,</span> <span class="n">n_max_epochs</span><span class="p">,</span>
+        <span class="n">is_model_in_normalized</span><span class="p">,</span> <span class="n">is_model_out_normalized</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span>
+        <span class="n">loss_nature</span><span class="p">,</span> <span class="n">loss_type</span><span class="p">,</span> <span class="n">loss_kwargs</span><span class="p">,</span> <span class="n">dataset_file_path</span><span class="p">,</span> <span class="n">dataset</span><span class="p">,</span>
+        <span class="n">k_fold_loss_array</span><span class="p">,</span> <span class="n">total_time_sec</span><span class="p">,</span> <span class="n">avg_time_fold</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">k_fold_loss_array</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

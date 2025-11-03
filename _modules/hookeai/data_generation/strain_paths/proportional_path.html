@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>hookeai.data_generation.strain_paths.proportional_path &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../_autosummary/hookeai.html">Code</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">hookeai.data_generation.strain_paths.proportional_path</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for hookeai.data_generation.strain_paths.proportional_path</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Generation of synthetic strain loading paths: Proportional generator.</span>
+
+<span class="sd">Classes</span>
+<span class="sd">-------</span>
+<span class="sd">ProportionalStrainPathGenerator(StrainPathGenerator)</span>
+<span class="sd">    Proportional strain loading path generator.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#                                                                       Modules</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Standard</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
+<span class="c1"># Third-party</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="c1"># Local</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">data_generation.strain_paths.interface</span><span class="w"> </span><span class="kn">import</span> <span class="n">StrainPathGenerator</span>
+<span class="c1">#</span>
+<span class="c1">#                                                          Authorship &amp; Credits</span>
+<span class="c1"># =============================================================================</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Bernardo Ferreira (bernardo_ferreira@brown.edu)&#39;</span>
+<span class="n">__credits__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Bernardo Ferreira&#39;</span><span class="p">,</span> <span class="p">]</span>
+<span class="n">__status__</span> <span class="o">=</span> <span class="s1">&#39;Stable&#39;</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="ProportionalStrainPathGenerator"><a class="viewcode-back" href="../../../../_autosummary/hookeai.data_generation.strain_paths.proportional_path.ProportionalStrainPathGenerator.html#hookeai.data_generation.strain_paths.proportional_path.ProportionalStrainPathGenerator">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">ProportionalStrainPathGenerator</span><span class="p">(</span><span class="n">StrainPathGenerator</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Proportional strain loading path generator.</span>
+<span class="sd">    </span>
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    _strain_formulation: {&#39;infinitesimal&#39;, &#39;finite&#39;}</span>
+<span class="sd">        Problem strain formulation.</span>
+<span class="sd">    _n_dim : int</span>
+<span class="sd">        Problem number of spatial dimensions.</span>
+<span class="sd">    _comp_order_sym : tuple[str]</span>
+<span class="sd">        Strain/Stress components symmetric order.</span>
+<span class="sd">    _comp_order_nsym : tuple[str]</span>
+<span class="sd">        Strain/Stress components nonsymmetric order.</span>
+<span class="sd">    </span>
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    generate_strain_path(self, strain_bounds, n_time, \</span>
+<span class="sd">                         time_init=0.0, time_end=1.0, \</span>
+<span class="sd">                         inc_strain_norm=None, strain_noise_std=None, \</span>
+<span class="sd">                         n_cycle=None, random_seed=None)</span>
+<span class="sd">        Generate strain path.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="ProportionalStrainPathGenerator.generate_strain_path"><a class="viewcode-back" href="../../../../_autosummary/hookeai.data_generation.strain_paths.proportional_path.ProportionalStrainPathGenerator.html#hookeai.data_generation.strain_paths.proportional_path.ProportionalStrainPathGenerator.generate_strain_path">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">generate_strain_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">strain_bounds</span><span class="p">,</span> <span class="n">n_time</span><span class="p">,</span>
+                             <span class="n">time_init</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">time_end</span><span class="o">=</span><span class="mf">1.0</span><span class="p">,</span>
+                             <span class="n">inc_strain_norm</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">strain_noise_std</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                             <span class="n">n_cycle</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">random_seed</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate strain path.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        strain_bounds : dict</span>
+<span class="sd">            Lower and upper sampling bounds (item, tuple(lower, upper)) for</span>
+<span class="sd">            each independent strain component (key, str).</span>
+<span class="sd">        n_time : int</span>
+<span class="sd">            Number of discrete time points.</span>
+<span class="sd">        time_init : float, default=0.0</span>
+<span class="sd">            Initial time.</span>
+<span class="sd">        time_end : float, default=1.0</span>
+<span class="sd">            Final time.</span>
+<span class="sd">        inc_strain_norm : float, default=None</span>
+<span class="sd">            Enforce given incremental strain norm in all time steps of the</span>
+<span class="sd">            strain path.</span>
+<span class="sd">        strain_noise_std : float, default=None</span>
+<span class="sd">            For each discrete time, add noise to the strain components sampled</span>
+<span class="sd">            from a Gaussian distribution with zero mean and given standard</span>
+<span class="sd">            deviation.</span>
+<span class="sd">        n_cycle : int, default=None</span>
+<span class="sd">            Number of strain path (similar) loading/reverse-loading cycles.</span>
+<span class="sd">            Last time step (corresponding to the initial strain state) is</span>
+<span class="sd">            replicated until the prescribed number of discrete time points is</span>
+<span class="sd">            met.</span>
+<span class="sd">        random_seed : int, default=None</span>
+<span class="sd">            Seed used to initialize the random number generator of Python and</span>
+<span class="sd">            other libraries to preserve reproducibility.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        strain_comps_order : tuple[str]</span>
+<span class="sd">            Strain components order.</span>
+<span class="sd">        time_hist : numpy.ndarray(1d)</span>
+<span class="sd">            Discrete time history.</span>
+<span class="sd">        strain_path : numpy.ndarray(2d)</span>
+<span class="sd">            Strain path history stored as numpy.ndarray(2d) of shape</span>
+<span class="sd">            (sequence_length, n_strain_comps).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Set random number generators initialization for reproducibility</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">random_seed</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">random_seed</span><span class="p">)</span>
+            <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">random_seed</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get strain components</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_strain_formulation</span> <span class="o">==</span> <span class="s1">&#39;infinitesimal&#39;</span><span class="p">:</span>
+            <span class="n">strain_comps_order</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_comp_order_sym</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">strain_comps_order</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_comp_order_nsym</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Check strain components</span>
+        <span class="k">if</span> <span class="nb">set</span><span class="p">(</span><span class="n">strain_bounds</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span> <span class="o">!=</span> <span class="nb">set</span><span class="p">(</span><span class="n">strain_comps_order</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The sampling bounds must be provided for all &#39;</span>
+                               <span class="s1">&#39;independent strain components: &#39;</span>
+                               <span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">&#39;</span><span class="p">,</span> <span class="n">strain_comps_order</span><span class="p">)</span>
+        <span class="c1"># Check sampling bounds</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">strain_bounds</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="k">if</span> <span class="n">val</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">&gt;</span> <span class="n">val</span><span class="p">[</span><span class="mi">1</span><span class="p">]:</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The lower bound of strain component &#39;</span>
+                                   <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s1"> is greater than the upper bound.&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set discrete time history</span>
+        <span class="n">time_hist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">time_init</span><span class="p">,</span> <span class="n">time_end</span><span class="p">,</span> <span class="n">n_time</span><span class="p">,</span>
+                                <span class="n">endpoint</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span> <span class="n">dtype</span><span class="o">=</span><span class="nb">float</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set number of discrete time points in the forward direction</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">n_cycle</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="n">n_cycle</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="c1"># Check minimum number of time points</span>
+            <span class="k">if</span> <span class="p">(</span><span class="n">n_time</span> <span class="o">&lt;</span> <span class="mi">2</span><span class="o">*</span><span class="n">n_cycle</span> <span class="o">+</span> <span class="mi">1</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;In order to generate </span><span class="si">{</span><span class="n">n_cycle</span><span class="si">}</span><span class="s1"> &#39;</span>
+                                   <span class="sa">f</span><span class="s1">&#39;loading/reverse-loading cycles, &#39;</span>
+                                   <span class="sa">f</span><span class="s1">&#39;the minimum required number of discrete &#39;</span>
+                                   <span class="sa">f</span><span class="s1">&#39;time points is </span><span class="si">{</span><span class="mi">2</span><span class="o">*</span><span class="n">n_cycle</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
+            <span class="c1"># Set number of forward time points</span>
+            <span class="n">n_time_forward</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">floor</span><span class="p">(((</span><span class="n">n_time</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="mi">2</span><span class="o">*</span><span class="n">n_cycle</span><span class="p">))</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+            <span class="c1"># Set cyclic loading flag</span>
+            <span class="n">is_cyclic_loading</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Set number of forward time points</span>
+            <span class="n">n_time_forward</span> <span class="o">=</span> <span class="n">n_time</span>
+            <span class="c1"># Set cyclic loading flag</span>
+            <span class="n">is_cyclic_loading</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize trial strain path</span>
+        <span class="n">strain_path_trial</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="n">n_time_forward</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">strain_comps_order</span><span class="p">)))</span>
+        <span class="c1"># Generate trial strain path (normalized)</span>
+        <span class="k">for</span> <span class="n">j</span><span class="p">,</span> <span class="n">comp</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">strain_comps_order</span><span class="p">):</span>
+            <span class="c1"># Get strain component sampling bounds</span>
+            <span class="n">lbound</span><span class="p">,</span> <span class="n">ubound</span> <span class="o">=</span> <span class="n">strain_bounds</span><span class="p">[</span><span class="n">comp</span><span class="p">]</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Generate strain component strain path</span>
+            <span class="k">if</span> <span class="n">np</span><span class="o">.</span><span class="n">isclose</span><span class="p">(</span><span class="n">lbound</span><span class="p">,</span> <span class="n">ubound</span><span class="p">):</span>
+                <span class="c1"># Enforce constant strain</span>
+                <span class="n">strain_comp_hist</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">lbound</span><span class="p">,</span> <span class="n">lbound</span><span class="p">,</span>
+                                               <span class="n">num</span><span class="o">=</span><span class="n">n_time_forward</span><span class="p">)</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Initialize control strains (normalized)</span>
+                <span class="n">control_strains_normalized</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="mi">2</span><span class="p">)</span>
+                <span class="c1"># Enforce initial null strain (normalized)</span>
+                <span class="n">control_strains_normalized</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">=</span> \
+                    <span class="o">-</span><span class="p">(</span><span class="n">ubound</span> <span class="o">+</span> <span class="n">lbound</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">ubound</span> <span class="o">-</span> <span class="n">lbound</span><span class="p">)</span>
+                <span class="c1"># Sample final strain (normalized)</span>
+                <span class="n">control_strains_normalized</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> \
+                    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">low</span><span class="o">=-</span><span class="mf">1.0</span><span class="p">,</span> <span class="n">high</span><span class="o">=</span><span class="mf">1.0</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Predict with linear regression model</span>
+                <span class="n">strain_mean_normalized</span> <span class="o">=</span> \
+                    <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="n">control_strains_normalized</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span>
+                                <span class="n">control_strains_normalized</span><span class="p">[</span><span class="mi">1</span><span class="p">],</span>
+                                <span class="n">num</span><span class="o">=</span><span class="n">n_time_forward</span><span class="p">)</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Denormalize strain component path</span>
+                <span class="n">strain_comp_hist</span> <span class="o">=</span> \
+                    <span class="n">np</span><span class="o">.</span><span class="n">array</span><span class="p">([</span><span class="n">lbound</span> <span class="o">+</span> <span class="mf">0.5</span><span class="o">*</span><span class="p">(</span><span class="n">ubound</span> <span class="o">-</span> <span class="n">lbound</span><span class="p">)</span><span class="o">*</span><span class="p">(</span><span class="n">x</span> <span class="o">+</span> <span class="mf">1.0</span><span class="p">)</span>
+                              <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">strain_mean_normalized</span><span class="p">])</span>
+            <span class="c1"># Assemble strain component path</span>
+            <span class="n">strain_path_trial</span><span class="p">[:,</span> <span class="n">j</span><span class="p">]</span> <span class="o">=</span> <span class="n">strain_comp_hist</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize strain path</span>
+        <span class="n">strain_path</span> <span class="o">=</span> <span class="n">strain_path_trial</span><span class="p">[:,</span> <span class="p">:]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Loop over time</span>
+        <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_time_forward</span><span class="p">):</span>
+            <span class="c1"># Enforce increment strain norm</span>
+            <span class="k">if</span> <span class="n">inc_strain_norm</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># Check increment strain norm</span>
+                <span class="k">if</span> <span class="n">inc_strain_norm</span> <span class="o">&lt;=</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Prescribed incremental strain norm &#39;</span>
+                                       <span class="s1">&#39;must be positive value.&#39;</span><span class="p">)</span>
+                <span class="c1"># Get strain tensors</span>
+                <span class="n">strain</span> <span class="o">=</span> <span class="n">StrainPathGenerator</span><span class="o">.</span><span class="n">build_strain_tensor</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_n_dim</span><span class="p">,</span> <span class="n">strain_path</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:],</span> <span class="n">strain_comps_order</span><span class="p">,</span>
+                    <span class="n">is_symmetric</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_strain_formulation</span> <span class="o">==</span> <span class="s1">&#39;infinitesimal&#39;</span><span class="p">)</span>
+                <span class="n">strain_old</span> <span class="o">=</span> <span class="n">StrainPathGenerator</span><span class="o">.</span><span class="n">build_strain_tensor</span><span class="p">(</span>
+                    <span class="bp">self</span><span class="o">.</span><span class="n">_n_dim</span><span class="p">,</span> <span class="n">strain_path</span><span class="p">[</span><span class="n">i</span> <span class="o">-</span> <span class="mi">1</span><span class="p">,</span> <span class="p">:],</span> <span class="n">strain_comps_order</span><span class="p">,</span>
+                    <span class="n">is_symmetric</span><span class="o">=</span><span class="bp">self</span><span class="o">.</span><span class="n">_strain_formulation</span> <span class="o">==</span> <span class="s1">&#39;infinitesimal&#39;</span><span class="p">)</span>
+                <span class="c1"># Compute strain increment</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_strain_formulation</span> <span class="o">==</span> <span class="s1">&#39;infinitesimal&#39;</span><span class="p">:</span>
+                    <span class="n">inc_strain</span> <span class="o">=</span> <span class="n">strain</span> <span class="o">-</span> <span class="n">strain_old</span>
+                <span class="k">else</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Not implemented.&#39;</span><span class="p">)</span>
+                <span class="c1"># Compute strain increment unit vector</span>
+                <span class="n">inc_strain_direction</span> <span class="o">=</span> <span class="n">inc_strain</span><span class="o">/</span><span class="n">np</span><span class="o">.</span><span class="n">linalg</span><span class="o">.</span><span class="n">norm</span><span class="p">(</span><span class="n">inc_strain</span><span class="p">)</span>
+                <span class="c1"># Enforce strain increment norm</span>
+                <span class="n">strain</span> <span class="o">=</span> <span class="n">strain_old</span> <span class="o">+</span> <span class="n">inc_strain_norm</span><span class="o">*</span><span class="n">inc_strain_direction</span>
+                <span class="c1"># Update strain path</span>
+                <span class="n">strain_path</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="p">[</span><span class="n">strain</span><span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+                                    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">strain_comps_order</span><span class="p">]</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Add noise to strain components</span>
+            <span class="k">if</span> <span class="n">strain_noise_std</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="c1"># Check noise standard deviation</span>
+                <span class="k">if</span> <span class="n">strain_noise_std</span> <span class="o">&lt;</span> <span class="mi">0</span><span class="p">:</span>
+                    <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Prescribed strain noise standard &#39;</span>
+                                       <span class="s1">&#39;deviation must be non-negative value.&#39;</span><span class="p">)</span>
+                <span class="c1"># Sample strain components noise</span>
+                <span class="n">strain_comps_noise</span> <span class="o">=</span> \
+                    <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">strain_noise_std</span><span class="p">,</span>
+                                        <span class="n">size</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">strain_comps_order</span><span class="p">))</span>
+                <span class="c1"># Add strain components noise</span>
+                <span class="n">strain_path</span><span class="p">[</span><span class="n">i</span><span class="p">,</span> <span class="p">:]</span> <span class="o">+=</span> <span class="n">strain_comps_noise</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Generate cyclic strain loading path</span>
+        <span class="k">if</span> <span class="n">is_cyclic_loading</span><span class="p">:</span>
+            <span class="c1"># Get initial strain state</span>
+            <span class="n">initial_strain</span> <span class="o">=</span> <span class="n">strain_path</span><span class="p">[</span><span class="mi">0</span><span class="p">,</span> <span class="p">:]</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+            <span class="c1"># Get forward strain path</span>
+            <span class="n">forward_strain_path</span> <span class="o">=</span> <span class="n">strain_path</span><span class="p">[:,</span> <span class="p">:]</span>
+            <span class="c1"># Get backward strain path</span>
+            <span class="n">backward_strain_path</span> <span class="o">=</span> <span class="n">strain_path</span><span class="p">[</span><span class="o">-</span><span class="mi">2</span><span class="p">:</span><span class="mi">0</span><span class="p">:</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="p">:]</span>
+            <span class="c1"># Stack backward strain path</span>
+            <span class="n">strain_path</span> <span class="o">=</span> \
+                <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">strain_path</span><span class="p">,</span> <span class="n">backward_strain_path</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="c1"># Loop over additional cycles</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_cycle</span><span class="p">):</span>
+                <span class="c1"># Stack cycle (forward and backward strain path)</span>
+                <span class="n">strain_path</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">(</span>
+                    <span class="p">(</span><span class="n">strain_path</span><span class="p">,</span> <span class="n">forward_strain_path</span><span class="p">,</span> <span class="n">backward_strain_path</span><span class="p">),</span>
+                    <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="c1"># Set strain path last time step</span>
+            <span class="n">strain_path</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">strain_path</span><span class="p">,</span> <span class="n">initial_strain</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>
+            <span class="c1"># Replicate last time step until prescribed number of discrete time</span>
+            <span class="c1"># points is met</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_time</span> <span class="o">-</span> <span class="n">strain_path</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                <span class="n">strain_path</span> <span class="o">=</span> \
+                    <span class="n">np</span><span class="o">.</span><span class="n">concatenate</span><span class="p">((</span><span class="n">strain_path</span><span class="p">,</span> <span class="n">initial_strain</span><span class="p">),</span> <span class="n">axis</span><span class="o">=</span><span class="mi">0</span><span class="p">)</span>        
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">strain_comps_order</span><span class="p">,</span> <span class="n">time_hist</span><span class="p">,</span> <span class="n">strain_path</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

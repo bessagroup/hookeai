@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Overview &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../" id="documentation_options" src="../../_static/documentation_options.js"></script>
+        <script src="../../_static/doctools.js"></script>
+        <script src="../../_static/sphinx_highlight.js"></script>
+    <script src="../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../genindex.html" />
+    <link rel="search" title="Search" href="../../search.html" />
+    <link rel="next" title="Data generation" href="data_generation.html" />
+    <link rel="prev" title="Installation" href="../getting_started/installation.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../_autosummary/hookeai.html">Code</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+      <li class="breadcrumb-item active">Overview</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="overview">
+<h1>Overview<a class="headerlink" href="#overview" title="Permalink to this heading">¶</a></h1>
+<p>HookeAI is built around the <a class="reference external" href="https://doi.org/10.1016/j.jmps.2025.106408">Automatically Differentiable Model Updating (ADiMU)</a> framework for material model updating, but it’s also a flexible, general-purpose library for <strong>AI-driven material modeling research</strong>. It includes a wide range of features and functionalities, such as:</p>
+<ul class="simple">
+<li><p><strong>Data generation methods</strong>. Need to generate synthetic data to test your material model architectures? HookeAI includes tools to generate diverse strain-stress data sets as well as material patches undergoing all sorts of deformations!</p></li>
+<li><p><strong>Material model architectures</strong>. Want to try out different material model architectures or implement your own? HookeAI includes a variety of pre-built conventional, neural network, and hybrid material models, and it’s easy to create your own custom architectures by following similar blueprints.</p></li>
+<li><p><strong>Local material model updating</strong>. Have a rich strain-stress data set from numerical simulations and want to find a material model that explains the material behavior? HookeAI provides all the required tools to perform local, direct model updating as well as to test and validate the results.</p></li>
+<li><p><strong>Global material model updating</strong>. Have experimental displacement-force data and want to find a material model that explains the material behavior? HookeAI includes all the required tools to perform global, indirect model updating.</p></li>
+<li><p><strong>Data analysis and visualization tools</strong>. Need to better understand your data sets or the performance of your material models? HookeAI provides material-related data analysis tools as well as a complete toolkit for data visualization.</p></li>
+<li><p><strong>Tensorial algebra and matrix operations</strong>. Want to implement your own material model procedures and architectures without losing time with tensorial algebra and matrix operations? HookeAI has you covered, as it includes a comprehensive set of algebraic and matricial operations commonly used in material modeling.</p></li>
+<li><p><strong>Other utilities</strong>. In addition to the core features mentioned above, HookeAI also provides a variety of complementary tools to streamline your material modeling workflow.</p></li>
+</ul>
+<p>Find out more about HookeAI’s features in the following sections!</p>
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="../getting_started/installation.html" class="btn btn-neutral float-left" title="Installation" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="data_generation.html" class="btn btn-neutral float-right" title="Data generation" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

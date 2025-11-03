@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>hookeai.ioput.plots.plot_histogram &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="hookeai.ioput.plots.plot_histogram_2d" href="hookeai.ioput.plots.plot_histogram_2d.html" />
+    <link rel="prev" title="hookeai.ioput.plots.plot_boxplots" href="hookeai.ioput.plots.plot_boxplots.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="hookeai.html">Code</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="hookeai.data_generation.html">hookeai.data_generation</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="hookeai.ioput.html">hookeai.ioput</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="hookeai.ioput.iostandard.html">hookeai.ioput.iostandard</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="hookeai.ioput.plots.html">hookeai.ioput.plots</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="hookeai.ioput.plots.html#functions">Functions</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hookeai.ioput.plots.grouped_bar_chart.html">hookeai.ioput.plots.grouped_bar_chart</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hookeai.ioput.plots.plot_boxplots.html">hookeai.ioput.plots.plot_boxplots</a></li>
+<li class="toctree-l4 current"><a class="current reference internal" href="#">hookeai.ioput.plots.plot_histogram</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hookeai.ioput.plots.plot_histogram_2d.html">hookeai.ioput.plots.plot_histogram_2d</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hookeai.ioput.plots.plot_surface_xyz_data.html">hookeai.ioput.plots.plot_surface_xyz_data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hookeai.ioput.plots.plot_xny_data.html">hookeai.ioput.plots.plot_xny_data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hookeai.ioput.plots.plot_xy2_data.html">hookeai.ioput.plots.plot_xy2_data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hookeai.ioput.plots.plot_xy_data.html">hookeai.ioput.plots.plot_xy_data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hookeai.ioput.plots.plot_xyz_data.html">hookeai.ioput.plots.plot_xyz_data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hookeai.ioput.plots.save_figure.html">hookeai.ioput.plots.save_figure</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hookeai.ioput.plots.scatter_xny_data.html">hookeai.ioput.plots.scatter_xny_data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hookeai.ioput.plots.scatter_xy_data.html">hookeai.ioput.plots.scatter_xy_data</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hookeai.ioput.plots.tex_str.html">hookeai.ioput.plots.tex_str</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.material_model_finder.html">hookeai.material_model_finder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.miscellaneous.html">hookeai.miscellaneous</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.model_architectures.html">hookeai.model_architectures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.simulators.html">hookeai.simulators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.time_series_data.html">hookeai.time_series_data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.utilities.html">hookeai.utilities</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="hookeai.html">hookeai</a></li>
+          <li class="breadcrumb-item"><a href="hookeai.ioput.html">hookeai.ioput</a></li>
+          <li class="breadcrumb-item"><a href="hookeai.ioput.plots.html">hookeai.ioput.plots</a></li>
+      <li class="breadcrumb-item active">hookeai.ioput.plots.plot_histogram</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="hookeai-ioput-plots-plot-histogram">
+<h1>hookeai.ioput.plots.plot_histogram<a class="headerlink" href="#hookeai-ioput-plots-plot-histogram" title="Permalink to this heading">¶</a></h1>
+<dl class="py function">
+<dt class="sig sig-object py" id="hookeai.ioput.plots.plot_histogram">
+<span class="sig-name descname"><span class="pre">plot_histogram</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">data_labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bins</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">bins_range</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">density</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_lims</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(None,</span> <span class="pre">None)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_lims</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">(None,</span> <span class="pre">None)</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">title</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_label</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'linear'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_scale</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'linear'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">x_tick_format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">y_tick_format</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_latex</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/ioput/plots.html#plot_histogram"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.ioput.plots.plot_histogram" title="Permalink to this definition">¶</a></dt>
+<dd><p>Plot 1D histogram.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>data</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>numpy.ndarray</em></a><em>(</em><em>1d</em><em>)</em><em>]</em>) – Histogram data set.</p></li>
+<li><p><strong>data_labels</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>]</em><em>, </em><em>default=None</em>) – Histogram data sets labels. If None, then no labels are displayed.</p></li>
+<li><p><strong>bins</strong> (<em>{int</em><em>, </em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>, </em><em>str}</em><em>, </em><em>default=None</em>) – Histogram bins, provided either as an integer (number of equal-width
+bins in the range) or as a sequence (bins edges). Some binning
+strategies are also available (e.g., ‘auto’, ‘fd’).</p></li>
+<li><p><strong>bins_range</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>, </em><em>default=None</em>) – The lower (bins_range[0]) and upper (bins_range[1]) range of the bins,
+ignoring outliers outside the provided range. Not effective if bins
+sequence is provided.</p></li>
+<li><p><strong>density</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – If True, draw and return a probability density (area under the
+histogram integrates to 1).</p></li>
+<li><p><strong>title</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>default=None</em>) – Plot title.</p></li>
+<li><p><strong>x_label</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>default=None</em>) – x-axis label.</p></li>
+<li><p><strong>y_label</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>, </em><em>default=None</em>) – y-axis label.</p></li>
+<li><p><strong>x_scale</strong> (<em>str {'linear'</em><em>, </em><em>'log'}</em><em>, </em><em>default='linear'</em>) – x-axis scale. If None or invalid format, then default scale is set.
+Scale ‘log’ overrides any x-axis ticks formatting.</p></li>
+<li><p><strong>y_scale</strong> (<em>str {'linear'</em><em>, </em><em>'log'}</em><em>, </em><em>default='linear'</em>) – y-axis scale. If None or invalid format, then default scale is set.
+Scale ‘log’ overrides any y-axis ticks formatting.</p></li>
+<li><p><strong>x_tick_format</strong> (<em>{'int'</em><em>, </em><em>'float'</em><em>, </em><em>'exp'}</em><em>, </em><em>default=None</em>) – x-axis ticks formatting. If None or invalid format, then default
+formatting is set.</p></li>
+<li><p><strong>y_tick_format</strong> (<em>{'int'</em><em>, </em><em>'float'</em><em>, </em><em>'exp'}</em><em>, </em><em>default=None</em>) – y-axis ticks formatting. If None or invalid format, then default
+formatting is set.</p></li>
+<li><p><strong>is_latex</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – If True, then render all strings in LaTeX. If LaTex is not available,
+then this option is silently set to False and all input strings are
+processed to remove $(…)$ enclosure.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>figure</strong> (<em>Matplotlib Figure</em>) – Figure.</p></li>
+<li><p><strong>axes</strong> (<em>Matplotlib Axes</em>) – Axes.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="hookeai.ioput.plots.plot_boxplots.html" class="btn btn-neutral float-left" title="hookeai.ioput.plots.plot_boxplots" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="hookeai.ioput.plots.plot_histogram_2d.html" class="btn btn-neutral float-right" title="hookeai.ioput.plots.plot_histogram_2d" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

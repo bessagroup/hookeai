@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>hookeai.simulators.fetorch.material.models.standard.hardening &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../../../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../../../../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../../../../" id="documentation_options" src="../../../../../../../_static/documentation_options.js"></script>
+        <script src="../../../../../../../_static/doctools.js"></script>
+        <script src="../../../../../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../../../../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../../_autosummary/hookeai.html">Code</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../../../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../../../../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">hookeai.simulators.fetorch.material.models.standard.hardening</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for hookeai.simulators.fetorch.material.models.standard.hardening</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Strain hardening laws.</span>
+
+<span class="sd">This module includes the definition of several types of strain hardening laws</span>
+<span class="sd">and the suitable processing of the associated parameters.</span>
+
+<span class="sd">Classes</span>
+<span class="sd">-------</span>
+<span class="sd">IsotropicHardeningLaw(ABC)</span>
+<span class="sd">    Isotropic strain hardening law interface.</span>
+<span class="sd">PiecewiseLinearIHL(IsotropicHardeningLaw)</span>
+<span class="sd">    Piecewise linear isotropic strain hardening law.</span>
+<span class="sd">LinearIHL(IsotropicHardeningLaw)</span>
+<span class="sd">    Linear isotropic strain hardening law.</span>
+<span class="sd">NadaiLudwikIHL(IsotropicHardeningLaw)</span>
+<span class="sd">    Nadai-Ludwik isotropic strain hardening law.</span>
+
+<span class="sd">Functions</span>
+<span class="sd">---------</span>
+<span class="sd">get_available_hardening_types</span>
+<span class="sd">    Get available isotropic hardening laws.</span>
+<span class="sd">get_hardening_law</span>
+<span class="sd">    Get hardening law to compute yield stress and hardening slope.</span>
+<span class="sd">torch_interp</span>
+<span class="sd">    1D linear interpolation for monotonically increasing data points.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#                                                                       Modules</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Standard</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">abc</span><span class="w"> </span><span class="kn">import</span> <span class="n">ABC</span><span class="p">,</span> <span class="n">abstractmethod</span>
+<span class="c1"># Third-party</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="c1">#</span>
+<span class="c1">#                                                          Authorship &amp; Credits</span>
+<span class="c1"># =============================================================================</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Bernardo Ferreira (bernardo_ferreira@brown.edu)&#39;</span>
+<span class="n">__credits__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Bernardo Ferreira&#39;</span><span class="p">,</span> <span class="p">]</span>
+<span class="n">__status__</span> <span class="o">=</span> <span class="s1">&#39;Stable&#39;</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="get_available_hardening_types"><a class="viewcode-back" href="../../../../../../../_autosummary/hookeai.simulators.fetorch.material.models.standard.hardening.get_available_hardening_types.html#hookeai.simulators.fetorch.material.models.standard.hardening.get_available_hardening_types">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">get_available_hardening_types</span><span class="p">():</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get available isotropic hardening laws.</span>
+
+<span class="sd">    Available isotropic hardening laws:</span>
+
+<span class="sd">    * Piecewise linear hardening</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">           \\{\\bar{\\varepsilon}^{p}_{i}, \\, \\sigma_{y, i}\\},</span>
+<span class="sd">           \\quad i = 1, \\dots, n_{\\text{points}}</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">        </span>
+<span class="sd">        - &#39;hardening_points&#39; : Hardening points (torch.Tensor(2d) of shape \</span>
+<span class="sd">                               (n_points, 2), where the i-th hardening point \</span>
+<span class="sd">                               is stored in tensor[i, :] as \</span>
+<span class="sd">                               [accumulated plastic strain, yield stress]).</span>
+
+<span class="sd">    ----</span>
+
+<span class="sd">    * Linear hardening</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">           \\sigma_{y}(\\bar{\\varepsilon}^{p}) = \\sigma_{y, 0}</span>
+<span class="sd">           + a \\bar{\\varepsilon}^{p}</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">        </span>
+<span class="sd">        - &#39;s0&#39; - Initial yielding stress (:math:`\\sigma_{y, 0}`) (float);</span>
+<span class="sd">        - &#39;a&#39;  - Hardening law parameter (:math:`a`) (float);</span>
+
+<span class="sd">    ----</span>
+
+<span class="sd">    * Nadai-Ludwik hardening:</span>
+
+<span class="sd">        .. math::</span>
+
+<span class="sd">           \\sigma_{y}(\\bar{\\varepsilon}^{p}) = \\sigma_{y, 0}</span>
+<span class="sd">           + a (\\bar{\\varepsilon}^{p}_{0} + \\bar{\\varepsilon}^{p})^{b}</span>
+
+<span class="sd">        Parameters:</span>
+<span class="sd">        </span>
+<span class="sd">        - &#39;s0&#39;  - Initial yielding stress (:math:`\\sigma_{y, 0}`) (float);</span>
+<span class="sd">        - &#39;a&#39;   - Hardening law parameter (:math:`a`) (float);</span>
+<span class="sd">        - &#39;b&#39;   - Hardening law parameter (:math:`a`) (float);</span>
+<span class="sd">        - &#39;ep0&#39; - Accumulated plastic strain corresponding to initial \</span>
+<span class="sd">                  yielding stress (:math:`\\bar{\\varepsilon}^{p}_{0}`) \</span>
+<span class="sd">                  (float);</span>
+
+<span class="sd">    ----</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    available_hardening_types : tuple[str]</span>
+<span class="sd">        List of available isotropic hardening laws (str).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Set available isotropic hardening types</span>
+    <span class="n">available_hardening_types</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;piecewise_linear&#39;</span><span class="p">,</span> <span class="s1">&#39;linear&#39;</span><span class="p">,</span> <span class="s1">&#39;nadai_ludwik&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">available_hardening_types</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="get_hardening_law"><a class="viewcode-back" href="../../../../../../../_autosummary/hookeai.simulators.fetorch.material.models.standard.hardening.get_hardening_law.html#hookeai.simulators.fetorch.material.models.standard.hardening.get_hardening_law">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">get_hardening_law</span><span class="p">(</span><span class="n">hardening_type</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Get hardening law to compute yield stress and hardening slope.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    hardening_type : str</span>
+<span class="sd">        Type of hardening law.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    hardening_law : function</span>
+<span class="sd">        Hardening law.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get hardening class</span>
+    <span class="k">if</span> <span class="n">hardening_type</span> <span class="o">==</span> <span class="s1">&#39;piecewise_linear&#39;</span><span class="p">:</span>
+        <span class="c1"># Piecewise linear hardening isotropic strain hardening</span>
+        <span class="n">hardening_class</span> <span class="o">=</span> <span class="n">PiecewiseLinearIHL</span>
+    <span class="k">elif</span> <span class="n">hardening_type</span> <span class="o">==</span> <span class="s1">&#39;linear&#39;</span><span class="p">:</span>
+        <span class="c1"># Linear isotropic strain hardening</span>
+        <span class="n">hardening_class</span> <span class="o">=</span> <span class="n">LinearIHL</span>
+    <span class="k">elif</span> <span class="n">hardening_type</span> <span class="o">==</span> <span class="s1">&#39;nadai_ludwik&#39;</span><span class="p">:</span>
+        <span class="c1"># Nadai-Ludwik isotropic hardening</span>
+        <span class="n">hardening_class</span> <span class="o">=</span> <span class="n">NadaiLudwikIHL</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Unknown isotropic hardening type</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Unknown type of isotropic hardening law.&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get hardening law</span>
+    <span class="n">hardening_law</span> <span class="o">=</span> <span class="n">hardening_class</span><span class="o">.</span><span class="n">hardening_law</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">hardening_law</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="IsotropicHardeningLaw"><a class="viewcode-back" href="../../../../../../../_autosummary/hookeai.simulators.fetorch.material.models.standard.hardening.IsotropicHardeningLaw.html#hookeai.simulators.fetorch.material.models.standard.hardening.IsotropicHardeningLaw">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">IsotropicHardeningLaw</span><span class="p">(</span><span class="n">ABC</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Isotropic strain hardening law interface.</span>
+<span class="sd">    </span>
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    hardening_law(hardening_parameters, acc_p_strain)</span>
+<span class="sd">        Compute yield stress and hardening slope for given plastic strain.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="IsotropicHardeningLaw.hardening_law"><a class="viewcode-back" href="../../../../../../../_autosummary/hookeai.simulators.fetorch.material.models.standard.hardening.IsotropicHardeningLaw.html#hookeai.simulators.fetorch.material.models.standard.hardening.IsotropicHardeningLaw.hardening_law">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="nd">@abstractmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">hardening_law</span><span class="p">(</span><span class="n">hardening_parameters</span><span class="p">,</span> <span class="n">acc_p_strain</span><span class="p">,</span> <span class="n">is_check_data</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute yield stress and hardening slope for given plastic strain.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        hardening_parameters : dict</span>
+<span class="sd">            Hardening law parameters.</span>
+<span class="sd">        acc_p_strain : float</span>
+<span class="sd">            Accumulated plastic strain.</span>
+<span class="sd">        is_check_data : bool, default=False</span>
+<span class="sd">            If True, then check data required to evaluate strain hardening law.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        yield_stress : float</span>
+<span class="sd">            Material yield stress.</span>
+<span class="sd">        hard_slope : float</span>
+<span class="sd">            Material hardening slope.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">pass</span></div></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="PiecewiseLinearIHL"><a class="viewcode-back" href="../../../../../../../_autosummary/hookeai.simulators.fetorch.material.models.standard.hardening.PiecewiseLinearIHL.html#hookeai.simulators.fetorch.material.models.standard.hardening.PiecewiseLinearIHL">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">PiecewiseLinearIHL</span><span class="p">(</span><span class="n">IsotropicHardeningLaw</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Piecewise linear isotropic strain hardening law.</span>
+<span class="sd">    </span>
+<span class="sd">    Compatible with vectorized mapping.</span>
+<span class="sd">    </span>
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    hardening_law(hardening_parameters, acc_p_strain)</span>
+<span class="sd">        Compute yield stress and hardening slope for given plastic strain.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="PiecewiseLinearIHL.hardening_law"><a class="viewcode-back" href="../../../../../../../_autosummary/hookeai.simulators.fetorch.material.models.standard.hardening.PiecewiseLinearIHL.html#hookeai.simulators.fetorch.material.models.standard.hardening.PiecewiseLinearIHL.hardening_law">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">hardening_law</span><span class="p">(</span><span class="n">hardening_parameters</span><span class="p">,</span> <span class="n">acc_p_strain</span><span class="p">,</span> <span class="n">is_check_data</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute yield stress and hardening slope for given plastic strain.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        hardening_parameters : dict</span>
+<span class="sd">            Hardening law parameters.</span>
+<span class="sd">        acc_p_strain : float</span>
+<span class="sd">            Accumulated plastic strain.</span>
+<span class="sd">        is_check_data : bool, default=False</span>
+<span class="sd">            If True, then check data required to evaluate strain hardening law. </span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        yield_stress : float</span>
+<span class="sd">            Material yield stress.</span>
+<span class="sd">        hard_slope : float</span>
+<span class="sd">            Material hardening slope.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get hardening curve points array</span>
+        <span class="n">hardening_points</span> <span class="o">=</span> <span class="n">hardening_parameters</span><span class="p">[</span><span class="s1">&#39;hardening_points&#39;</span><span class="p">]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Build lists with the accumulated plastic strain points and</span>
+        <span class="c1"># associated yield stress values</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">hardening_points</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">acc_p_strain</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">hardening_points</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">acc_p_strain</span><span class="o">.</span><span class="n">device</span><span class="p">)</span>
+        <span class="c1"># Check if the accumulated plastic strain list is correctly sorted</span>
+        <span class="c1"># in ascending order</span>
+        <span class="k">if</span> <span class="n">is_check_data</span><span class="p">:</span>
+            <span class="k">if</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">diff</span><span class="p">(</span><span class="n">a</span><span class="p">)</span> <span class="o">&gt;</span> <span class="mi">0</span><span class="p">):</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Points of piecewise linear isotropic &#39;</span>
+                                   <span class="s1">&#39;hardening law must be specified in &#39;</span>
+                                   <span class="s1">&#39;ascending order of accumulated plastic &#39;</span>
+                                   <span class="s1">&#39;strain.&#39;</span><span class="p">)</span>
+            <span class="k">elif</span> <span class="ow">not</span> <span class="n">np</span><span class="o">.</span><span class="n">all</span><span class="p">([</span><span class="n">i</span> <span class="o">&gt;=</span> <span class="mi">0</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="n">a</span><span class="p">]):</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Points of piecewise linear isotropic &#39;</span>
+                                   <span class="s1">&#39;hardening law must be associated with &#39;</span>
+                                   <span class="s1">&#39;non-negative accumulated plastic strain &#39;</span>
+                                   <span class="s1">&#39;values.&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Check non-negative accumulated plastic strain</span>
+        <span class="k">if</span> <span class="n">is_check_data</span> <span class="ow">and</span> <span class="n">acc_p_strain</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Expecting non-negative accumulated plastic &#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;strain but got </span><span class="si">{</span><span class="n">acc_p_strain</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Enforce non-negative accumulate plastic strain</span>
+        <span class="n">acc_p_strain</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="n">acc_p_strain</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># If the value of the accumulated plastic strain is either below or</span>
+        <span class="c1"># above the provided hardening curve points, then simply assume the</span>
+        <span class="c1"># yield stress associated with the first or last provided points,</span>
+        <span class="c1"># respectively. Otherwise, perform linear interpolation to compute</span>
+        <span class="c1"># the yield stress        </span>
+        <span class="n">yield_stress</span> <span class="o">=</span> <span class="n">torch_interp</span><span class="p">(</span><span class="n">acc_p_strain</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="n">b</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">right</span><span class="o">=</span><span class="n">b</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get hardening slope</span>
+        <span class="n">hard_slope</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+            <span class="n">acc_p_strain</span> <span class="o">&lt;</span> <span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mf">0.0</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span>
+                <span class="n">acc_p_strain</span> <span class="o">&gt;=</span> <span class="n">a</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="mf">0.0</span><span class="p">,</span>
+                <span class="n">PiecewiseLinearIHL</span><span class="o">.</span><span class="n">_hardening_slope</span><span class="p">(</span><span class="n">acc_p_strain</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">)))</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">yield_stress</span><span class="p">,</span> <span class="n">hard_slope</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="PiecewiseLinearIHL._hardening_slope"><a class="viewcode-back" href="../../../../../../../_autosummary/hookeai.simulators.fetorch.material.models.standard.hardening.PiecewiseLinearIHL.html#hookeai.simulators.fetorch.material.models.standard.hardening.PiecewiseLinearIHL._hardening_slope">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">_hardening_slope</span><span class="p">(</span><span class="n">acc_p_strain</span><span class="p">,</span> <span class="n">a</span><span class="p">,</span> <span class="n">b</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute hardening slope for given plastic strain.</span>
+<span class="sd">        </span>
+<span class="sd">        Extrapolation enforces null hardening slope.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        acc_p_strain : torch.Tensor(0d)</span>
+<span class="sd">            Accumulated plastic strain.</span>
+<span class="sd">        a : torch.Tensor(1d)</span>
+<span class="sd">            Hardening law accumulated plastic strain points.</span>
+<span class="sd">        b : torch.Tensor(1d)</span>
+<span class="sd">            Hardening law yield stress points.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        hard_slope : torch.Tensor(0d)</span>
+<span class="sd">            Material hardening slope.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get hardening curve bracket index</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">ge</span><span class="p">(</span><span class="n">acc_p_strain</span><span class="p">,</span> <span class="n">a</span><span class="p">))</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+        <span class="c1"># Avoid out-of-bounds bracket indices</span>
+        <span class="n">idx</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="n">idx</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="n">a</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="o">-</span> <span class="mi">2</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get hardening curve bracket points</span>
+        <span class="n">x0</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+        <span class="n">y0</span> <span class="o">=</span> <span class="n">b</span><span class="p">[</span><span class="n">idx</span><span class="p">]</span>
+        <span class="n">x1</span> <span class="o">=</span> <span class="n">a</span><span class="p">[</span><span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="n">y1</span> <span class="o">=</span> <span class="n">b</span><span class="p">[</span><span class="n">idx</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="c1"># Compute hardening slope</span>
+        <span class="n">hard_slope</span> <span class="o">=</span> <span class="p">(</span><span class="n">y1</span> <span class="o">-</span> <span class="n">y0</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">x1</span> <span class="o">-</span> <span class="n">x0</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Enforce null hardening slope when extrapolating</span>
+        <span class="n">lower_mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="n">acc_p_strain</span> <span class="o">-</span> <span class="n">a</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span><span class="o">.</span><span class="n">sign</span><span class="p">()</span>
+        <span class="n">upper_mask</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="n">a</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">acc_p_strain</span><span class="p">)</span><span class="o">.</span><span class="n">sign</span><span class="p">()</span>
+        <span class="n">mask</span> <span class="o">=</span> <span class="n">lower_mask</span><span class="o">*</span><span class="n">upper_mask</span>
+        <span class="c1"># Enforce extrapolation masking</span>
+        <span class="n">hard_slope</span> <span class="o">=</span> <span class="n">hard_slope</span><span class="o">*</span><span class="n">mask</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">hard_slope</span></div></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="LinearIHL"><a class="viewcode-back" href="../../../../../../../_autosummary/hookeai.simulators.fetorch.material.models.standard.hardening.LinearIHL.html#hookeai.simulators.fetorch.material.models.standard.hardening.LinearIHL">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">LinearIHL</span><span class="p">(</span><span class="n">IsotropicHardeningLaw</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Linear isotropic strain hardening law.</span>
+<span class="sd">    </span>
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    hardening_law(hardening_parameters, acc_p_strain)</span>
+<span class="sd">        Compute yield stress and hardening slope for given plastic strain.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="LinearIHL.hardening_law"><a class="viewcode-back" href="../../../../../../../_autosummary/hookeai.simulators.fetorch.material.models.standard.hardening.LinearIHL.html#hookeai.simulators.fetorch.material.models.standard.hardening.LinearIHL.hardening_law">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">hardening_law</span><span class="p">(</span><span class="n">hardening_parameters</span><span class="p">,</span> <span class="n">acc_p_strain</span><span class="p">,</span> <span class="n">is_check_data</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute yield stress and hardening slope for given plastic strain.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        hardening_parameters : dict</span>
+<span class="sd">            Hardening law parameters.</span>
+<span class="sd">        acc_p_strain : float</span>
+<span class="sd">            Accumulated plastic strain.</span>
+<span class="sd">        is_check_data : bool, default=False</span>
+<span class="sd">            If True, then check data required to evaluate strain hardening law.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        yield_stress : float</span>
+<span class="sd">            Material yield stress.</span>
+<span class="sd">        hard_slope : float</span>
+<span class="sd">            Material hardening slope.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get initial yield stress and hardening slope</span>
+        <span class="n">yield_stress_init</span> <span class="o">=</span> <span class="n">hardening_parameters</span><span class="p">[</span><span class="s1">&#39;s0&#39;</span><span class="p">]</span>
+        <span class="n">hard_slope</span> <span class="o">=</span> <span class="n">hardening_parameters</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Check non-negative accumulated plastic strain</span>
+        <span class="k">if</span> <span class="n">is_check_data</span> <span class="ow">and</span> <span class="n">acc_p_strain</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Expecting non-negative accumulated plastic &#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;strain but got </span><span class="si">{</span><span class="n">acc_p_strain</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Enforce non-negative accumulate plastic strain</span>
+        <span class="n">acc_p_strain</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="n">acc_p_strain</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Compute yield stress</span>
+        <span class="n">yield_stress</span> <span class="o">=</span> <span class="n">yield_stress_init</span> <span class="o">+</span> <span class="n">hard_slope</span><span class="o">*</span><span class="n">acc_p_strain</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">yield_stress</span><span class="p">,</span> <span class="n">hard_slope</span></div></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="NadaiLudwikIHL"><a class="viewcode-back" href="../../../../../../../_autosummary/hookeai.simulators.fetorch.material.models.standard.hardening.NadaiLudwikIHL.html#hookeai.simulators.fetorch.material.models.standard.hardening.NadaiLudwikIHL">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">NadaiLudwikIHL</span><span class="p">(</span><span class="n">IsotropicHardeningLaw</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Nadai-Ludwik isotropic strain hardening law.</span>
+<span class="sd">    </span>
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    hardening_law(hardening_parameters, acc_p_strain)</span>
+<span class="sd">        Compute yield stress and hardening slope for given plastic strain.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="NadaiLudwikIHL.hardening_law"><a class="viewcode-back" href="../../../../../../../_autosummary/hookeai.simulators.fetorch.material.models.standard.hardening.NadaiLudwikIHL.html#hookeai.simulators.fetorch.material.models.standard.hardening.NadaiLudwikIHL.hardening_law">[docs]</a>    <span class="nd">@staticmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">hardening_law</span><span class="p">(</span><span class="n">hardening_parameters</span><span class="p">,</span> <span class="n">acc_p_strain</span><span class="p">,</span> <span class="n">is_check_data</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Compute yield stress and hardening slope for given plastic strain.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        hardening_parameters : dict</span>
+<span class="sd">            Hardening law parameters.</span>
+<span class="sd">        acc_p_strain : float</span>
+<span class="sd">            Accumulated plastic strain.</span>
+<span class="sd">        is_check_data : bool, default=False</span>
+<span class="sd">            If True, then check data required to evaluate strain hardening law.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        yield_stress : float</span>
+<span class="sd">            Material yield stress.</span>
+<span class="sd">        hard_slope : float</span>
+<span class="sd">            Material hardening slope.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get initial yield stress and parameters</span>
+        <span class="n">yield_stress_init</span> <span class="o">=</span> <span class="n">hardening_parameters</span><span class="p">[</span><span class="s1">&#39;s0&#39;</span><span class="p">]</span>
+        <span class="n">a</span> <span class="o">=</span> <span class="n">hardening_parameters</span><span class="p">[</span><span class="s1">&#39;a&#39;</span><span class="p">]</span>
+        <span class="n">b</span> <span class="o">=</span> <span class="n">hardening_parameters</span><span class="p">[</span><span class="s1">&#39;b&#39;</span><span class="p">]</span>
+        <span class="n">ep0</span> <span class="o">=</span> <span class="n">hardening_parameters</span><span class="p">[</span><span class="s1">&#39;ep0&#39;</span><span class="p">]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Check non-negative accumulated plastic strain</span>
+        <span class="k">if</span> <span class="n">is_check_data</span> <span class="ow">and</span> <span class="n">acc_p_strain</span> <span class="o">&lt;</span> <span class="mf">0.0</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Expecting non-negative accumulated plastic &#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;strain but got </span><span class="si">{</span><span class="n">acc_p_strain</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Enforce non-negative accumulate plastic strain</span>
+        <span class="n">acc_p_strain</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">relu</span><span class="p">(</span><span class="n">acc_p_strain</span><span class="p">)</span> <span class="o">+</span> <span class="n">ep0</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Compute yield stress</span>
+        <span class="n">yield_stress</span> <span class="o">=</span> <span class="n">yield_stress_init</span> <span class="o">+</span> <span class="n">a</span><span class="o">*</span><span class="p">((</span><span class="n">acc_p_strain</span> <span class="o">+</span> <span class="n">ep0</span><span class="p">)</span><span class="o">**</span><span class="n">b</span><span class="p">)</span>
+        <span class="c1"># Compute hardening slope</span>
+        <span class="n">hard_slope</span> <span class="o">=</span> <span class="n">a</span><span class="o">*</span><span class="n">b</span><span class="o">*</span><span class="p">(</span><span class="n">acc_p_strain</span> <span class="o">+</span> <span class="n">ep0</span><span class="p">)</span><span class="o">**</span><span class="p">(</span><span class="n">b</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Return</span>
+        <span class="k">return</span> <span class="n">yield_stress</span><span class="p">,</span> <span class="n">hard_slope</span></div></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="torch_interp"><a class="viewcode-back" href="../../../../../../../_autosummary/hookeai.simulators.fetorch.material.models.standard.hardening.torch_interp.html#hookeai.simulators.fetorch.material.models.standard.hardening.torch_interp">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">torch_interp</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">xp</span><span class="p">,</span> <span class="n">fp</span><span class="p">,</span> <span class="n">left</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">right</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_check_data</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;1D linear interpolation for monotonically increasing data points.</span>
+<span class="sd">    </span>
+<span class="sd">    Compatible with vectorized mapping.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns the one-dimensional piecewise linear interpolant to a function with</span>
+<span class="sd">    given discrete data points (xp, fp), evaluated at x.</span>
+<span class="sd">    </span>
+<span class="sd">    This function is essentially a torch-based implementation of numpy.interp.</span>
+
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    x : torch.Tensor(1d)</span>
+<span class="sd">        The x-coordinates at which to evaluate the interpolated values, sorted</span>
+<span class="sd">        by increasing order.</span>
+<span class="sd">    xp : torch.Tensor(1d)</span>
+<span class="sd">        The x-coordinates of the discrete data points, sorted by increasing</span>
+<span class="sd">        order.</span>
+<span class="sd">    fp : torch.Tensor(1d)</span>
+<span class="sd">        The y-coordinates of the discrete data points.</span>
+<span class="sd">    left : float, default=None</span>
+<span class="sd">        Value to return for x &lt; xp[0]. Defaults to fp[0].</span>
+<span class="sd">    right : float, default=None</span>
+<span class="sd">        Value to return for x &gt; xp[-1]. Defaults to fp[-1].</span>
+<span class="sd">    is_check_data : bool, default=False</span>
+<span class="sd">        If True, then check data required to perform linear interpolation.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    y : torch.Tensor(1d)</span>
+<span class="sd">        The y-coordinates of the interpolated data points.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check if data points are sorted</span>
+    <span class="k">if</span> <span class="n">is_check_data</span><span class="p">:</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">x</span> <span class="o">==</span> <span class="n">torch</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">x</span><span class="p">)[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The interpolated data points x-coordinates must &#39;</span>
+                            <span class="s1">&#39;be sorted in ascending order.&#39;</span><span class="p">)</span>
+        <span class="k">if</span> <span class="ow">not</span> <span class="n">torch</span><span class="o">.</span><span class="n">all</span><span class="p">(</span><span class="n">xp</span> <span class="o">==</span> <span class="n">torch</span><span class="o">.</span><span class="n">sort</span><span class="p">(</span><span class="n">xp</span><span class="p">)[</span><span class="mi">0</span><span class="p">]):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The discrete data points x-coordinates must be &#39;</span>
+                            <span class="s1">&#39;sorted in ascending order.&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Compute linear interpolation parameters</span>
+    <span class="n">m</span> <span class="o">=</span> <span class="p">(</span><span class="n">fp</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">-</span> <span class="n">fp</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span><span class="o">/</span><span class="p">(</span><span class="n">xp</span><span class="p">[</span><span class="mi">1</span><span class="p">:]</span> <span class="o">-</span> <span class="n">xp</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+    <span class="n">b</span> <span class="o">=</span> <span class="n">fp</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">m</span><span class="o">*</span><span class="n">xp</span><span class="p">[:</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Compute data points interpolation brackets</span>
+    <span class="n">idxs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">sum</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">ge</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">,</span> <span class="mi">1</span><span class="p">),</span> <span class="n">xp</span><span class="o">.</span><span class="n">reshape</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="o">-</span><span class="mi">1</span><span class="p">)),</span> <span class="mi">1</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span>
+    <span class="c1"># Assign out-of-bounds data points to limits interpolation brackets</span>
+    <span class="n">idxs</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">clamp</span><span class="p">(</span><span class="n">idxs</span><span class="p">,</span> <span class="nb">min</span><span class="o">=</span><span class="mi">0</span><span class="p">,</span> <span class="nb">max</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="n">m</span><span class="p">)</span> <span class="o">-</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Compute interpolated data points</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">m</span><span class="p">[</span><span class="n">idxs</span><span class="p">]</span><span class="o">*</span><span class="n">x</span> <span class="o">+</span> <span class="n">b</span><span class="p">[</span><span class="n">idxs</span><span class="p">]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set out-of-bounds values</span>
+    <span class="k">if</span> <span class="n">left</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">left</span> <span class="o">=</span> <span class="n">fp</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="k">if</span> <span class="n">right</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">right</span> <span class="o">=</span> <span class="n">fp</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">]</span>
+    <span class="c1"># Enforce out-of-bounds values</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">x</span> <span class="o">&lt;</span> <span class="n">xp</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="n">left</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+    <span class="n">y</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">where</span><span class="p">(</span><span class="n">x</span> <span class="o">&gt;</span> <span class="n">xp</span><span class="p">[</span><span class="o">-</span><span class="mi">1</span><span class="p">],</span> <span class="n">right</span><span class="p">,</span> <span class="n">y</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">y</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

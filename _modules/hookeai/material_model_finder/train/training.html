@@ -1,0 +1,717 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>hookeai.material_model_finder.train.training &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../_autosummary/hookeai.html">Code</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">hookeai.material_model_finder.train.training</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for hookeai.material_model_finder.train.training</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Material model finder learning procedure.</span>
+
+<span class="sd">Functions</span>
+<span class="sd">---------</span>
+<span class="sd">train_model</span>
+<span class="sd">    Training of recurrent constitutive model.</span>
+<span class="sd">save_material_models_state</span>
+<span class="sd">    Save material models states at given training epoch.</span>
+<span class="sd">save_parameters_history</span>
+<span class="sd">    Save model learnable parameters history record.</span>
+<span class="sd">read_parameters_history_from_file</span>
+<span class="sd">    Read model learnable parameters history from parameters record file.</span>
+<span class="sd">save_best_parameters</span>
+<span class="sd">    Save best performance state model parameters.</span>
+<span class="sd">read_best_parameters_from_file</span>
+<span class="sd">    Read best performance state model parameters from file.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#                                                                       Modules</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Standard</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">random</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">time</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
+<span class="c1"># Third-party</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="c1"># Local</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">material_model_finder.model.material_discovery</span><span class="w"> </span><span class="kn">import</span> <span class="n">MaterialModelFinder</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">model_architectures.rc_base_model.train.training</span><span class="w"> </span><span class="kn">import</span> \
+    <span class="n">check_model_parameters_convergence</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">model_architectures.procedures.model_training</span><span class="w"> </span><span class="kn">import</span> \
+    <span class="n">save_training_state</span><span class="p">,</span> <span class="n">save_loss_history</span><span class="p">,</span> <span class="n">write_training_summary_file</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">model_architectures.procedures.model_summary</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_model_summary</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">model_architectures.procedures.model_state_files</span><span class="w"> </span><span class="kn">import</span> \
+    <span class="n">save_model_state</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">utilities.optimizers</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_pytorch_optimizer</span><span class="p">,</span> \
+    <span class="n">get_learning_rate_scheduler</span>
+<span class="c1">#</span>
+<span class="c1">#                                                          Authorship &amp; Credits</span>
+<span class="c1"># =============================================================================</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Bernardo Ferreira (bernardo_ferreira@brown.edu)&#39;</span>
+<span class="n">__credits__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Bernardo Ferreira&#39;</span><span class="p">,</span> <span class="p">]</span>
+<span class="n">__status__</span> <span class="o">=</span> <span class="s1">&#39;Stable&#39;</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="train_model"><a class="viewcode-back" href="../../../../_autosummary/hookeai.material_model_finder.train.training.train_model.html#hookeai.material_model_finder.train.training.train_model">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">train_model</span><span class="p">(</span><span class="n">n_max_epochs</span><span class="p">,</span> <span class="n">specimen_data</span><span class="p">,</span> <span class="n">specimen_material_state</span><span class="p">,</span>
+                <span class="n">model_init_args</span><span class="p">,</span> <span class="n">lr_init</span><span class="p">,</span> <span class="n">opt_algorithm</span><span class="o">=</span><span class="s1">&#39;adam&#39;</span><span class="p">,</span>
+                <span class="n">lr_scheduler_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">lr_scheduler_kwargs</span><span class="o">=</span><span class="p">{},</span>
+                <span class="n">is_explicit_model_parameters</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_params_stopping</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                <span class="n">params_stopping_kwargs</span><span class="o">=</span><span class="p">{},</span> <span class="n">loss_scaling_factor</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                <span class="n">loss_time_weights</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">save_every</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">device_type</span><span class="o">=</span><span class="s1">&#39;cpu&#39;</span><span class="p">,</span>
+                <span class="n">seed</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_verbose</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Training of recurrent constitutive model.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    n_max_epochs : int</span>
+<span class="sd">        Maximum number of training epochs.</span>
+<span class="sd">    specimen_data : SpecimenNumericalData</span>
+<span class="sd">        Specimen numerical data translated from experimental results.</span>
+<span class="sd">    specimen_material_state : StructureMaterialState</span>
+<span class="sd">        FETorch structure material state.</span>
+<span class="sd">    model_init_args : dict</span>
+<span class="sd">        Material model finder class initialization parameters (check class</span>
+<span class="sd">        MaterialModelFinder).</span>
+<span class="sd">    lr_init : float</span>
+<span class="sd">        Initial value optimizer learning rate. Constant learning rate value if</span>
+<span class="sd">        no learning rate scheduler is specified (lr_scheduler_type=None).</span>
+<span class="sd">    opt_algorithm : {&#39;adam&#39;,}, default=&#39;adam&#39;</span>
+<span class="sd">        Optimization algorithm:</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;adam&#39;  : Adam (torch.optim.Adam)</span>
+<span class="sd">        </span>
+<span class="sd">    lr_scheduler_type : {&#39;steplr&#39;, &#39;explr&#39;, &#39;linlr&#39;}, default=None</span>
+<span class="sd">        Type of learning rate scheduler:</span>
+
+<span class="sd">        &#39;steplr&#39;  : Step-based decay (torch.optim.lr_scheduler.SetpLR)</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;explr&#39;   : Exponential decay (torch.optim.lr_scheduler.ExponentialLR)</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;linlr&#39;   : Linear decay (torch.optim.lr_scheduler.LinearLR)</span>
+
+<span class="sd">    lr_scheduler_kwargs : dict, default={}</span>
+<span class="sd">        Arguments of torch.optim.lr_scheduler.LRScheduler initializer.</span>
+<span class="sd">    is_explicit_model_parameters : bool, default=False</span>
+<span class="sd">        If True, then activate the explicit handling of model parameters. This</span>
+<span class="sd">        includes enforcing available bounds on the parameters during the</span>
+<span class="sd">        training procedure and storing the model parameters history for</span>
+<span class="sd">        post-processing.</span>
+<span class="sd">    is_params_stopping : bool, default=True</span>
+<span class="sd">        If True, then training process is halted when parameters convergence</span>
+<span class="sd">        criterion is triggered.</span>
+<span class="sd">    params_stopping_kwargs : dict, default={}</span>
+<span class="sd">        Parameters convergence stopping criterion parameters.</span>
+<span class="sd">    loss_scaling_factor : torch.Tensor(0d), default=None</span>
+<span class="sd">        Loss scaling factor. If provided, then loss is pre-multiplied by</span>
+<span class="sd">        loss scaling factor.</span>
+<span class="sd">    loss_time_weights : torch.Tensor(1d), default=None</span>
+<span class="sd">        Loss time weights stored as torch.Tensor(1d) of shape (n_time).</span>
+<span class="sd">        If provided, then each discrete time loss contribution is</span>
+<span class="sd">        pre-multiplied by corresponding weight. If None, time weights are</span>
+<span class="sd">        set to 1.0.</span>
+<span class="sd">    save_every : int, default=None</span>
+<span class="sd">        Save model every save_every epochs. If None, then saves only last epoch</span>
+<span class="sd">        and best performance states.</span>
+<span class="sd">    device_type : {&#39;cpu&#39;, &#39;cuda&#39;}, default=&#39;cpu&#39;</span>
+<span class="sd">        Type of device on which torch.Tensor is allocated.</span>
+<span class="sd">    seed : int, default=None</span>
+<span class="sd">        Seed used to initialize the random number generators of Python and</span>
+<span class="sd">        other libraries (e.g., NumPy, PyTorch) for all devices to preserve</span>
+<span class="sd">        reproducibility. Does also set workers seed in PyTorch data loaders.</span>
+<span class="sd">    is_verbose : bool, default=False</span>
+<span class="sd">        If True, enable verbose output.</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    model : torch.nn.Module</span>
+<span class="sd">        Recurrent neural network model.</span>
+<span class="sd">    best_loss : float</span>
+<span class="sd">        Best loss during training process.</span>
+<span class="sd">    best_training_epoch : int</span>
+<span class="sd">        Training epoch corresponding to best loss during training process.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Set random number generators initialization for reproducibility</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">seed</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+        <span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+        <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+        <span class="n">generator</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">Generator</span><span class="p">()</span><span class="o">.</span><span class="n">manual_seed</span><span class="p">(</span><span class="n">seed</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set device</span>
+    <span class="n">device</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">device</span><span class="p">(</span><span class="n">device_type</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="n">start_time_sec</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span>
+    <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Material model finder learning procedure&#39;</span>
+              <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">----------------------------------------&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize material model finder</span>
+    <span class="n">model</span> <span class="o">=</span> <span class="n">MaterialModelFinder</span><span class="p">(</span><span class="o">**</span><span class="n">model_init_args</span><span class="p">)</span>
+    <span class="c1"># Set specimen data and material state</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">set_specimen_data</span><span class="p">(</span><span class="n">specimen_data</span><span class="p">,</span> <span class="n">specimen_material_state</span><span class="p">,</span>
+                            <span class="n">loss_scaling_factor</span><span class="o">=</span><span class="n">loss_scaling_factor</span><span class="p">,</span>
+                            <span class="n">loss_time_weights</span><span class="o">=</span><span class="n">loss_time_weights</span><span class="p">)</span>
+    <span class="c1"># Set model device</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">set_device</span><span class="p">(</span><span class="n">device_type</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Save material models initial state</span>
+    <span class="n">save_material_models_state</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">state_type</span><span class="o">=</span><span class="s1">&#39;init&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get model parameters</span>
+    <span class="n">model_parameters</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">parameters</span><span class="p">(</span><span class="n">recurse</span><span class="o">=</span><span class="kc">True</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Move model to device</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">to</span><span class="p">(</span><span class="n">device</span><span class="o">=</span><span class="n">device</span><span class="p">)</span>
+    <span class="c1"># Set model in training mode</span>
+    <span class="n">model</span><span class="o">.</span><span class="n">train</span><span class="p">()</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Display initial parameters</span>
+    <span class="k">if</span> <span class="n">is_explicit_model_parameters</span> <span class="ow">and</span> <span class="n">is_verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&gt; Initial parameters:&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">get_detached_model_parameters</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;  &gt; </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s1"> = </span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Enforce bounds and constraints on model parameters</span>
+    <span class="c1"># (only explicit learnable parameters)</span>
+    <span class="k">if</span> <span class="n">is_explicit_model_parameters</span><span class="p">:</span>
+        <span class="c1"># Enforce bounds on model parameters</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">enforce_parameters_bounds</span><span class="p">()</span>
+        <span class="c1"># Enforce model-dependent constraints on model parameters</span>
+        <span class="n">model</span><span class="o">.</span><span class="n">enforce_parameters_constraints</span><span class="p">()</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Display initial parameters (after bounds and constraints)</span>
+    <span class="k">if</span> <span class="n">is_explicit_model_parameters</span> <span class="ow">and</span> <span class="n">is_verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&gt; Initial parameters (after bounds and constraints):&#39;</span><span class="p">)</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">get_detached_model_parameters</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;  &gt; </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s1"> = </span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize learning rate</span>
+    <span class="n">learning_rate</span> <span class="o">=</span> <span class="n">lr_init</span>
+    <span class="c1"># Set optimizer    </span>
+    <span class="k">if</span> <span class="n">opt_algorithm</span> <span class="o">==</span> <span class="s1">&#39;adam&#39;</span><span class="p">:</span>
+        <span class="c1"># Initialize optimizer, specifying the model (and submodels) parameters</span>
+        <span class="c1"># that should be optimized</span>
+        <span class="n">optimizer</span> <span class="o">=</span> <span class="n">get_pytorch_optimizer</span><span class="p">(</span><span class="n">algorithm</span><span class="o">=</span><span class="n">opt_algorithm</span><span class="p">,</span>
+                                          <span class="n">params</span><span class="o">=</span><span class="n">model_parameters</span><span class="p">,</span>
+                                          <span class="o">**</span><span class="p">{</span><span class="s1">&#39;lr&#39;</span><span class="p">:</span> <span class="n">learning_rate</span><span class="p">})</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Unknown optimization algorithm&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize learning rate scheduler</span>
+    <span class="n">is_lr_scheduler</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="k">if</span> <span class="n">lr_scheduler_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">is_lr_scheduler</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">lr_scheduler</span> <span class="o">=</span> <span class="n">get_learning_rate_scheduler</span><span class="p">(</span>
+            <span class="n">optimizer</span><span class="o">=</span><span class="n">optimizer</span><span class="p">,</span> <span class="n">scheduler_type</span><span class="o">=</span><span class="n">lr_scheduler_type</span><span class="p">,</span>
+            <span class="o">**</span><span class="n">lr_scheduler_kwargs</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize loss and learning rate histories (per epoch)</span>
+    <span class="n">loss_history_epochs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">lr_history_epochs</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># Initialize loss and learning rate histories (per training step)</span>
+    <span class="n">loss_history_steps</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="n">lr_history_steps</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize storage of model parameters history</span>
+    <span class="c1"># (only explicit learnable parameters)</span>
+    <span class="k">if</span> <span class="n">is_explicit_model_parameters</span><span class="p">:</span>
+        <span class="c1"># Initialize model parameters history (per epoch)</span>
+        <span class="n">model_init_parameters</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get_detached_model_parameters</span><span class="p">()</span>
+        <span class="n">model_parameters_history_epochs</span> <span class="o">=</span> \
+            <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">model_init_parameters</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+        <span class="c1"># Initialize model parameters history (per training step)</span>
+        <span class="n">model_parameters_history_steps</span> <span class="o">=</span> \
+            <span class="p">{</span><span class="n">key</span><span class="p">:</span> <span class="p">[]</span> <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">_</span> <span class="ow">in</span> <span class="n">model_init_parameters</span><span class="o">.</span><span class="n">items</span><span class="p">()}</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Initialize best model parameters</span>
+        <span class="n">best_model_parameters</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize training flag</span>
+    <span class="n">is_keep_training</span> <span class="o">=</span> <span class="kc">True</span>
+    <span class="c1"># Initialize number of training epochs</span>
+    <span class="n">epoch</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="c1"># Initialize number of training steps</span>
+    <span class="n">step</span> <span class="o">=</span> <span class="mi">0</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize early stopping flag</span>
+    <span class="n">is_stop_training</span> <span class="o">=</span> <span class="kc">False</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">&gt; Starting training process...</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Loop over training iterations</span>
+    <span class="k">while</span> <span class="n">is_keep_training</span><span class="p">:</span>
+        <span class="c1"># Store epoch initial training step</span>
+        <span class="n">epoch_init_step</span> <span class="o">=</span> <span class="n">step</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Compute force equilibrium history loss</span>
+        <span class="n">loss</span> <span class="o">=</span> <span class="n">model</span><span class="p">(</span><span class="n">sequential_mode</span><span class="o">=</span><span class="s1">&#39;sequential_element_vmap&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize gradients (set to zero)</span>
+        <span class="n">optimizer</span><span class="o">.</span><span class="n">zero_grad</span><span class="p">()</span>
+        <span class="c1"># Compute gradients with respect to model parameters (backward</span>
+        <span class="c1"># propagation)</span>
+        <span class="n">loss</span><span class="o">.</span><span class="n">backward</span><span class="p">()</span>
+        <span class="c1"># Perform optimization step. Gradients are stored in the .grad</span>
+        <span class="c1"># attribute of model parameters</span>
+        <span class="n">optimizer</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Display parameters</span>
+        <span class="k">if</span> <span class="n">is_explicit_model_parameters</span> <span class="ow">and</span> <span class="n">is_verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&gt; Epoch parameters:&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">get_detached_model_parameters</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;  &gt; </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s1"> = </span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Enforce bounds and constraints on model parameters</span>
+        <span class="c1"># (only explicit learnable parameters)</span>
+        <span class="k">if</span> <span class="n">is_explicit_model_parameters</span><span class="p">:</span>
+            <span class="c1"># Enforce bounds on model parameters</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">enforce_parameters_bounds</span><span class="p">()</span>
+            <span class="c1"># Enforce model-dependent constraints on model parameters</span>
+            <span class="n">model</span><span class="o">.</span><span class="n">enforce_parameters_constraints</span><span class="p">()</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Display parameters (after bounds and constraints)</span>
+        <span class="k">if</span> <span class="n">is_explicit_model_parameters</span> <span class="ow">and</span> <span class="n">is_verbose</span><span class="p">:</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&gt; Epoch parameters (after bounds and constraints):&#39;</span><span class="p">)</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">model</span><span class="o">.</span><span class="n">get_detached_model_parameters</span><span class="p">()</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;  &gt; </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s1"> = </span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+            <span class="nb">print</span><span class="p">()</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+            <span class="n">total_time_sec</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time_sec</span>
+            <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;&gt; Epoch: {:</span><span class="si">{width}</span><span class="s1">d}/</span><span class="si">{:d}</span><span class="s1"> | Training step: </span><span class="si">{:d}</span><span class="s1"> | &#39;</span>
+                    <span class="s1">&#39;Loss: </span><span class="si">{:.8e}</span><span class="s1"> | Elapsed time (s): </span><span class="si">{:}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+                <span class="n">epoch</span><span class="p">,</span> <span class="n">n_max_epochs</span><span class="p">,</span> <span class="n">step</span><span class="p">,</span> <span class="n">loss</span><span class="p">,</span>
+                <span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">total_time_sec</span><span class="p">))),</span>
+                <span class="n">width</span><span class="o">=</span><span class="nb">len</span><span class="p">(</span><span class="nb">str</span><span class="p">(</span><span class="n">n_max_epochs</span><span class="p">))),</span> <span class="n">end</span><span class="o">=</span><span class="s1">&#39;</span><span class="se">\r</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Save training step loss and learning rate</span>
+        <span class="n">loss_history_steps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">loss</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">clone</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">())</span>
+        <span class="k">if</span> <span class="n">is_lr_scheduler</span><span class="p">:</span>
+            <span class="n">lr_history_steps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lr_scheduler</span><span class="o">.</span><span class="n">get_last_lr</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">lr_history_steps</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lr_init</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Save model parameters (only explicit learnable parameters)</span>
+        <span class="k">if</span> <span class="n">is_explicit_model_parameters</span><span class="p">:</span>
+            <span class="c1"># Get current model parameters</span>
+            <span class="n">model_parameters_step</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get_detached_model_parameters</span><span class="p">()</span>
+            <span class="c1"># Loop over model parameters</span>
+            <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">model_parameters_step</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+                <span class="n">model_parameters_history_steps</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Increment training step counter</span>
+        <span class="n">step</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Update optimizer learning rate</span>
+        <span class="k">if</span> <span class="n">is_lr_scheduler</span><span class="p">:</span>
+            <span class="n">lr_scheduler</span><span class="o">.</span><span class="n">step</span><span class="p">()</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Save training epoch loss (epoch average loss value)</span>
+        <span class="n">epoch_avg_loss</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span><span class="n">loss_history_steps</span><span class="p">[</span><span class="n">epoch_init_step</span><span class="p">:])</span>
+        <span class="n">loss_history_epochs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">epoch_avg_loss</span><span class="p">)</span>
+        <span class="c1"># Save training epoch learning rate (epoch last value)</span>
+        <span class="k">if</span> <span class="n">is_lr_scheduler</span><span class="p">:</span>
+            <span class="n">lr_history_epochs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lr_scheduler</span><span class="o">.</span><span class="n">get_last_lr</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">lr_history_epochs</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">lr_init</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Save model parameters (epoch average parameter value)</span>
+        <span class="k">if</span> <span class="n">is_explicit_model_parameters</span><span class="p">:</span>
+            <span class="c1"># Loop over parameters</span>
+            <span class="k">for</span> <span class="n">key</span> <span class="ow">in</span> <span class="n">model_init_parameters</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="n">model_parameters_history_epochs</span><span class="p">[</span><span class="n">key</span><span class="p">]</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">mean</span><span class="p">(</span>
+                    <span class="n">model_parameters_history_steps</span><span class="p">[</span><span class="n">key</span><span class="p">][</span><span class="n">epoch_init_step</span><span class="p">:]))</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Save model and optimizer current states</span>
+        <span class="k">if</span> <span class="n">save_every</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span> <span class="ow">and</span> <span class="n">epoch</span> <span class="o">%</span> <span class="n">save_every</span> <span class="o">==</span> <span class="mi">0</span><span class="p">:</span>
+            <span class="n">save_training_state</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="n">optimizer</span><span class="p">,</span>
+                                <span class="n">state_type</span><span class="o">=</span><span class="s1">&#39;epoch&#39;</span><span class="p">,</span> <span class="n">epoch</span><span class="o">=</span><span class="n">epoch</span><span class="p">)</span>
+            <span class="n">save_material_models_state</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">state_type</span><span class="o">=</span><span class="s1">&#39;epoch&#39;</span><span class="p">,</span>
+                                       <span class="n">epoch</span><span class="o">=</span><span class="n">epoch</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Save model and optimizer best performance state corresponding to</span>
+        <span class="c1"># minimum training loss</span>
+        <span class="k">if</span> <span class="n">epoch_avg_loss</span> <span class="o">&lt;=</span> <span class="nb">min</span><span class="p">(</span><span class="n">loss_history_epochs</span><span class="p">):</span>
+            <span class="n">save_training_state</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="n">optimizer</span><span class="p">,</span>
+                                <span class="n">state_type</span><span class="o">=</span><span class="s1">&#39;best&#39;</span><span class="p">,</span> <span class="n">epoch</span><span class="o">=</span><span class="n">epoch</span><span class="p">)</span>
+            <span class="c1"># Save model parameters (only explicit learnable parameters)</span>
+            <span class="k">if</span> <span class="n">is_explicit_model_parameters</span><span class="p">:</span>
+                <span class="n">best_model_parameters</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get_detached_model_parameters</span><span class="p">()</span>
+            <span class="c1"># Save material models state</span>
+            <span class="n">save_material_models_state</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">state_type</span><span class="o">=</span><span class="s1">&#39;best&#39;</span><span class="p">,</span>
+                                       <span class="n">epoch</span><span class="o">=</span><span class="n">epoch</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Check model parameters convergence</span>
+        <span class="k">if</span> <span class="n">is_explicit_model_parameters</span> <span class="ow">and</span> <span class="n">is_params_stopping</span><span class="p">:</span>
+            <span class="n">is_stop_training</span><span class="p">,</span> <span class="n">parameters_status</span> <span class="o">=</span> \
+                <span class="n">check_model_parameters_convergence</span><span class="p">(</span>
+                    <span class="n">model_parameters_history_epochs</span><span class="p">,</span> <span class="n">is_verbose</span><span class="o">=</span><span class="n">is_verbose</span><span class="p">,</span>
+                    <span class="o">**</span><span class="n">params_stopping_kwargs</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Check training process flow</span>
+        <span class="k">if</span> <span class="n">epoch</span> <span class="o">&gt;=</span> <span class="n">n_max_epochs</span><span class="p">:</span>
+            <span class="c1"># Completed maximum number of epochs</span>
+            <span class="n">is_keep_training</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">break</span>
+        <span class="k">elif</span> <span class="n">is_params_stopping</span> <span class="ow">and</span> <span class="n">is_stop_training</span><span class="p">:</span>
+            <span class="c1"># Parameters convergence criterion triggered</span>
+            <span class="n">is_keep_training</span> <span class="o">=</span> <span class="kc">False</span>
+            <span class="k">break</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="c1"># Increment epoch counter</span>
+            <span class="n">epoch</span> <span class="o">+=</span> <span class="mi">1</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">&gt; Finished training process!&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Save model and optimizer final states</span>
+    <span class="n">save_training_state</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">optimizer</span><span class="o">=</span><span class="n">optimizer</span><span class="p">,</span> <span class="n">state_type</span><span class="o">=</span><span class="s1">&#39;epoch&#39;</span><span class="p">,</span>
+                        <span class="n">epoch</span><span class="o">=</span><span class="n">epoch</span><span class="p">)</span>
+    <span class="c1"># Save material models final states</span>
+    <span class="n">save_material_models_state</span><span class="p">(</span><span class="n">model</span><span class="o">=</span><span class="n">model</span><span class="p">,</span> <span class="n">state_type</span><span class="o">=</span><span class="s1">&#39;epoch&#39;</span><span class="p">,</span> <span class="n">epoch</span><span class="o">=</span><span class="n">epoch</span><span class="p">)</span>
+    <span class="c1"># Save loss and learning rate histories</span>
+    <span class="n">save_loss_history</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">n_max_epochs</span><span class="p">,</span> <span class="s1">&#39;Force equilibrium history&#39;</span><span class="p">,</span>
+                      <span class="s1">&#39;None&#39;</span><span class="p">,</span> <span class="n">loss_history_epochs</span><span class="p">,</span>
+                      <span class="n">lr_scheduler_type</span><span class="o">=</span><span class="n">lr_scheduler_type</span><span class="p">,</span>
+                      <span class="n">lr_history_epochs</span><span class="o">=</span><span class="n">lr_history_epochs</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Save model parameters history (only explicit learnable parameters)</span>
+    <span class="k">if</span> <span class="n">is_explicit_model_parameters</span><span class="p">:</span>
+        <span class="n">save_parameters_history</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">model_parameters_history_epochs</span><span class="p">,</span>
+                                <span class="n">model</span><span class="o">.</span><span class="n">get_model_parameters_bounds</span><span class="p">())</span>
+        <span class="n">save_best_parameters</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">best_model_parameters</span><span class="p">,</span>
+                             <span class="n">model</span><span class="o">.</span><span class="n">get_model_parameters_bounds</span><span class="p">())</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get best loss and corresponding training epoch</span>
+    <span class="n">best_loss</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="nb">min</span><span class="p">(</span><span class="n">loss_history_epochs</span><span class="p">))</span>
+    <span class="n">best_training_epoch</span> <span class="o">=</span> <span class="n">loss_history_epochs</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">best_loss</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">&gt; Minimum training loss: </span><span class="si">{:.8e}</span><span class="s1"> | Epoch: </span><span class="si">{:d}</span><span class="s1">&#39;</span><span class="o">.</span><span class="n">format</span><span class="p">(</span>
+              <span class="n">best_loss</span><span class="p">,</span> <span class="n">best_training_epoch</span><span class="p">))</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Compute total training time and average training time per epoch</span>
+    <span class="n">total_time_sec</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time_sec</span>
+    <span class="n">avg_time_epoch</span> <span class="o">=</span> <span class="n">total_time_sec</span><span class="o">/</span><span class="n">epoch</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">if</span> <span class="n">is_verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&gt; Model directory: </span><span class="si">{</span><span class="n">model</span><span class="o">.</span><span class="n">model_directory</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+        <span class="n">total_time_sec</span> <span class="o">=</span> <span class="n">time</span><span class="o">.</span><span class="n">time</span><span class="p">()</span> <span class="o">-</span> <span class="n">start_time_sec</span>
+        <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">&gt; Total training time: &#39;</span>
+              <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">total_time_sec</span><span class="p">)))</span><span class="si">}</span><span class="s1"> | &#39;</span>
+              <span class="sa">f</span><span class="s1">&#39;Avg. training time per epoch: &#39;</span>
+              <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">avg_time_epoch</span><span class="p">)))</span><span class="si">}</span><span class="se">\n</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Display best performance state model parameters</span>
+    <span class="k">if</span> <span class="n">is_explicit_model_parameters</span> <span class="ow">and</span> <span class="n">is_verbose</span><span class="p">:</span>
+        <span class="nb">print</span><span class="p">(</span><span class="s1">&#39;</span><span class="se">\n</span><span class="s1">Best performance state model parameters&#39;</span>
+              <span class="s1">&#39;</span><span class="se">\n</span><span class="s1">---------------------------------------&#39;</span><span class="p">)</span>
+        <span class="c1"># Loop over model parameters</span>
+        <span class="k">for</span> <span class="n">key</span><span class="p">,</span> <span class="n">val</span> <span class="ow">in</span> <span class="n">best_model_parameters</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="nb">print</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;&gt; Parameter: </span><span class="si">{</span><span class="n">key</span><span class="si">}</span><span class="s1"> = </span><span class="si">{</span><span class="n">val</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get summary of PyTorch model</span>
+    <span class="n">model_statistics</span> <span class="o">=</span> <span class="n">get_model_summary</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">device_type</span><span class="o">=</span><span class="n">device_type</span><span class="p">)</span>
+    <span class="c1"># Write summary data file for model training process</span>
+    <span class="n">write_training_summary_file</span><span class="p">(</span>
+        <span class="n">device_type</span><span class="p">,</span> <span class="n">seed</span><span class="p">,</span> <span class="n">model</span><span class="o">.</span><span class="n">model_directory</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">n_max_epochs</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="n">opt_algorithm</span><span class="p">,</span> <span class="n">lr_init</span><span class="p">,</span>
+        <span class="n">lr_scheduler_type</span><span class="p">,</span> <span class="n">lr_scheduler_kwargs</span><span class="p">,</span> <span class="n">epoch</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span>
+        <span class="n">best_loss</span><span class="p">,</span> <span class="n">best_training_epoch</span><span class="p">,</span> <span class="n">total_time_sec</span><span class="p">,</span> <span class="n">avg_time_epoch</span><span class="p">,</span>
+        <span class="n">best_model_parameters</span><span class="o">=</span><span class="n">best_model_parameters</span><span class="p">,</span>
+        <span class="n">torchinfo_summary</span><span class="o">=</span><span class="nb">str</span><span class="p">(</span><span class="n">model_statistics</span><span class="p">))</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">model</span><span class="p">,</span> <span class="n">best_loss</span><span class="p">,</span> <span class="n">best_training_epoch</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="save_material_models_state"><a class="viewcode-back" href="../../../../_autosummary/hookeai.material_model_finder.train.training.save_material_models_state.html#hookeai.material_model_finder.train.training.save_material_models_state">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">save_material_models_state</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">state_type</span><span class="o">=</span><span class="s1">&#39;default&#39;</span><span class="p">,</span> <span class="n">epoch</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Save material models states to files.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    model : torch.nn.Module</span>
+<span class="sd">        Model.</span>
+<span class="sd">    state_type : {&#39;default&#39;, &#39;init&#39;, &#39;epoch&#39;, &#39;best&#39;}, default=&#39;default&#39;</span>
+<span class="sd">        Saved model state file type.</span>
+<span class="sd">        Options:</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;default&#39; : Model default state</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;init&#39;    : Model initial state</span>
+<span class="sd">    </span>
+<span class="sd">        &#39;epoch&#39;   : Model state of given training epoch</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;best&#39;    : Model state of best performance</span>
+<span class="sd">        </span>
+<span class="sd">    epoch : int, default=None</span>
+<span class="sd">        Training epoch corresponding to current model state.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get material models</span>
+    <span class="n">material_models</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">get_material_models</span><span class="p">()</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Loop over material models</span>
+    <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">model</span> <span class="ow">in</span> <span class="n">material_models</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="c1"># Save model state</span>
+        <span class="n">save_model_state</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">state_type</span><span class="o">=</span><span class="n">state_type</span><span class="p">,</span> <span class="n">epoch</span><span class="o">=</span><span class="n">epoch</span><span class="p">)</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="save_parameters_history"><a class="viewcode-back" href="../../../../_autosummary/hookeai.material_model_finder.train.training.save_parameters_history.html#hookeai.material_model_finder.train.training.save_parameters_history">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">save_parameters_history</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">model_parameters_history</span><span class="p">,</span>
+                            <span class="n">model_parameters_bounds</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Save model learnable parameters history record.</span>
+<span class="sd">    </span>
+<span class="sd">    Model parameters record file is stored in model_directory under the name</span>
+<span class="sd">    parameters_history_record.pkl.</span>
+
+<span class="sd">    Overwrites existing model parameters record file.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    model : torch.nn.Module</span>
+<span class="sd">        Model.</span>
+<span class="sd">    model_parameters_history : dict</span>
+<span class="sd">        Model learnable parameters history. For each model parameter</span>
+<span class="sd">        (key, str), store the corresponding training history (item, list).</span>
+<span class="sd">    model_parameters_bounds : dict</span>
+<span class="sd">        Model learnable parameters bounds. For each parameter (key, str),</span>
+<span class="sd">        the corresponding bounds are stored as a</span>
+<span class="sd">        tuple(lower_bound, upper_bound) (item, tuple).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Set model parameters record file path</span>
+    <span class="n">parameters_record_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">model_directory</span><span class="p">,</span>
+                                          <span class="s1">&#39;parameters_history_record&#39;</span> <span class="o">+</span> <span class="s1">&#39;.pkl&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Build model parameters history record</span>
+    <span class="n">parameters_history_record</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">parameters_history_record</span><span class="p">[</span><span class="s1">&#39;model_parameters_history&#39;</span><span class="p">]</span> <span class="o">=</span> \
+        <span class="n">model_parameters_history</span>
+    <span class="n">parameters_history_record</span><span class="p">[</span><span class="s1">&#39;model_parameters_bounds&#39;</span><span class="p">]</span> <span class="o">=</span> \
+        <span class="n">model_parameters_bounds</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Save model parameters history record</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">parameters_record_path</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">parameters_record_file</span><span class="p">:</span>
+        <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">parameters_history_record</span><span class="p">,</span> <span class="n">parameters_record_file</span><span class="p">)</span> </div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="read_parameters_history_from_file"><a class="viewcode-back" href="../../../../_autosummary/hookeai.material_model_finder.train.training.read_parameters_history_from_file.html#hookeai.material_model_finder.train.training.read_parameters_history_from_file">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">read_parameters_history_from_file</span><span class="p">(</span><span class="n">parameters_record_path</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Read model learnable parameters history from parameters record file.</span>
+<span class="sd">    </span>
+<span class="sd">    Model parameters record file is stored in model_directory under the name</span>
+<span class="sd">    parameters_history_record.pkl.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    parameters_record_path : str</span>
+<span class="sd">        Model parameters history record file path.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    model_parameters_history : dict</span>
+<span class="sd">        Model learnable parameters history. For each model parameter</span>
+<span class="sd">        (key, str), store the corresponding training history (item, list).</span>
+<span class="sd">    model_parameters_bounds : dict</span>
+<span class="sd">        Model learnable parameters bounds. For each parameter (key, str),</span>
+<span class="sd">        the corresponding bounds are stored as a</span>
+<span class="sd">        tuple(lower_bound, upper_bound) (item, tuple).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check model parameters history record file</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">parameters_record_path</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Model parameters history record file has not been &#39;</span>
+                           <span class="s1">&#39;found:</span><span class="se">\n\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">parameters_record_path</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Load model parameters history record</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">parameters_record_path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">parameters_record_file</span><span class="p">:</span>
+        <span class="n">parameters_history_record</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">parameters_record_file</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get model parameters history</span>
+    <span class="n">model_parameters_history</span> <span class="o">=</span> \
+        <span class="n">parameters_history_record</span><span class="p">[</span><span class="s1">&#39;model_parameters_history&#39;</span><span class="p">]</span>
+    <span class="n">model_parameters_bounds</span> <span class="o">=</span> \
+        <span class="n">parameters_history_record</span><span class="p">[</span><span class="s1">&#39;model_parameters_bounds&#39;</span><span class="p">]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">model_parameters_history</span><span class="p">,</span> <span class="n">model_parameters_bounds</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="save_best_parameters"><a class="viewcode-back" href="../../../../_autosummary/hookeai.material_model_finder.train.training.save_best_parameters.html#hookeai.material_model_finder.train.training.save_best_parameters">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">save_best_parameters</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">best_model_parameters</span><span class="p">,</span>
+                         <span class="n">model_parameters_bounds</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Save best performance state model parameters.</span>
+<span class="sd">    </span>
+<span class="sd">    Best performance state model parameters file is stored in model_directory</span>
+<span class="sd">    under the name parameters_best.pkl.</span>
+
+<span class="sd">    Overwrites existing model parameters file.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    model : torch.nn.Module</span>
+<span class="sd">        Model.</span>
+<span class="sd">    best_model_parameters : dict</span>
+<span class="sd">        Model best performance state learnable parameters. For each model</span>
+<span class="sd">        parameter (key, str), store the corresponding value (item, float).</span>
+<span class="sd">    model_parameters_bounds : dict</span>
+<span class="sd">        Model learnable parameters bounds. For each parameter (key, str),</span>
+<span class="sd">        the corresponding bounds are stored as a</span>
+<span class="sd">        tuple(lower_bound, upper_bound) (item, tuple).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Set model best parameters file path</span>
+    <span class="n">parameters_file_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">model_directory</span><span class="p">,</span>
+                                        <span class="s1">&#39;parameters_best&#39;</span> <span class="o">+</span> <span class="s1">&#39;.pkl&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Build model best parameters record</span>
+    <span class="n">parameters_record</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">parameters_record</span><span class="p">[</span><span class="s1">&#39;best_model_parameters&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">best_model_parameters</span>
+    <span class="n">parameters_record</span><span class="p">[</span><span class="s1">&#39;model_parameters_bounds&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">model_parameters_bounds</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Save model best parameters</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">parameters_file_path</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">parameters_file</span><span class="p">:</span>
+        <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">parameters_record</span><span class="p">,</span> <span class="n">parameters_file</span><span class="p">)</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="read_best_parameters_from_file"><a class="viewcode-back" href="../../../../_autosummary/hookeai.material_model_finder.train.training.read_best_parameters_from_file.html#hookeai.material_model_finder.train.training.read_best_parameters_from_file">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">read_best_parameters_from_file</span><span class="p">(</span><span class="n">parameters_file_path</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Read best performance state model parameters from file.</span>
+<span class="sd">    </span>
+<span class="sd">    Best performance state model parameters file is stored in model_directory</span>
+<span class="sd">    under the name parameters_best.pkl.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    parameters_file_path : str</span>
+<span class="sd">        Model parameters file path.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    best_model_parameters : dict</span>
+<span class="sd">        Model best performance state learnable parameters. For each model</span>
+<span class="sd">        parameter (key, str), store the corresponding value (item, float).</span>
+<span class="sd">    model_parameters_bounds : dict</span>
+<span class="sd">        Model learnable parameters bounds. For each parameter (key, str),</span>
+<span class="sd">        the corresponding bounds are stored as a</span>
+<span class="sd">        tuple(lower_bound, upper_bound) (item, tuple).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check model best parameters file path</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">parameters_file_path</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Model best parameters file has not been &#39;</span>
+                           <span class="s1">&#39;found:</span><span class="se">\n\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">parameters_file_path</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Load model best parameters</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">parameters_file_path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">parameters_file</span><span class="p">:</span>
+        <span class="n">parameters_record</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">parameters_file</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get model parameters history</span>
+    <span class="n">best_model_parameters</span> <span class="o">=</span> <span class="n">parameters_record</span><span class="p">[</span><span class="s1">&#39;best_model_parameters&#39;</span><span class="p">]</span>
+    <span class="n">model_parameters_bounds</span> <span class="o">=</span> <span class="n">parameters_record</span><span class="p">[</span><span class="s1">&#39;model_parameters_bounds&#39;</span><span class="p">]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">best_model_parameters</span><span class="p">,</span> <span class="n">model_parameters_bounds</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

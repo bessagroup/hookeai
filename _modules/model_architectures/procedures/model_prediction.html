@@ -1,0 +1,579 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>model_architectures.procedures.model_prediction &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../_autosummary/hookeai.html">Code</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">model_architectures.procedures.model_prediction</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for model_architectures.procedures.model_prediction</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Procedures associated to model prediction.</span>
+
+<span class="sd">Functions</span>
+<span class="sd">---------</span>
+<span class="sd">make_predictions_subdir</span>
+<span class="sd">    Create model predictions subdirectory.</span>
+<span class="sd">save_sample_predictions</span>
+<span class="sd">    Save model prediction results for given sample.</span>
+<span class="sd">load_sample_predictions</span>
+<span class="sd">    Load model prediction results for given sample.</span>
+<span class="sd">write_prediction_summary_file</span>
+<span class="sd">    Write summary data file for model prediction process.</span>
+<span class="sd">plot_time_series_prediction</span>
+<span class="sd">    Plot time series predictions.</span>
+<span class="sd">plot_truth_vs_prediction</span>
+<span class="sd">    Plot ground-truth versus predictions.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#                                                                       Modules</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Standard</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
+<span class="c1"># Third-party</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="c1"># Local</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ioput.iostandard</span><span class="w"> </span><span class="kn">import</span> <span class="n">make_directory</span><span class="p">,</span> <span class="n">write_summary_file</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ioput.plots</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_xy_data</span><span class="p">,</span> <span class="n">plot_xny_data</span><span class="p">,</span> <span class="n">scatter_xy_data</span><span class="p">,</span> \
+    <span class="n">save_figure</span>
+<span class="c1">#</span>
+<span class="c1">#                                                          Authorship &amp; Credits</span>
+<span class="c1"># =============================================================================</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Bernardo Ferreira (bernardo_ferreira@brown.edu)&#39;</span>
+<span class="n">__credits__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Bernardo Ferreira&#39;</span><span class="p">,</span> <span class="p">]</span>
+<span class="n">__status__</span> <span class="o">=</span> <span class="s1">&#39;Stable&#39;</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="make_predictions_subdir"><a class="viewcode-back" href="../../../_autosummary/hookeai.model_architectures.rnn_base_model.predict.prediction.make_predictions_subdir.html#hookeai.miscellaneous.file_processing.plot_prediction_files.make_predictions_subdir">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">make_predictions_subdir</span><span class="p">(</span><span class="n">predict_directory</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Create model predictions subdirectory.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    predict_directory : str</span>
+<span class="sd">        Directory where model predictions results are stored.</span>
+
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    predict_subdir : str</span>
+<span class="sd">        Subdirectory where samples predictions results files are stored.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check prediction directory</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">predict_directory</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The model prediction directory has not been &#39;</span>
+                           <span class="s1">&#39;found:</span><span class="se">\n\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">predict_directory</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set predictions subdirectory path</span>
+    <span class="n">predict_subdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">predict_directory</span><span class="p">,</span> <span class="s1">&#39;prediction_set_0&#39;</span><span class="p">)</span>
+    <span class="k">while</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">predict_subdir</span><span class="p">):</span>
+        <span class="n">predict_subdir</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span>
+            <span class="n">predict_directory</span><span class="p">,</span>
+            <span class="s1">&#39;prediction_set_&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="nb">int</span><span class="p">(</span><span class="n">predict_subdir</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;_&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span> <span class="o">+</span> <span class="mi">1</span><span class="p">))</span>
+    <span class="c1"># Create model predictions subdirectory</span>
+    <span class="n">predict_subdir</span> <span class="o">=</span> <span class="n">make_directory</span><span class="p">(</span><span class="n">predict_subdir</span><span class="p">,</span> <span class="n">is_overwrite</span><span class="o">=</span><span class="kc">False</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">predict_subdir</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="save_sample_predictions"><a class="viewcode-back" href="../../../_autosummary/hookeai.model_architectures.rnn_base_model.predict.prediction.save_sample_predictions.html#hookeai.miscellaneous.file_processing.plot_prediction_files.save_sample_predictions">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">save_sample_predictions</span><span class="p">(</span><span class="n">predictions_dir</span><span class="p">,</span> <span class="n">sample_id</span><span class="p">,</span> <span class="n">sample_results</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Save model prediction results for given sample.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    predictions_dir : str</span>
+<span class="sd">        Directory where sample prediction results are stored.</span>
+<span class="sd">    sample_id : int</span>
+<span class="sd">        Sample ID. Sample ID is appended to sample prediction results file</span>
+<span class="sd">        name.</span>
+<span class="sd">    sample_results : dict</span>
+<span class="sd">        Sample prediction results.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check prediction results directory</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">exists</span><span class="p">(</span><span class="n">predictions_dir</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;The prediction results directory has not been &#39;</span>
+                           <span class="s1">&#39;found:</span><span class="se">\n\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">predictions_dir</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set sample prediction results file path</span>
+    <span class="n">sample_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">predictions_dir</span><span class="p">,</span>
+                               <span class="s1">&#39;prediction_sample_&#39;</span><span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">sample_id</span><span class="p">)</span> <span class="o">+</span> <span class="s1">&#39;.pkl&#39;</span><span class="p">)</span>
+    <span class="c1"># Save sample prediction results</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">sample_path</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">sample_file</span><span class="p">:</span>
+        <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">sample_results</span><span class="p">,</span> <span class="n">sample_file</span><span class="p">)</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="load_sample_predictions"><a class="viewcode-back" href="../../../_autosummary/hookeai.model_architectures.materials.process_predictions.load_sample_predictions.html#hookeai.miscellaneous.file_processing.plot_prediction_files.load_sample_predictions">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">load_sample_predictions</span><span class="p">(</span><span class="n">sample_prediction_path</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Load model prediction results for given sample.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    sample_prediction_path : str</span>
+<span class="sd">        Sample prediction results file path.</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    sample_results : dict</span>
+<span class="sd">        Sample prediction results.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check sample prediction results file</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">sample_prediction_path</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Sample prediction results file has not been &#39;</span>
+                           <span class="s1">&#39;found:</span><span class="se">\n\n</span><span class="s1">&#39;</span> <span class="o">+</span> <span class="n">sample_prediction_path</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Load sample prediction results</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">sample_prediction_path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">sample_prediction_file</span><span class="p">:</span>
+        <span class="n">sample_results</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">sample_prediction_file</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">sample_results</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="write_prediction_summary_file"><a class="viewcode-back" href="../../../_autosummary/hookeai.model_architectures.rnn_base_model.predict.prediction.write_prediction_summary_file.html#hookeai.miscellaneous.file_processing.plot_prediction_files.write_prediction_summary_file">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">write_prediction_summary_file</span><span class="p">(</span>
+    <span class="n">predict_subdir</span><span class="p">,</span> <span class="n">device_type</span><span class="p">,</span> <span class="n">seed</span><span class="p">,</span> <span class="n">model_directory</span><span class="p">,</span> <span class="n">model_load_state</span><span class="p">,</span>
+    <span class="n">loss_type</span><span class="p">,</span> <span class="n">loss_kwargs</span><span class="p">,</span> <span class="n">is_normalized_loss</span><span class="p">,</span> <span class="n">dataset_file_path</span><span class="p">,</span> <span class="n">dataset</span><span class="p">,</span>
+    <span class="n">avg_predict_loss</span><span class="p">,</span> <span class="n">total_time_sec</span><span class="p">,</span> <span class="n">avg_time_sample</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Write summary data file for model prediction process.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    predict_subdir : str</span>
+<span class="sd">        Subdirectory where samples predictions results files are stored.</span>
+<span class="sd">    device_type : {&#39;cpu&#39;, &#39;cuda&#39;}</span>
+<span class="sd">        Type of device on which torch.Tensor is allocated.</span>
+<span class="sd">    seed : int</span>
+<span class="sd">        Seed used to initialize the random number generators of Python and</span>
+<span class="sd">        other libraries (e.g., NumPy, PyTorch) for all devices to preserve</span>
+<span class="sd">        reproducibility. Does also set workers seed in PyTorch data loaders.</span>
+<span class="sd">    model_directory : str</span>
+<span class="sd">        Directory where model is stored.</span>
+<span class="sd">    model_load_state : {&#39;default&#39;, &#39;init&#39;, int, &#39;best&#39;, &#39;last&#39;}</span>
+<span class="sd">        Available model state to be loaded from the model directory.</span>
+<span class="sd">    loss_type : {&#39;mse&#39;,}</span>
+<span class="sd">        Loss function type.</span>
+<span class="sd">    loss_kwargs : dict</span>
+<span class="sd">        Arguments of torch.nn._Loss initializer.</span>
+<span class="sd">    is_normalized_loss : bool, default=False</span>
+<span class="sd">        If True, then samples prediction loss are computed from the normalized</span>
+<span class="sd">        data, False otherwise. Normalization requires that model features data</span>
+<span class="sd">        scalers are fitted.</span>
+<span class="sd">    dataset_file_path : str</span>
+<span class="sd">        Data set file path if such file exists. Only used for output purposes.</span>
+<span class="sd">    dataset : torch.utils.data.Dataset</span>
+<span class="sd">        Data set.</span>
+<span class="sd">    avg_predict_loss : float</span>
+<span class="sd">        Average prediction loss per sample.</span>
+<span class="sd">    total_time_sec : int</span>
+<span class="sd">        Total prediction time in seconds.</span>
+<span class="sd">    avg_time_sample : float</span>
+<span class="sd">        Average prediction time per sample.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Set summary data</span>
+    <span class="n">summary_data</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;device_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">device_type</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;seed&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">seed</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;model_directory&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">model_directory</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;model_load_state&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">model_load_state</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;loss_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">loss_type</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;loss_kwargs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">loss_kwargs</span> <span class="k">if</span> <span class="n">loss_kwargs</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;is_normalized_loss&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">is_normalized_loss</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;Prediction data set file&#39;</span><span class="p">]</span> <span class="o">=</span> \
+        <span class="n">dataset_file_path</span> <span class="k">if</span> <span class="n">dataset_file_path</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;Prediction data set size&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;Avg. prediction loss per sample&#39;</span><span class="p">]</span> <span class="o">=</span> \
+        <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">avg_predict_loss</span><span class="si">:</span><span class="s1">.8e</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">if</span> <span class="n">avg_predict_loss</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;Total prediction time&#39;</span><span class="p">]</span> <span class="o">=</span> \
+        <span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">total_time_sec</span><span class="p">)))</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;Avg. prediction time per sample&#39;</span><span class="p">]</span> <span class="o">=</span> \
+        <span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">avg_time_sample</span><span class="p">)))</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Write summary file</span>
+    <span class="n">write_summary_file</span><span class="p">(</span>
+        <span class="n">summary_directory</span><span class="o">=</span><span class="n">predict_subdir</span><span class="p">,</span>
+        <span class="n">summary_title</span><span class="o">=</span><span class="s1">&#39;Summary: Model prediction&#39;</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">summary_data</span><span class="p">)</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="plot_time_series_prediction"><a class="viewcode-back" href="../../../_autosummary/hookeai.model_architectures.procedures.convergence_plots.plot_time_series_prediction.html#hookeai.miscellaneous.file_processing.plot_prediction_files.plot_time_series_prediction">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">plot_time_series_prediction</span><span class="p">(</span><span class="n">prediction_sets</span><span class="p">,</span> <span class="n">is_reference_data</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                <span class="n">x_label</span><span class="o">=</span><span class="s1">&#39;Time&#39;</span><span class="p">,</span> <span class="n">y_label</span><span class="o">=</span><span class="s1">&#39;Value&#39;</span><span class="p">,</span>
+                                <span class="n">is_normalize_data</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                <span class="n">is_uncertainty_quantification</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                <span class="n">range_type</span><span class="o">=</span><span class="s1">&#39;min-max&#39;</span><span class="p">,</span>
+                                <span class="n">filename</span><span class="o">=</span><span class="s1">&#39;time_series_prediction&#39;</span><span class="p">,</span>
+                                <span class="n">save_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_save_fig</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                <span class="n">is_stdout_display</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_latex</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot time series predictions.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    prediction_sets : dict</span>
+<span class="sd">        One or more time series prediction processes, where each process</span>
+<span class="sd">        (key, str) is stored as a data array (item, numpy.ndarray(2d)) of shape</span>
+<span class="sd">        (sequence_length, 1 + n_predictions) as follows: data_array[:, 0]</span>
+<span class="sd">        stores the time series time, data_array[:, 1:] stores the time series</span>
+<span class="sd">        predictions.</span>
+<span class="sd">    is_reference_data : bool, default=False</span>
+<span class="sd">        If True, then the first prediction process is assumed to be the</span>
+<span class="sd">        reference and is formatted independently (black, dashed, on top).</span>
+<span class="sd">    x_label : str, default=&#39;Time&#39;</span>
+<span class="sd">        x-axis label.</span>
+<span class="sd">    y_label : str, default=&#39;Value&#39;</span>
+<span class="sd">        y-axis label.</span>
+<span class="sd">    is_normalize_data : bool, default=False</span>
+<span class="sd">        Normalize time and predictions data to the range [0, 1].</span>
+<span class="sd">    is_uncertainty_quantification: bool, default=False</span>
+<span class="sd">        If True, then plot the prediction processes range of time series</span>
+<span class="sd">        predictions for each time. Assumes the same time series time for all</span>
+<span class="sd">        the different prediction processes.</span>
+<span class="sd">    range_type : {&#39;min-max&#39;, &#39;mean-std&#39;, None}, default=&#39;min-max&#39;</span>
+<span class="sd">        Type of range used to plot the range of time series predictions for</span>
+<span class="sd">        each time. If None, only the mean is plotted. Only effective if</span>
+<span class="sd">        is_uncertainty_quantification is set to True.</span>
+<span class="sd">    filename : str, default=&#39;time_series_prediction&#39;</span>
+<span class="sd">        Figure name.</span>
+<span class="sd">    save_dir : str, default=None</span>
+<span class="sd">        Directory where figure is saved. If None, then figure is saved in</span>
+<span class="sd">        current working directory.</span>
+<span class="sd">    is_save_fig : bool, default=False</span>
+<span class="sd">        Save figure.</span>
+<span class="sd">    is_stdout_display : bool, default=False</span>
+<span class="sd">        True if displaying figure to standard output device, False otherwise.</span>
+<span class="sd">    is_latex : bool, default=False</span>
+<span class="sd">        If True, then render all strings in LaTeX. If LaTex is not available,</span>
+<span class="sd">        then this option is silently set to False and all input strings are</span>
+<span class="sd">        processed to remove $(...)$ enclosure.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check time series predictions data</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">prediction_sets</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Prediction processes are not provided as a dict.&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">([</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
+                  <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">prediction_sets</span><span class="o">.</span><span class="n">values</span><span class="p">()]):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Prediction processes must be provided as a dict &#39;</span>
+                           <span class="s1">&#39;where each process (key, str) is stored as a &#39;</span>
+                           <span class="s1">&#39;numpy.ndarray of shape &#39;</span>
+                           <span class="s1">&#39;(sequence_length, 1 + n_predictions).&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">([</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">&gt;=</span> <span class="mi">2</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">prediction_sets</span><span class="o">.</span><span class="n">values</span><span class="p">()]):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Prediction processes must be provided as a dict &#39;</span>
+                           <span class="s1">&#39;where each process (key, str) is stored as a &#39;</span>
+                           <span class="s1">&#39;numpy.ndarray of shape &#39;</span>
+                           <span class="s1">&#39;(sequence_length, 1 + n_predictions).&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Build prediction plot data</span>
+    <span class="k">if</span> <span class="n">is_uncertainty_quantification</span><span class="p">:</span>        
+        <span class="c1"># Initialize prediction data list and data labels</span>
+        <span class="n">data_xy_list</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="n">data_labels</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Loop over prediction processes</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">prediction_sets</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+            <span class="c1"># Assemble prediction process data</span>
+            <span class="n">data_xy_list</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+            <span class="c1"># Assemble prediction process label</span>
+            <span class="n">data_labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>       
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Normalize prediction data</span>
+        <span class="k">if</span> <span class="n">is_normalize_data</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Not implemented.&#39;</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Get number of prediction processes</span>
+        <span class="n">n_processes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">prediction_sets</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+        <span class="c1"># Get maximum sequence length</span>
+        <span class="n">max_sequence_len</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">prediction_sets</span><span class="o">.</span><span class="n">values</span><span class="p">()])</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize data array and data labels</span>
+        <span class="n">data_xy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">max_sequence_len</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">n_processes</span><span class="p">),</span> <span class="n">fill_value</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+        <span class="n">data_labels</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Loop over prediction processes</span>
+        <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">prediction_sets</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+            <span class="c1"># Get prediction process sequence length</span>
+            <span class="n">n_time</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Assemble prediction process data</span>
+            <span class="n">data_xy</span><span class="p">[:</span><span class="n">n_time</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span>
+            <span class="n">data_xy</span><span class="p">[:</span><span class="n">n_time</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Assemble prediction process label</span>
+            <span class="n">data_labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Normalize prediction data</span>
+        <span class="k">if</span> <span class="n">is_normalize_data</span><span class="p">:</span>
+            <span class="c1"># Get minimum and maximum prediction values</span>
+            <span class="n">min_pred</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">min</span><span class="p">(</span><span class="n">data_xy</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">])</span>
+            <span class="n">max_pred</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">max</span><span class="p">(</span><span class="n">data_xy</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">::</span><span class="mi">2</span><span class="p">])</span>
+            <span class="c1"># Normalize data array</span>
+            <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">n_processes</span><span class="p">):</span>
+                <span class="c1"># Get prediction process sequence length</span>
+                <span class="n">n_time</span> <span class="o">=</span> <span class="n">val</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+                <span class="c1"># Normalize time</span>
+                <span class="n">data_xy</span><span class="p">[:</span><span class="n">n_time</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">linspace</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mf">1.0</span><span class="p">,</span> <span class="n">num</span><span class="o">=</span><span class="n">n_time</span><span class="p">)</span>
+                <span class="c1"># Normalize predictions</span>
+                <span class="n">data_xy</span><span class="p">[:</span><span class="n">n_time</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> \
+                    <span class="p">(</span><span class="n">data_xy</span><span class="p">[:,</span> <span class="mi">2</span><span class="o">*</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">-</span> <span class="n">min_pred</span><span class="p">)</span><span class="o">/</span><span class="p">(</span><span class="n">max_pred</span> <span class="o">-</span> <span class="n">min_pred</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set axes limits</span>
+    <span class="k">if</span> <span class="n">is_normalize_data</span><span class="p">:</span>
+        <span class="n">x_lims</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">y_lims</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">x_lims</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">y_lims</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set axes labels</span>
+    <span class="k">if</span> <span class="n">is_normalize_data</span><span class="p">:</span>
+        <span class="n">x_label</span> <span class="o">+=</span> <span class="s1">&#39; (Normalized)&#39;</span>
+        <span class="n">y_label</span> <span class="o">+=</span> <span class="s1">&#39; (Normalized)&#39;</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Plot time series predictions</span>
+    <span class="k">if</span> <span class="n">is_uncertainty_quantification</span><span class="p">:</span>
+        <span class="n">figure</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">plot_xny_data</span><span class="p">(</span><span class="n">data_xy_list</span><span class="p">,</span> <span class="n">range_type</span><span class="o">=</span><span class="n">range_type</span><span class="p">,</span>
+                                  <span class="n">is_error_bar</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                  <span class="n">is_error_shading</span><span class="o">=</span><span class="kc">True</span><span class="p">,</span>
+                                  <span class="n">data_labels</span><span class="o">=</span><span class="n">data_labels</span><span class="p">,</span>
+                                  <span class="n">is_reference_data</span><span class="o">=</span><span class="n">is_reference_data</span><span class="p">,</span>
+                                  <span class="n">x_lims</span><span class="o">=</span><span class="n">x_lims</span><span class="p">,</span> <span class="n">y_lims</span><span class="o">=</span><span class="n">y_lims</span><span class="p">,</span>
+                                  <span class="n">x_label</span><span class="o">=</span><span class="n">x_label</span><span class="p">,</span> <span class="n">y_label</span><span class="o">=</span><span class="n">y_label</span><span class="p">,</span>
+                                  <span class="n">is_latex</span><span class="o">=</span><span class="n">is_latex</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">figure</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">plot_xy_data</span><span class="p">(</span><span class="n">data_xy</span><span class="p">,</span> <span class="n">data_labels</span><span class="o">=</span><span class="n">data_labels</span><span class="p">,</span>
+                                 <span class="n">is_reference_data</span><span class="o">=</span><span class="n">is_reference_data</span><span class="p">,</span>
+                                 <span class="n">x_lims</span><span class="o">=</span><span class="n">x_lims</span><span class="p">,</span> <span class="n">y_lims</span><span class="o">=</span><span class="n">y_lims</span><span class="p">,</span> <span class="n">x_label</span><span class="o">=</span><span class="n">x_label</span><span class="p">,</span>
+                                 <span class="n">y_label</span><span class="o">=</span><span class="n">y_label</span><span class="p">,</span> <span class="n">is_latex</span><span class="o">=</span><span class="n">is_latex</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Display figure</span>
+    <span class="k">if</span> <span class="n">is_stdout_display</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Save figure</span>
+    <span class="k">if</span> <span class="n">is_save_fig</span><span class="p">:</span>
+        <span class="n">save_figure</span><span class="p">(</span><span class="n">figure</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span><span class="p">,</span> <span class="n">save_dir</span><span class="o">=</span><span class="n">save_dir</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Close plot</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">figure</span><span class="p">)</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="plot_truth_vs_prediction"><a class="viewcode-back" href="../../../_autosummary/hookeai.model_architectures.procedures.convergence_plots.plot_truth_vs_prediction.html#hookeai.miscellaneous.file_processing.plot_prediction_files.plot_truth_vs_prediction">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">plot_truth_vs_prediction</span><span class="p">(</span><span class="n">prediction_sets</span><span class="p">,</span> <span class="n">error_bound</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                             <span class="n">is_r2_coefficient</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                             <span class="n">is_direct_loss_estimator</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                             <span class="n">is_normalize_data</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                             <span class="n">filename</span><span class="o">=</span><span class="s1">&#39;prediction_vs_groundtruth&#39;</span><span class="p">,</span>
+                             <span class="n">save_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_save_fig</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                             <span class="n">is_stdout_display</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_latex</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot ground-truth versus predictions.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    prediction_sets : dict</span>
+<span class="sd">        One or more prediction processes, where each process (key, str) is</span>
+<span class="sd">        stored as a data array (item, numpy.ndarray(2d)) as follows: the i-th</span>
+<span class="sd">        row is associated with i-th prediction point, data_array[i, 0] holds</span>
+<span class="sd">        the ground-truth and data_array[i, 1] holds the prediction. Dictionary</span>
+<span class="sd">        keys are taken as labels for the corresponding prediction processes.</span>
+<span class="sd">    error_bound : float, default=None</span>
+<span class="sd">        Relative error between ground-truth and prediction that defines an</span>
+<span class="sd">        symmetric error-based shaded area with respect to the identity line.</span>
+<span class="sd">    is_r2_coefficient : bool, default=False</span>
+<span class="sd">        Plot coefficient of determination. Only effective if plotting a single</span>
+<span class="sd">        prediction process.</span>
+<span class="sd">    is_direct_loss_estimator : bool, default=False</span>
+<span class="sd">        Plot Direct Loss Estimator (DLE) based on Linear Regression model.</span>
+<span class="sd">        Only effective if plotting a single prediction process.</span>
+<span class="sd">    is_normalize_data : bool, default=False</span>
+<span class="sd">        Normalize predictions and ground-truth data to the range [0, 1] for</span>
+<span class="sd">        each prediction process.</span>
+<span class="sd">    filename : str, default=&#39;prediction_vs_groundtruth&#39;</span>
+<span class="sd">        Figure name.</span>
+<span class="sd">    save_dir : str, default=None</span>
+<span class="sd">        Directory where figure is saved. If None, then figure is saved in</span>
+<span class="sd">        current working directory.</span>
+<span class="sd">    is_save_fig : bool, default=False</span>
+<span class="sd">        Save figure.</span>
+<span class="sd">    is_stdout_display : bool, default=False</span>
+<span class="sd">        True if displaying figure to standard output device, False otherwise.</span>
+<span class="sd">    is_latex : bool, default=False</span>
+<span class="sd">        If True, then render all strings in LaTeX. If LaTex is not available,</span>
+<span class="sd">        then this option is silently set to False and all input strings are</span>
+<span class="sd">        processed to remove $(...)$ enclosure.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check loss history</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">prediction_sets</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Prediction processes are not provided as a dict.&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">([</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">np</span><span class="o">.</span><span class="n">ndarray</span><span class="p">)</span>
+                  <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">prediction_sets</span><span class="o">.</span><span class="n">values</span><span class="p">()]):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Prediction processes must be provided as a dict &#39;</span>
+                           <span class="s1">&#39;where each process (key, str) is stored as a &#39;</span>
+                           <span class="s1">&#39;numpy.ndarray of shape (n_points, 2).&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">([</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]</span> <span class="o">==</span> <span class="mi">2</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">prediction_sets</span><span class="o">.</span><span class="n">values</span><span class="p">()]):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Prediction processes must be provided as a dict &#39;</span>
+                           <span class="s1">&#39;where each process (key, str) is stored as a &#39;</span>
+                           <span class="s1">&#39;numpy.ndarray of shape (n_points, 2).&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get number of prediction processes</span>
+    <span class="n">n_processes</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">prediction_sets</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="c1"># Get maximum number of prediction points</span>
+    <span class="n">max_n_points</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="n">x</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">prediction_sets</span><span class="o">.</span><span class="n">values</span><span class="p">()])</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize data array and data labels</span>
+    <span class="n">data_xy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">max_n_points</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">n_processes</span><span class="p">),</span> <span class="n">fill_value</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="n">data_labels</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Loop over prediction processes</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">prediction_sets</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+        <span class="c1"># Normalize prediction process data</span>
+        <span class="k">if</span> <span class="n">is_normalize_data</span><span class="p">:</span>
+            <span class="n">val</span> <span class="o">=</span> <span class="p">(</span><span class="n">val</span> <span class="o">-</span> <span class="n">val</span><span class="o">.</span><span class="n">min</span><span class="p">())</span><span class="o">/</span><span class="p">(</span><span class="n">val</span><span class="o">.</span><span class="n">max</span><span class="p">()</span> <span class="o">-</span> <span class="n">val</span><span class="o">.</span><span class="n">min</span><span class="p">())</span>
+        <span class="c1"># Assemble prediction process</span>
+        <span class="n">data_xy</span><span class="p">[:</span><span class="n">val</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">2</span><span class="o">*</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span><span class="p">[:</span><span class="n">val</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">0</span><span class="p">]</span>
+        <span class="n">data_xy</span><span class="p">[:</span><span class="nb">len</span><span class="p">(</span><span class="n">val</span><span class="p">),</span> <span class="mi">2</span><span class="o">*</span><span class="n">i</span> <span class="o">+</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">val</span><span class="p">[:</span><span class="n">val</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">],</span> <span class="mi">1</span><span class="p">]</span>
+        <span class="c1"># Assemble data label</span>
+        <span class="n">data_labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set relative error parameters</span>
+    <span class="k">if</span> <span class="n">error_bound</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">is_identity_line</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="n">identity_error</span> <span class="o">=</span> <span class="nb">float</span><span class="p">(</span><span class="n">error_bound</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">is_identity_line</span><span class="o">=</span><span class="kc">None</span>
+        <span class="n">identity_error</span><span class="o">=</span><span class="kc">None</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set axes limits and scale</span>
+    <span class="k">if</span> <span class="n">is_normalize_data</span><span class="p">:</span>
+        <span class="n">x_lims</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+        <span class="n">y_lims</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="mi">1</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">x_lims</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="n">y_lims</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set axes labels</span>
+    <span class="n">x_label</span> <span class="o">=</span> <span class="s1">&#39;Ground-truth&#39;</span>
+    <span class="n">y_label</span> <span class="o">=</span> <span class="s1">&#39;Prediction&#39;</span>
+    <span class="k">if</span> <span class="n">is_normalize_data</span><span class="p">:</span>
+        <span class="n">x_label</span> <span class="o">+=</span> <span class="s1">&#39; (Normalized)&#39;</span>
+        <span class="n">y_label</span> <span class="o">+=</span> <span class="s1">&#39; (Normalized)&#39;</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Plot ground-truth versus predictions</span>
+    <span class="n">figure</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">scatter_xy_data</span><span class="p">(</span>
+        <span class="n">data_xy</span><span class="p">,</span> <span class="n">data_labels</span><span class="o">=</span><span class="n">data_labels</span><span class="p">,</span> <span class="n">is_identity_line</span><span class="o">=</span><span class="n">is_identity_line</span><span class="p">,</span>
+        <span class="n">identity_error</span><span class="o">=</span><span class="n">identity_error</span><span class="p">,</span> <span class="n">is_r2_coefficient</span><span class="o">=</span><span class="n">is_r2_coefficient</span><span class="p">,</span>
+        <span class="n">is_direct_loss_estimator</span><span class="o">=</span><span class="n">is_direct_loss_estimator</span><span class="p">,</span>
+        <span class="n">x_lims</span><span class="o">=</span><span class="n">x_lims</span><span class="p">,</span> <span class="n">y_lims</span><span class="o">=</span><span class="n">y_lims</span><span class="p">,</span>
+        <span class="n">x_label</span><span class="o">=</span><span class="n">x_label</span><span class="p">,</span> <span class="n">y_label</span><span class="o">=</span><span class="n">y_label</span><span class="p">,</span> <span class="n">is_latex</span><span class="o">=</span><span class="n">is_latex</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Display figure</span>
+    <span class="k">if</span> <span class="n">is_stdout_display</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Save figure</span>
+    <span class="k">if</span> <span class="n">is_save_fig</span><span class="p">:</span>
+        <span class="n">save_figure</span><span class="p">(</span><span class="n">figure</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;png&#39;</span><span class="p">,</span> <span class="n">save_dir</span><span class="o">=</span><span class="n">save_dir</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Close plot</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">figure</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

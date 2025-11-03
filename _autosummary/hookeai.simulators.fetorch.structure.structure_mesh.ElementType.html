@@ -1,0 +1,570 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>hookeai.simulators.fetorch.structure.structure_mesh.ElementType &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="hookeai.simulators.fetorch.structure.structure_mesh.StructureMesh" href="hookeai.simulators.fetorch.structure.structure_mesh.StructureMesh.html" />
+    <link rel="prev" title="hookeai.simulators.fetorch.structure.structure_mesh" href="hookeai.simulators.fetorch.structure.structure_mesh.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="hookeai.html">Code</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="hookeai.data_generation.html">hookeai.data_generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.ioput.html">hookeai.ioput</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.material_model_finder.html">hookeai.material_model_finder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.miscellaneous.html">hookeai.miscellaneous</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.model_architectures.html">hookeai.model_architectures</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="hookeai.simulators.html">hookeai.simulators</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="hookeai.simulators.fetorch.html">hookeai.simulators.fetorch</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="hookeai.simulators.fetorch.element.html">hookeai.simulators.fetorch.element</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hookeai.simulators.fetorch.material.html">hookeai.simulators.fetorch.material</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hookeai.simulators.fetorch.math.html">hookeai.simulators.fetorch.math</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="hookeai.simulators.fetorch.structure.html">hookeai.simulators.fetorch.structure</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="hookeai.simulators.links.html">hookeai.simulators.links</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.time_series_data.html">hookeai.time_series_data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.utilities.html">hookeai.utilities</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="hookeai.html">hookeai</a></li>
+          <li class="breadcrumb-item"><a href="hookeai.simulators.html">hookeai.simulators</a></li>
+          <li class="breadcrumb-item"><a href="hookeai.simulators.fetorch.html">hookeai.simulators.fetorch</a></li>
+          <li class="breadcrumb-item"><a href="hookeai.simulators.fetorch.structure.html">hookeai.simulators.fetorch.structure</a></li>
+          <li class="breadcrumb-item"><a href="hookeai.simulators.fetorch.structure.structure_mesh.html">hookeai.simulators.fetorch.structure.structure_mesh</a></li>
+      <li class="breadcrumb-item active">hookeai.simulators.fetorch.structure.structure_mesh.ElementType</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="hookeai-simulators-fetorch-structure-structure-mesh-elementtype">
+<h1>hookeai.simulators.fetorch.structure.structure_mesh.ElementType<a class="headerlink" href="#hookeai-simulators-fetorch-structure-structure-mesh-elementtype" title="Permalink to this heading">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="hookeai.simulators.fetorch.structure.structure_mesh.ElementType">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">ElementType</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_gauss</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'cpu'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/element/type/interface.html#ElementType"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.simulators.fetorch.structure.structure_mesh.ElementType" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference internal" href="hookeai.simulators.links.models.interface.ABC.html#hookeai.simulators.links.models.interface.ABC" title="abc.ABC"><code class="xref py py-class docutils literal notranslate"><span class="pre">ABC</span></code></a></p>
+<p>FETorch finite element interface.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.simulators.fetorch.structure.structure_mesh.ElementType._name">
+<span class="sig-name descname"><span class="pre">_name</span></span><a class="headerlink" href="#hookeai.simulators.fetorch.structure.structure_mesh.ElementType._name" title="Permalink to this definition">¶</a></dt>
+<dd><p>Name.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.simulators.fetorch.structure.structure_mesh.ElementType._n_node">
+<span class="sig-name descname"><span class="pre">_n_node</span></span><a class="headerlink" href="#hookeai.simulators.fetorch.structure.structure_mesh.ElementType._n_node" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of nodes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.simulators.fetorch.structure.structure_mesh.ElementType._n_dof_node">
+<span class="sig-name descname"><span class="pre">_n_dof_node</span></span><a class="headerlink" href="#hookeai.simulators.fetorch.structure.structure_mesh.ElementType._n_dof_node" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of degrees of freedom per node.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.simulators.fetorch.structure.structure_mesh.ElementType._node_local_coord">
+<span class="sig-name descname"><span class="pre">_node_local_coord</span></span><a class="headerlink" href="#hookeai.simulators.fetorch.structure.structure_mesh.ElementType._node_local_coord" title="Permalink to this definition">¶</a></dt>
+<dd><p>Nodes local coordinates stored as torch.Tensor(2d) of shape
+(n_node, n_dof_node).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor(2d)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.simulators.fetorch.structure.structure_mesh.ElementType._n_gauss">
+<span class="sig-name descname"><span class="pre">_n_gauss</span></span><a class="headerlink" href="#hookeai.simulators.fetorch.structure.structure_mesh.ElementType._n_gauss" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of Gauss quadrature integration points.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.simulators.fetorch.structure.structure_mesh.ElementType._gp_coords">
+<span class="sig-name descname"><span class="pre">_gp_coords</span></span><a class="headerlink" href="#hookeai.simulators.fetorch.structure.structure_mesh.ElementType._gp_coords" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gauss quadrature integration points (key, str[int]) local coordinates
+(item, torch.Tensor(1d)). Gauss integration points are labeled from
+1 to n_gauss.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.simulators.fetorch.structure.structure_mesh.ElementType._gp_weights">
+<span class="sig-name descname"><span class="pre">_gp_weights</span></span><a class="headerlink" href="#hookeai.simulators.fetorch.structure.structure_mesh.ElementType._gp_weights" title="Permalink to this definition">¶</a></dt>
+<dd><p>Gauss quadrature integration points (key, str[int]) weights
+(item, torch.Tensor(0d)). Gauss integration points are labeled from
+1 to n_gauss.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.simulators.fetorch.structure.structure_mesh.ElementType._device_type">
+<span class="sig-name descname"><span class="pre">_device_type</span></span><a class="headerlink" href="#hookeai.simulators.fetorch.structure.structure_mesh.ElementType._device_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Type of device on which torch.Tensor is allocated.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>{‘cpu’, ‘cuda’}, default=’cpu’</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.simulators.fetorch.structure.structure_mesh.ElementType._device">
+<span class="sig-name descname"><span class="pre">_device</span></span><a class="headerlink" href="#hookeai.simulators.fetorch.structure.structure_mesh.ElementType._device" title="Permalink to this definition">¶</a></dt>
+<dd><p>Device on which torch.Tensor is allocated.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.device</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.simulators.fetorch.structure.structure_mesh.ElementType._set_nodes_local_coords">
+<span class="sig-name descname"><span class="pre">_set_nodes_local_coords</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/element/type/interface.html#ElementType._set_nodes_local_coords"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.simulators.fetorch.structure.structure_mesh.ElementType._set_nodes_local_coords" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>abstract</em>: Set nodes local coordinates.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.simulators.fetorch.structure.structure_mesh.ElementType.eval_shapefun">
+<span class="sig-name descname"><span class="pre">eval_shapefun</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">local_coords</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/element/type/interface.html#ElementType.eval_shapefun"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.simulators.fetorch.structure.structure_mesh.ElementType.eval_shapefun" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>abstract</em>: Evaluate shape functions at given local coordinates.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.simulators.fetorch.structure.structure_mesh.ElementType.eval_shapefun_local_deriv">
+<span class="sig-name descname"><span class="pre">eval_shapefun_local_deriv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">local_coords</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/element/type/interface.html#ElementType.eval_shapefun_local_deriv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.simulators.fetorch.structure.structure_mesh.ElementType.eval_shapefun_local_deriv" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>abstract</em>: Evaluate shape functions local derivates at given local
+coordinates.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.simulators.fetorch.structure.structure_mesh.ElementType._admissible_gauss_quadratures">
+<span class="sig-name descname"><span class="pre">_admissible_gauss_quadratures</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/element/type/interface.html#ElementType._admissible_gauss_quadratures"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.simulators.fetorch.structure.structure_mesh.ElementType._admissible_gauss_quadratures" title="Permalink to this definition">¶</a></dt>
+<dd><p><em>abstract</em>: Get admissible Gauss integration quadratures.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.simulators.fetorch.structure.structure_mesh.ElementType.get_n_node">
+<span class="sig-name descname"><span class="pre">get_n_node</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/element/type/interface.html#ElementType.get_n_node"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.simulators.fetorch.structure.structure_mesh.ElementType.get_n_node" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get number of nodes.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.simulators.fetorch.structure.structure_mesh.ElementType.get_n_dof_node">
+<span class="sig-name descname"><span class="pre">get_n_dof_node</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/element/type/interface.html#ElementType.get_n_dof_node"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.simulators.fetorch.structure.structure_mesh.ElementType.get_n_dof_node" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get number of degrees of freedom per node.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.simulators.fetorch.structure.structure_mesh.ElementType.get_n_gauss">
+<span class="sig-name descname"><span class="pre">get_n_gauss</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/element/type/interface.html#ElementType.get_n_gauss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.simulators.fetorch.structure.structure_mesh.ElementType.get_n_gauss" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get number of Gauss quadrature integration points.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.simulators.fetorch.structure.structure_mesh.ElementType.get_gauss_integration_points">
+<span class="sig-name descname"><span class="pre">get_gauss_integration_points</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/element/type/interface.html#ElementType.get_gauss_integration_points"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.simulators.fetorch.structure.structure_mesh.ElementType.get_gauss_integration_points" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get Gaussian quadrature points local coordinates and weights.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.simulators.fetorch.structure.structure_mesh.ElementType.set_device">
+<span class="sig-name descname"><span class="pre">set_device</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device_type</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/element/type/interface.html#ElementType.set_device"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.simulators.fetorch.structure.structure_mesh.ElementType.set_device" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set device on which torch.Tensor is allocated.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.simulators.fetorch.structure.structure_mesh.ElementType.get_device">
+<span class="sig-name descname"><span class="pre">get_device</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/element/type/interface.html#ElementType.get_device"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.simulators.fetorch.structure.structure_mesh.ElementType.get_device" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get device on which torch.Tensor is allocated.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.simulators.fetorch.structure.structure_mesh.ElementType.check_shape_functions_properties">
+<span class="sig-name descname"><span class="pre">check_shape_functions_properties</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/element/type/interface.html#ElementType.check_shape_functions_properties"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.simulators.fetorch.structure.structure_mesh.ElementType.check_shape_functions_properties" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if element shape functions satisfy known properties.</p>
+</dd></dl>
+
+<p>Constructor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_gauss</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>default=None</em>) – Number of Gauss quadrature integration points.</p></li>
+<li><p><strong>device_type</strong> (<em>{'cpu'</em><em>, </em><em>'cuda'}</em><em>, </em><em>default='cpu'</em>) – Type of device on which torch.Tensor is allocated.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">List of Public Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id2" title="hookeai.simulators.fetorch.structure.structure_mesh.ElementType.check_shape_functions_properties"><code class="xref py py-obj docutils literal notranslate"><span class="pre">check_shape_functions_properties</span></code></a></p></td>
+<td><p>Check if element shape functions satisfy known properties.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#id3" title="hookeai.simulators.fetorch.structure.structure_mesh.ElementType.eval_shapefun"><code class="xref py py-obj docutils literal notranslate"><span class="pre">eval_shapefun</span></code></a></p></td>
+<td><p>Evaluate shape functions at given local coordinates.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id4" title="hookeai.simulators.fetorch.structure.structure_mesh.ElementType.eval_shapefun_local_deriv"><code class="xref py py-obj docutils literal notranslate"><span class="pre">eval_shapefun_local_deriv</span></code></a></p></td>
+<td><p>Evaluate shape functions local derivates at given local coordinates.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#hookeai.simulators.fetorch.structure.structure_mesh.ElementType.get_batched_gauss_integration_points" title="hookeai.simulators.fetorch.structure.structure_mesh.ElementType.get_batched_gauss_integration_points"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_batched_gauss_integration_points</span></code></a></p></td>
+<td><p>Get Gaussian quadrature points batched coordinates and weights.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id5" title="hookeai.simulators.fetorch.structure.structure_mesh.ElementType.get_device"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_device</span></code></a></p></td>
+<td><p>Get device on which torch.Tensor is allocated.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#id6" title="hookeai.simulators.fetorch.structure.structure_mesh.ElementType.get_gauss_integration_points"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_gauss_integration_points</span></code></a></p></td>
+<td><p>Get Gaussian quadrature points local coordinates and weights.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id7" title="hookeai.simulators.fetorch.structure.structure_mesh.ElementType.get_n_dof_node"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_n_dof_node</span></code></a></p></td>
+<td><p>Get number of degrees of freedom per node.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#id8" title="hookeai.simulators.fetorch.structure.structure_mesh.ElementType.get_n_gauss"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_n_gauss</span></code></a></p></td>
+<td><p>Get number of Gauss quadrature integration points.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id9" title="hookeai.simulators.fetorch.structure.structure_mesh.ElementType.get_n_node"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_n_node</span></code></a></p></td>
+<td><p>Get number of nodes.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#id10" title="hookeai.simulators.fetorch.structure.structure_mesh.ElementType.set_device"><code class="xref py py-obj docutils literal notranslate"><span class="pre">set_device</span></code></a></p></td>
+<td><p>Set device on which torch.Tensor is allocated.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.simulators.fetorch.structure.structure_mesh.ElementType.__init__">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_gauss</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">device_type</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'cpu'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/element/type/interface.html#ElementType.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.simulators.fetorch.structure.structure_mesh.ElementType.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>n_gauss</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>, </em><em>default=None</em>) – Number of Gauss quadrature integration points.</p></li>
+<li><p><strong>device_type</strong> (<em>{'cpu'</em><em>, </em><em>'cuda'}</em><em>, </em><em>default='cpu'</em>) – Type of device on which torch.Tensor is allocated.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id0">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span><span class="pre">static</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">_admissible_gauss_quadratures</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/element/type/interface.html#ElementType._admissible_gauss_quadratures"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id0" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get admissible Gauss integration quadratures.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>admissible_n_gauss</strong> – Admissible Gauss integration quadratures (number of Gauss
+integration points).</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)">tuple</a>[<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id1">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">_set_nodes_local_coords</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/element/type/interface.html#ElementType._set_nodes_local_coords"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id1" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set nodes local coordinates.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id2">
+<span class="sig-name descname"><span class="pre">check_shape_functions_properties</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/element/type/interface.html#ElementType.check_shape_functions_properties"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check if element shape functions satisfy known properties.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id3">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">eval_shapefun</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">local_coords</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/element/type/interface.html#ElementType.eval_shapefun"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id3" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluate shape functions at given local coordinates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>local_coords</strong> (<em>torch.Tensor</em><em>(</em><em>1d</em><em>)</em>) – Local coordinates of point where shape functions are evaluated.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>shape_fun</strong> – Shape functions evaluated at given local coordinates, sorted
+according with element nodes.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor(1d)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id4">
+<em class="property"><span class="pre">abstract</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">eval_shapefun_local_deriv</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">local_coords</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/element/type/interface.html#ElementType.eval_shapefun_local_deriv"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id4" title="Permalink to this definition">¶</a></dt>
+<dd><p>Evaluate shape functions local derivates at given local coordinates.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>local_coords</strong> (<em>torch.Tensor</em><em>(</em><em>1d</em><em>)</em>) – Local coordinates of point where shape functions local derivatives
+are evaluated.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>shape_fun_local_deriv</strong> – Shape functions local derivatives evaluated at given local
+coordinates, sorted according with element nodes. Derivative of the
+i-th shape function with respect to the j-th local coordinate is
+stored in shape_fun_local_deriv[i, j].</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor(2d)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.simulators.fetorch.structure.structure_mesh.ElementType.get_batched_gauss_integration_points">
+<span class="sig-name descname"><span class="pre">get_batched_gauss_integration_points</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/element/type/interface.html#ElementType.get_batched_gauss_integration_points"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.simulators.fetorch.structure.structure_mesh.ElementType.get_batched_gauss_integration_points" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get Gaussian quadrature points batched coordinates and weights.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>device</strong> (<em>torch.device</em><em>, </em><em>default=None</em>) – Device on which torch.Tensor is allocated.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>gp_coords_tensor</strong> (<em>torch.Tensor(2d)</em>) – Gauss quadrature integration points local coordinates stored as
+torch.Tensor(2d) of shape (n_gauss, n_dim). Gauss integration
+points are sorted according with their label.</p></li>
+<li><p><strong>gp_weights_tensor</strong> (<em>torch.Tensor(1d)</em>) – Gauss quadrature integration points weights stored as
+torch.Tensor(1d) of shape (n_gauss,). Gauss integration points are
+sorted with their label.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id5">
+<span class="sig-name descname"><span class="pre">get_device</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/element/type/interface.html#ElementType.get_device"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id5" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get device on which torch.Tensor is allocated.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>device_type</strong> (<em>{‘cpu’, ‘cuda’}</em>) – Type of device on which torch.Tensor is allocated.</p></li>
+<li><p><strong>device</strong> (<em>torch.device</em>) – Device on which torch.Tensor is allocated.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id6">
+<span class="sig-name descname"><span class="pre">get_gauss_integration_points</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/element/type/interface.html#ElementType.get_gauss_integration_points"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id6" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get Gaussian quadrature points local coordinates and weights.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><ul class="simple">
+<li><p><strong>gp_coords</strong> (<em>dict</em>) – Gauss quadrature integration points (key, str[int]) local
+coordinates (item, torch.Tensor(1d)). Gauss integration points are
+labeled from 1 to n_gauss.</p></li>
+<li><p><strong>gp_weights</strong> (<em>dict</em>) – Gauss quadrature integration points (key, str[int]) weights
+(item, torch.Tensor(0d)). Gauss integration points are labeled from
+1 to n_gauss.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id7">
+<span class="sig-name descname"><span class="pre">get_n_dof_node</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/element/type/interface.html#ElementType.get_n_dof_node"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id7" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get number of degrees of freedom per node.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>n_dof_node</strong> – Number of degrees of freedom per node.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id8">
+<span class="sig-name descname"><span class="pre">get_n_gauss</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/element/type/interface.html#ElementType.get_n_gauss"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id8" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get number of Gauss quadrature integration points.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>n_gauss</strong> – Number of Gauss quadrature integration points.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id9">
+<span class="sig-name descname"><span class="pre">get_n_node</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/element/type/interface.html#ElementType.get_n_node"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id9" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get number of nodes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>n_node</strong> – Number of nodes.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id10">
+<span class="sig-name descname"><span class="pre">set_device</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">device_type</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/element/type/interface.html#ElementType.set_device"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id10" title="Permalink to this definition">¶</a></dt>
+<dd><p>Set device on which torch.Tensor is allocated.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>device_type</strong> (<em>{'cpu'</em><em>, </em><em>'cuda'}</em>) – Type of device on which torch.Tensor is allocated.</p></li>
+<li><p><strong>device</strong> (<em>torch.device</em>) – Device on which torch.Tensor is allocated.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="hookeai.simulators.fetorch.structure.structure_mesh.html" class="btn btn-neutral float-left" title="hookeai.simulators.fetorch.structure.structure_mesh" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="hookeai.simulators.fetorch.structure.structure_mesh.StructureMesh.html" class="btn btn-neutral float-right" title="hookeai.simulators.fetorch.structure.structure_mesh.StructureMesh" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

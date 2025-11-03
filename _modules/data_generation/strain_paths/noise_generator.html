@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>data_generation.strain_paths.noise_generator &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../_autosummary/hookeai.html">Code</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">data_generation.strain_paths.noise_generator</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for data_generation.strain_paths.noise_generator</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Generate noisy strain loading paths.</span>
+
+<span class="sd">Classes</span>
+<span class="sd">-------</span>
+<span class="sd">NoiseGenerator</span>
+<span class="sd">    Noise generator.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#                                                                       Modules</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Third-party</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="c1">#</span>
+<span class="c1">#                                                          Authorship &amp; Credits</span>
+<span class="c1"># =============================================================================</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Bernardo Ferreira (bernardo_ferreira@brown.edu)&#39;</span>
+<span class="n">__credits__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Bernardo Ferreira&#39;</span><span class="p">,</span> <span class="p">]</span>
+<span class="n">__status__</span> <span class="o">=</span> <span class="s1">&#39;Stable&#39;</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="NoiseGenerator"><a class="viewcode-back" href="../../../_autosummary/hookeai.miscellaneous.noisy_data.inject_disp_noise_csv.NoiseGenerator.html#hookeai.miscellaneous.noisy_data.inject_disp_noise_csv.NoiseGenerator">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">NoiseGenerator</span><span class="p">:</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Noise generator.</span>
+<span class="sd">    </span>
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    _noise_distribution : str, {&#39;uniform&#39;, &#39;gaussian&#39;, &#39;spiked_gaussian&#39;}</span>
+<span class="sd">        Noise distribution type.</span>
+<span class="sd">    _noise_parameters : dict</span>
+<span class="sd">        Noise distribution parameters.</span>
+
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    set_noise_distribution(self, noise_distribution)</span>
+<span class="sd">        Set noise distribution type.</span>
+<span class="sd">    set_noise_parameters(self, noise_parameters)</span>
+<span class="sd">        Set noise distribution parameters.</span>
+<span class="sd">    get_required_parameters(cls, noise_distribution)</span>
+<span class="sd">        Get required parameters for given noise distribution type.</span>
+<span class="sd">    generate_noise_path(self, noiseless_path, \</span>
+<span class="sd">                        noise_variability=&#39;homoscedastic&#39;, \</span>
+<span class="sd">                        heteroscedastic_weights=None)</span>
+<span class="sd">        Generate noise path.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="NoiseGenerator.__init__"><a class="viewcode-back" href="../../../_autosummary/hookeai.miscellaneous.noisy_data.inject_disp_noise_csv.NoiseGenerator.html#hookeai.miscellaneous.noisy_data.inject_disp_noise_csv.NoiseGenerator.__init__">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Constructor.&quot;&quot;&quot;</span>
+        <span class="c1"># Initialize noise distribution</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_noise_distribution</span> <span class="o">=</span> <span class="kc">None</span>
+        <span class="c1"># Initialize noise distribution parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_noise_parameters</span> <span class="o">=</span> <span class="kc">None</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="NoiseGenerator.set_noise_distribution"><a class="viewcode-back" href="../../../_autosummary/hookeai.miscellaneous.noisy_data.inject_disp_noise_csv.NoiseGenerator.html#hookeai.miscellaneous.noisy_data.inject_disp_noise_csv.NoiseGenerator.set_noise_distribution">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">set_noise_distribution</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">noise_distribution</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set noise distribution type.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        noise_distribution : str, {&#39;uniform&#39;, &#39;gaussian&#39;, &#39;spiked_gaussian&#39;}</span>
+<span class="sd">            Noise distribution type.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check noise distribution type</span>
+        <span class="k">if</span> <span class="n">noise_distribution</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;uniform&#39;</span><span class="p">,</span> <span class="s1">&#39;gaussian&#39;</span><span class="p">,</span>
+                                      <span class="s1">&#39;spiked_gaussian&#39;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Unknown noise distribution type.&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set noise distribution type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_noise_distribution</span> <span class="o">=</span> <span class="n">noise_distribution</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="NoiseGenerator.set_noise_parameters"><a class="viewcode-back" href="../../../_autosummary/hookeai.miscellaneous.noisy_data.inject_disp_noise_csv.NoiseGenerator.html#hookeai.miscellaneous.noisy_data.inject_disp_noise_csv.NoiseGenerator.set_noise_parameters">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">set_noise_parameters</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">noise_parameters</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Set noise distribution parameters.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        noise_parameters : dict</span>
+<span class="sd">            Noise distribution parameters.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Get required parameters</span>
+        <span class="n">required_parameters</span> <span class="o">=</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">get_required_parameters</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_noise_distribution</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Check parameters</span>
+        <span class="k">for</span> <span class="n">parameter</span> <span class="ow">in</span> <span class="n">required_parameters</span><span class="p">:</span>
+            <span class="k">if</span> <span class="n">parameter</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">noise_parameters</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+                <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Parameter </span><span class="si">{</span><span class="n">parameter</span><span class="si">}</span><span class="s1"> must be provided &#39;</span>
+                                   <span class="sa">f</span><span class="s1">&#39;for noise distribution of type &#39;</span>
+                                   <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="bp">self</span><span class="o">.</span><span class="n">_noise_distribution</span><span class="si">}</span><span class="s1">.&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_noise_parameters</span> <span class="o">=</span> <span class="n">noise_parameters</span>  </div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="NoiseGenerator.get_required_parameters"><a class="viewcode-back" href="../../../_autosummary/hookeai.miscellaneous.noisy_data.inject_disp_noise_csv.NoiseGenerator.html#hookeai.miscellaneous.noisy_data.inject_disp_noise_csv.NoiseGenerator.get_required_parameters">[docs]</a>    <span class="nd">@classmethod</span>
+    <span class="k">def</span><span class="w"> </span><span class="nf">get_required_parameters</span><span class="p">(</span><span class="bp">cls</span><span class="p">,</span> <span class="n">noise_distribution</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get required parameters for given noise distribution type.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        noise_distribution : str, {&#39;uniform&#39;, &#39;gaussian&#39;}</span>
+<span class="sd">            Noise distribution type.</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        required_noise_parameters : tuple[str]</span>
+<span class="sd">            Noise distribution required parameters.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">noise_distribution</span> <span class="o">==</span> <span class="s1">&#39;uniform&#39;</span><span class="p">:</span>
+            <span class="n">required_parameters</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;amp&#39;</span><span class="p">,)</span>
+        <span class="k">elif</span> <span class="n">noise_distribution</span> <span class="o">==</span> <span class="s1">&#39;gaussian&#39;</span><span class="p">:</span>
+            <span class="n">required_parameters</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;std&#39;</span><span class="p">,)</span>
+        <span class="k">elif</span> <span class="n">noise_distribution</span> <span class="o">==</span> <span class="s1">&#39;spiked_gaussian&#39;</span><span class="p">:</span>
+            <span class="n">required_parameters</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;std&#39;</span><span class="p">,</span> <span class="s1">&#39;spike&#39;</span><span class="p">,</span> <span class="s1">&#39;p_spike&#39;</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Unknown noise distribution type.&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">required_parameters</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="NoiseGenerator.generate_noise_path"><a class="viewcode-back" href="../../../_autosummary/hookeai.miscellaneous.noisy_data.inject_disp_noise_csv.NoiseGenerator.html#hookeai.miscellaneous.noisy_data.inject_disp_noise_csv.NoiseGenerator.generate_noise_path">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">generate_noise_path</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">noiseless_path</span><span class="p">,</span>
+                            <span class="n">noise_variability</span><span class="o">=</span><span class="s1">&#39;homoscedastic&#39;</span><span class="p">,</span>
+                            <span class="n">heteroscedastic_weights</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Generate noise path.</span>
+<span class="sd">        </span>
+<span class="sd">        Noise is applied independently for each signal feature.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        noiseless_path : numpy.ndarray(2d)</span>
+<span class="sd">            Noiseless signal path history stored as numpy.ndarray(2d) of shape</span>
+<span class="sd">            (sequence_length, n_features). </span>
+<span class="sd">        noise_variability: str, {&#39;homoscedastic&#39;, &#39;heteroscedastic&#39;}, \</span>
+<span class="sd">                           default=&#39;homoscedastic&#39;</span>
+<span class="sd">            Variability of noise across the data. In &#39;homoscedastic&#39; noise, the</span>
+<span class="sd">            variance of the noise remains constant across the data points</span>
+<span class="sd">            (uniform effect regardless of independent variable). In</span>
+<span class="sd">            &#39;heteroscedastic&#39; noise, the variance of the noise depends on the</span>
+<span class="sd">            data point.</span>
+<span class="sd">        heteroscedastic_weights : numpy.ndarray(1d), default=None</span>
+<span class="sd">            Weights that materialize noise heteroscedasticity by scaling the</span>
+<span class="sd">            noise distribution variance for each data point. Stored as</span>
+<span class="sd">            numpy.ndarray(1d) of shape (sequence_length). If None, then</span>
+<span class="sd">            defaults to ones (homoscedastic noise).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        noise_path : numpy.ndarray(2d)</span>
+<span class="sd">            Noise path history stored as numpy.ndarray(2d) of shape</span>
+<span class="sd">            (sequence_length, n_features).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Set noise path shape</span>
+        <span class="n">noise_path_shape</span> <span class="o">=</span> <span class="n">noiseless_path</span><span class="o">.</span><span class="n">shape</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Generate noise path</span>
+        <span class="k">if</span> <span class="n">noise_variability</span> <span class="o">==</span> <span class="s1">&#39;homoscedastic&#39;</span><span class="p">:</span>
+            <span class="c1"># Sample noise path</span>
+            <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_noise_distribution</span> <span class="o">==</span> <span class="s1">&#39;uniform&#39;</span><span class="p">:</span>
+                <span class="c1"># Set bounds</span>
+                <span class="n">low</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.5</span><span class="o">*</span><span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_noise_parameters</span><span class="p">[</span><span class="s1">&#39;amp&#39;</span><span class="p">])</span>
+                <span class="n">high</span> <span class="o">=</span> <span class="o">-</span><span class="n">low</span>
+                <span class="c1"># Sample noise</span>
+                <span class="n">noise_path</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">low</span><span class="p">,</span> <span class="n">high</span><span class="p">,</span>
+                                               <span class="n">size</span><span class="o">=</span><span class="n">noise_path_shape</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_noise_distribution</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;gaussian&#39;</span><span class="p">,</span> <span class="s1">&#39;spiked_gaussian&#39;</span><span class="p">):</span>
+                <span class="c1"># Set standard deviation</span>
+                <span class="n">std</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_noise_parameters</span><span class="p">[</span><span class="s1">&#39;std&#39;</span><span class="p">]</span>
+                <span class="c1"># Sample noise</span>
+                <span class="n">noise_path</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">std</span><span class="p">,</span>
+                                              <span class="n">size</span><span class="o">=</span><span class="n">noise_path_shape</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">elif</span> <span class="n">noise_variability</span> <span class="o">==</span> <span class="s1">&#39;heteroscedastic&#39;</span><span class="p">:</span>
+            <span class="c1"># Set heteroscedasticity weights</span>
+            <span class="k">if</span> <span class="n">heteroscedastic_weights</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+                <span class="n">heteroscedastic_weights</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">ones</span><span class="p">(</span><span class="n">noise_path_shape</span><span class="p">[</span><span class="mi">0</span><span class="p">])</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Initialize noise path</span>
+            <span class="n">noise_path</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">(</span><span class="n">noise_path_shape</span><span class="p">)</span>
+            <span class="c1"># Loop over time steps</span>
+            <span class="k">for</span> <span class="n">t</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="n">noise_path</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]):</span>
+                <span class="c1"># Get heteroscedasticity weight</span>
+                <span class="n">weight</span> <span class="o">=</span> <span class="n">heteroscedastic_weights</span><span class="p">[</span><span class="n">t</span><span class="p">]</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Sample noise</span>
+                <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_noise_distribution</span> <span class="o">==</span> <span class="s1">&#39;uniform&#39;</span><span class="p">:</span>
+                    <span class="c1"># Set homoscedastic bounds</span>
+                    <span class="n">hom_low</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.5</span><span class="o">*</span><span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_noise_parameters</span><span class="p">[</span><span class="s1">&#39;amp&#39;</span><span class="p">])</span>
+                    <span class="n">hom_high</span> <span class="o">=</span> <span class="o">-</span><span class="n">hom_low</span>
+                    <span class="c1"># Set heteroscedastic bounds</span>
+                    <span class="n">het_low</span> <span class="o">=</span> <span class="o">-</span><span class="mf">0.5</span><span class="o">*</span><span class="nb">abs</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_noise_parameters</span><span class="p">[</span><span class="s1">&#39;amp&#39;</span><span class="p">])</span><span class="o">*</span><span class="n">weight</span>
+                    <span class="n">het_high</span> <span class="o">=</span> <span class="o">-</span><span class="n">het_low</span>
+                    <span class="c1"># Sample noise</span>
+                    <span class="n">noise</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">hom_low</span><span class="p">,</span> <span class="n">hom_high</span><span class="p">,</span>
+                                               <span class="n">size</span><span class="o">=</span><span class="n">noise_path_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                             <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">uniform</span><span class="p">(</span><span class="n">het_low</span><span class="p">,</span> <span class="n">het_high</span><span class="p">,</span>
+                                                 <span class="n">size</span><span class="o">=</span><span class="n">noise_path_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+                    
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="k">elif</span> <span class="bp">self</span><span class="o">.</span><span class="n">_noise_distribution</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;gaussian&#39;</span><span class="p">,</span>
+                                                  <span class="s1">&#39;spiked_gaussian&#39;</span><span class="p">):</span>
+                    <span class="c1"># Set homoscedastic standard deviation</span>
+                    <span class="n">hom_std</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_noise_parameters</span><span class="p">[</span><span class="s1">&#39;std&#39;</span><span class="p">]</span>
+                    <span class="c1"># Set heteroscedastic standard deviation</span>
+                    <span class="n">het_std</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_noise_parameters</span><span class="p">[</span><span class="s1">&#39;std&#39;</span><span class="p">]</span><span class="o">*</span><span class="n">weight</span>
+                    <span class="c1"># Sample noise</span>
+                    <span class="n">noise</span> <span class="o">=</span> <span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">hom_std</span><span class="p">,</span>
+                                              <span class="n">size</span><span class="o">=</span><span class="n">noise_path_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">])</span>
+                             <span class="o">+</span> <span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">normal</span><span class="p">(</span><span class="n">loc</span><span class="o">=</span><span class="mf">0.0</span><span class="p">,</span> <span class="n">scale</span><span class="o">=</span><span class="n">het_std</span><span class="p">,</span>
+                                                <span class="n">size</span><span class="o">=</span><span class="n">noise_path_shape</span><span class="p">[</span><span class="mi">1</span><span class="p">]))</span>
+                    
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Assemble noise</span>
+                <span class="n">noise_path</span><span class="p">[</span><span class="n">t</span><span class="p">,</span> <span class="p">:]</span> <span class="o">=</span> <span class="n">noise</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Add noise spike</span>
+        <span class="k">if</span> <span class="bp">self</span><span class="o">.</span><span class="n">_noise_distribution</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;spiked_gaussian&#39;</span><span class="p">,):</span>
+            <span class="c1"># Set spike magnitude and probability</span>
+            <span class="n">spike</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_noise_parameters</span><span class="p">[</span><span class="s1">&#39;spike&#39;</span><span class="p">]</span>
+            <span class="n">p_spike</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_noise_parameters</span><span class="p">[</span><span class="s1">&#39;p_spike&#39;</span><span class="p">]</span>
+            <span class="c1"># Sample noise spike</span>
+            <span class="n">spike_path</span> <span class="o">=</span> <span class="n">spike</span><span class="o">*</span><span class="n">np</span><span class="o">.</span><span class="n">random</span><span class="o">.</span><span class="n">binomial</span><span class="p">(</span><span class="n">n</span><span class="o">=</span><span class="mi">1</span><span class="p">,</span> <span class="n">p</span><span class="o">=</span><span class="n">p_spike</span><span class="p">,</span>
+                                                  <span class="n">size</span><span class="o">=</span><span class="n">noise_path_shape</span><span class="p">)</span>
+            <span class="c1"># Add noise spike to noise path</span>
+            <span class="n">noise_path</span> <span class="o">+=</span> <span class="n">spike_path</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">noise_path</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

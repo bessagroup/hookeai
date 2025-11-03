@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>model_architectures.procedures.model_training &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../" id="documentation_options" src="../../../_static/documentation_options.js"></script>
+        <script src="../../../_static/doctools.js"></script>
+        <script src="../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../_autosummary/hookeai.html">Code</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">model_architectures.procedures.model_training</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for model_architectures.procedures.model_training</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Procedures associated to model training.</span>
+
+<span class="sd">Functions</span>
+<span class="sd">---------</span>
+<span class="sd">save_training_state</span>
+<span class="sd">    Save model and optimizer states at given training epoch.</span>
+<span class="sd">save_loss_history</span>
+<span class="sd">    Save training process loss history record.</span>
+<span class="sd">read_loss_history_from_file</span>
+<span class="sd">    Read training process loss history from loss history record file.</span>
+<span class="sd">read_lr_history_from_file</span>
+<span class="sd">    Read training learning rate history from loss history record file.</span>
+<span class="sd">write_training_summary_file</span>
+<span class="sd">    Write summary data file for model training process.</span>
+<span class="sd">plot_training_loss_history</span>
+<span class="sd">    Plot model training process loss history.</span>
+<span class="sd">plot_training_loss_and_lr_history</span>
+<span class="sd">    Plot model training process loss and learning rate histories.</span>
+<span class="sd">plot_model_parameters_history</span>
+<span class="sd">    Plot model learnable parameters history.</span>
+<span class="sd">write_cross_validation_summary_file</span>
+<span class="sd">    Write summary data file for model cross-validation process.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#                                                                       Modules</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Standard</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">os</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">pickle</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">datetime</span>
+<span class="c1"># Third-party</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">numpy</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">np</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">matplotlib.pyplot</span><span class="w"> </span><span class="k">as</span><span class="w"> </span><span class="nn">plt</span>
+<span class="c1"># Local</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">model_architectures.procedures.model_state_files</span><span class="w"> </span><span class="kn">import</span> <span class="n">save_model_state</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ioput.iostandard</span><span class="w"> </span><span class="kn">import</span> <span class="n">write_summary_file</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">ioput.plots</span><span class="w"> </span><span class="kn">import</span> <span class="n">plot_xy_data</span><span class="p">,</span> <span class="n">plot_xy2_data</span><span class="p">,</span> <span class="n">save_figure</span>
+<span class="c1">#</span>
+<span class="c1">#                                                          Authorship &amp; Credits</span>
+<span class="c1"># =============================================================================</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Bernardo Ferreira (bernardo_ferreira@brown.edu)&#39;</span>
+<span class="n">__credits__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Bernardo Ferreira&#39;</span><span class="p">,</span> <span class="p">]</span>
+<span class="n">__status__</span> <span class="o">=</span> <span class="s1">&#39;Stable&#39;</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="save_training_state"><a class="viewcode-back" href="../../../_autosummary/hookeai.model_architectures.rnn_base_model.train.training.save_training_state.html#hookeai.material_model_finder.train.training.save_training_state">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">save_training_state</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">optimizer</span><span class="p">,</span> <span class="n">state_type</span><span class="p">,</span> <span class="n">epoch</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                        <span class="n">is_remove_posterior</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Save model and optimizer states at given training epoch.</span>
+<span class="sd">    </span>
+<span class="sd">    Material patch model state file is stored in model_directory under the</span>
+<span class="sd">    name &lt; model_name &gt;.pt or &lt; model_name &gt;-&lt; epoch &gt;.pt if epoch is known.</span>
+<span class="sd">    </span>
+<span class="sd">    Material patch model state file corresponding to the best performance</span>
+<span class="sd">    is stored in model_directory under the name &lt; model_name &gt;-best.pt or</span>
+<span class="sd">    &lt; model_name &gt;-&lt; epoch &gt;-best.pt if epoch is known.</span>
+<span class="sd">        </span>
+<span class="sd">    Optimizer state file is stored in model_directory under the name</span>
+<span class="sd">    &lt; model_name &gt;_optim-&lt; epoch &gt;.pt.</span>
+<span class="sd">    </span>
+<span class="sd">    Optimizer state file corresponding to the best performance is stored in</span>
+<span class="sd">    model_directory under the name &lt; model_name &gt;_optim-best.pt or</span>
+<span class="sd">    &lt; model_name &gt;_optim-&lt; epoch &gt;-best.pt if epoch is known.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    model : torch.nn.Module</span>
+<span class="sd">        Model.</span>
+<span class="sd">    optimizer : torch.optim.Optimizer</span>
+<span class="sd">        PyTorch optimizer.</span>
+<span class="sd">    state_type : {&#39;default&#39;, &#39;init&#39;, &#39;epoch&#39;, &#39;best&#39;}, default=&#39;default&#39;</span>
+<span class="sd">        Saved model state file type.</span>
+<span class="sd">        Options:</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;default&#39; : Model default state</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;init&#39;    : Model initial state</span>
+<span class="sd">    </span>
+<span class="sd">        &#39;epoch&#39;   : Model state of given training epoch</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;best&#39;    : Model state of best performance</span>
+
+<span class="sd">    epoch : int, default=None</span>
+<span class="sd">        Training epoch.</span>
+<span class="sd">    is_remove_posterior : bool, default=True</span>
+<span class="sd">        Remove material patch model and optimizer state files corresponding to</span>
+<span class="sd">        training epochs posterior to the saved state file. Effective only if</span>
+<span class="sd">        saved epoch is known.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Save model state</span>
+    <span class="n">save_model_state</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">state_type</span><span class="o">=</span><span class="n">state_type</span><span class="p">,</span> <span class="n">epoch</span><span class="o">=</span><span class="n">epoch</span><span class="p">,</span>
+                     <span class="n">is_remove_posterior</span><span class="o">=</span><span class="n">is_remove_posterior</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize optimizer state filename</span>
+    <span class="n">optimizer_state_file</span> <span class="o">=</span> <span class="n">model</span><span class="o">.</span><span class="n">model_name</span> <span class="o">+</span> <span class="s1">&#39;_optim&#39;</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set optimizer state type</span>
+    <span class="k">if</span> <span class="n">state_type</span> <span class="o">==</span> <span class="s1">&#39;init&#39;</span><span class="p">:</span>
+        <span class="k">pass</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="c1"># Append epoch</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">epoch</span><span class="p">,</span> <span class="nb">int</span><span class="p">):</span>
+            <span class="n">optimizer_state_file</span> <span class="o">+=</span> <span class="s1">&#39;-&#39;</span> <span class="o">+</span> <span class="nb">str</span><span class="p">(</span><span class="n">epoch</span><span class="p">)</span> 
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set particular optimizer states</span>
+        <span class="k">if</span> <span class="n">state_type</span> <span class="o">==</span> <span class="s1">&#39;best&#39;</span><span class="p">:</span>
+            <span class="c1"># Set optimizer state corresponding to the best performance</span>
+            <span class="n">optimizer_state_file</span> <span class="o">+=</span> <span class="s1">&#39;-&#39;</span> <span class="o">+</span> <span class="s1">&#39;best&#39;</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Get files in model directory</span>
+            <span class="n">directory_list</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">model_directory</span><span class="p">)</span>
+            <span class="c1"># Loop over files in model directory</span>
+            <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">directory_list</span><span class="p">:</span>
+                <span class="c1"># Check if file is optimizer epoch best state file</span>
+                <span class="n">is_best_state_file</span> <span class="o">=</span> \
+                    <span class="nb">bool</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^&#39;</span> <span class="o">+</span> <span class="n">model</span><span class="o">.</span><span class="n">model_name</span> <span class="o">+</span> <span class="sa">r</span><span class="s1">&#39;_optim&#39;</span>
+                                   <span class="o">+</span> <span class="sa">r</span><span class="s1">&#39;-?[0-9]*&#39;</span> <span class="o">+</span> <span class="sa">r</span><span class="s1">&#39;-best&#39;</span> <span class="o">+</span> <span class="sa">r</span><span class="s1">&#39;\.pt&#39;</span><span class="p">,</span>
+                                   <span class="n">filename</span><span class="p">))</span>
+                <span class="c1"># Delete state file</span>
+                <span class="k">if</span> <span class="n">is_best_state_file</span><span class="p">:</span>
+                    <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">model_directory</span><span class="p">,</span> <span class="n">filename</span><span class="p">))</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set optimizer state file path</span>
+        <span class="n">optimizer_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">model_directory</span><span class="p">,</span>
+                                      <span class="n">optimizer_state_file</span> <span class="o">+</span> <span class="s1">&#39;.pt&#39;</span><span class="p">)</span>
+        <span class="c1"># Save optimizer state</span>
+        <span class="n">optimizer_state</span> <span class="o">=</span> <span class="nb">dict</span><span class="p">(</span><span class="n">state</span><span class="o">=</span><span class="n">optimizer</span><span class="o">.</span><span class="n">state_dict</span><span class="p">(),</span> <span class="n">epoch</span><span class="o">=</span><span class="n">epoch</span><span class="p">)</span>
+        <span class="n">torch</span><span class="o">.</span><span class="n">save</span><span class="p">(</span><span class="n">optimizer_state</span><span class="p">,</span> <span class="n">optimizer_path</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Delete optimizer epoch state files posterior to saved epoch</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">epoch</span><span class="p">,</span> <span class="nb">int</span><span class="p">)</span> <span class="ow">and</span> <span class="n">is_remove_posterior</span><span class="p">:</span>
+            <span class="n">remove_posterior_optim_state_files</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">epoch</span><span class="p">)</span></div>
+<span class="c1"># =============================================================================</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">remove_posterior_optim_state_files</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">epoch</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Delete optimizer training epoch state files posterior to given epoch.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    model : torch.nn.Module</span>
+<span class="sd">        Model.</span>
+<span class="sd">    epoch : int</span>
+<span class="sd">        Training epoch.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get files in material patch model directory</span>
+    <span class="n">directory_list</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">listdir</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">model_directory</span><span class="p">)</span>
+    <span class="c1"># Loop over files in material patch model directory</span>
+    <span class="k">for</span> <span class="n">filename</span> <span class="ow">in</span> <span class="n">directory_list</span><span class="p">:</span>
+        <span class="c1"># Check if file is optimizer epoch state file</span>
+        <span class="n">is_state_file</span> <span class="o">=</span> <span class="nb">bool</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^&#39;</span> <span class="o">+</span> <span class="n">model</span><span class="o">.</span><span class="n">model_name</span> <span class="o">+</span> <span class="sa">r</span><span class="s1">&#39;_optim&#39;</span>
+                             <span class="o">+</span> <span class="sa">r</span><span class="s1">&#39;-[0-9]+&#39;</span> <span class="o">+</span> <span class="sa">r</span><span class="s1">&#39;\.pt&#39;</span><span class="p">,</span> <span class="n">filename</span><span class="p">))</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Delete optimizer epoch state file posterior to given epoch</span>
+        <span class="k">if</span> <span class="n">is_state_file</span><span class="p">:</span>
+            <span class="c1"># Get optimizer state epoch</span>
+            <span class="n">file_epoch</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">splitext</span><span class="p">(</span><span class="n">filename</span><span class="p">)[</span><span class="mi">0</span><span class="p">]</span><span class="o">.</span><span class="n">split</span><span class="p">(</span><span class="s1">&#39;-&#39;</span><span class="p">)[</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Delete optimizer epoch state file</span>
+            <span class="k">if</span> <span class="n">file_epoch</span> <span class="o">&gt;</span> <span class="n">epoch</span><span class="p">:</span>
+                <span class="n">os</span><span class="o">.</span><span class="n">remove</span><span class="p">(</span><span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">model_directory</span><span class="p">,</span> <span class="n">filename</span><span class="p">))</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="save_loss_history"><a class="viewcode-back" href="../../../_autosummary/hookeai.model_architectures.rnn_base_model.train.training.save_loss_history.html#hookeai.material_model_finder.train.training.save_loss_history">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">save_loss_history</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="n">n_max_epochs</span><span class="p">,</span> <span class="n">loss_nature</span><span class="p">,</span> <span class="n">loss_type</span><span class="p">,</span>
+                      <span class="n">training_loss_history</span><span class="p">,</span> <span class="n">lr_scheduler_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                      <span class="n">lr_history_epochs</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">validation_loss_history</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Save training process loss history record.</span>
+<span class="sd">    </span>
+<span class="sd">    Loss history record file is stored in model_directory under the name</span>
+<span class="sd">    loss_history_record.pkl.</span>
+
+<span class="sd">    Overwrites existing loss history record file.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    model : torch.nn.Module</span>
+<span class="sd">        Model.</span>
+<span class="sd">    n_max_epochs : int</span>
+<span class="sd">        Maximum number of epochs of training process.</span>
+<span class="sd">    loss_nature : str</span>
+<span class="sd">        Loss nature.</span>
+<span class="sd">    loss_type : str</span>
+<span class="sd">        Loss function type.</span>
+<span class="sd">    training_loss_history : list[float]</span>
+<span class="sd">        Training process training loss history (per epoch).</span>
+<span class="sd">    lr_scheduler_type : {&#39;steplr&#39;, &#39;explr&#39;, &#39;linlr&#39;}, default=None</span>
+<span class="sd">        Type of learning rate scheduler.</span>
+<span class="sd">    lr_history_epochs : list[float], default=None</span>
+<span class="sd">        Training process learning rate history (per epoch).</span>
+<span class="sd">    validation_loss_history : list[float], default=None</span>
+<span class="sd">        Training process validation loss history (e.g., early stopping</span>
+<span class="sd">        criterion).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Set loss history record file path</span>
+    <span class="n">loss_record_path</span> <span class="o">=</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">join</span><span class="p">(</span><span class="n">model</span><span class="o">.</span><span class="n">model_directory</span><span class="p">,</span>
+                                    <span class="s1">&#39;loss_history_record&#39;</span> <span class="o">+</span> <span class="s1">&#39;.pkl&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Build training loss history record</span>
+    <span class="n">loss_history_record</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">loss_history_record</span><span class="p">[</span><span class="s1">&#39;n_max_epochs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">int</span><span class="p">(</span><span class="n">n_max_epochs</span><span class="p">)</span>
+    <span class="n">loss_history_record</span><span class="p">[</span><span class="s1">&#39;loss_nature&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">loss_nature</span><span class="p">)</span>
+    <span class="n">loss_history_record</span><span class="p">[</span><span class="s1">&#39;loss_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">loss_type</span><span class="p">)</span>
+    <span class="n">loss_history_record</span><span class="p">[</span><span class="s1">&#39;training_loss_history&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">training_loss_history</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Store learning rate history record</span>
+    <span class="k">if</span> <span class="n">lr_scheduler_type</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">loss_history_record</span><span class="p">[</span><span class="s1">&#39;lr_scheduler_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">lr_scheduler_type</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">loss_history_record</span><span class="p">[</span><span class="s1">&#39;lr_scheduler_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="k">if</span> <span class="n">lr_history_epochs</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">loss_history_record</span><span class="p">[</span><span class="s1">&#39;lr_history_epochs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">list</span><span class="p">(</span><span class="n">lr_history_epochs</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">loss_history_record</span><span class="p">[</span><span class="s1">&#39;lr_history_epochs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Store validation loss history</span>
+    <span class="k">if</span> <span class="n">validation_loss_history</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">loss_history_record</span><span class="p">[</span><span class="s1">&#39;validation_loss_history&#39;</span><span class="p">]</span> <span class="o">=</span> \
+            <span class="nb">list</span><span class="p">(</span><span class="n">validation_loss_history</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">loss_history_record</span><span class="p">[</span><span class="s1">&#39;validation_loss_history&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Save loss history record</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">loss_record_path</span><span class="p">,</span> <span class="s1">&#39;wb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">loss_record_file</span><span class="p">:</span>
+        <span class="n">pickle</span><span class="o">.</span><span class="n">dump</span><span class="p">(</span><span class="n">loss_history_record</span><span class="p">,</span> <span class="n">loss_record_file</span><span class="p">)</span></div>
+<span class="c1"># =============================================================================</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">read_loss_history_from_file</span><span class="p">(</span><span class="n">loss_record_path</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Read training process loss history from loss history record file.</span>
+<span class="sd">    </span>
+<span class="sd">    Loss history record file is stored in model_directory under the name</span>
+<span class="sd">    loss_history_record.pkl.</span>
+<span class="sd">    </span>
+<span class="sd">    Detaches loss values from computation graph and moves them to CPU.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    loss_record_path : str</span>
+<span class="sd">        Loss history record file path.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    loss_nature : str</span>
+<span class="sd">        Loss nature.</span>
+<span class="sd">    loss_type : str</span>
+<span class="sd">        Loss function type.</span>
+<span class="sd">    training_loss_history : list[float]</span>
+<span class="sd">        Training process training loss history (per epoch).</span>
+<span class="sd">    validation_loss_history : {None, list[float]}</span>
+<span class="sd">        Training process validation loss history. Set to None if not available.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check loss history record file</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">loss_record_path</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Loss history record file has not been found:</span><span class="se">\n\n</span><span class="s1">&#39;</span>
+                           <span class="o">+</span> <span class="n">loss_record_path</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Load loss history record</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">loss_record_path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">loss_record_file</span><span class="p">:</span>
+        <span class="n">loss_history_record</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">loss_record_file</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Check loss history</span>
+    <span class="k">if</span> <span class="s1">&#39;loss_nature&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">loss_history_record</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Loss nature is not available in loss history &#39;</span>
+                           <span class="s1">&#39;record.&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="s1">&#39;loss_type&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">loss_history_record</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Loss type is not available in loss history &#39;</span>
+                           <span class="s1">&#39;record.&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="s1">&#39;training_loss_history&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">loss_history_record</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Loss history is not available in loss history &#39;</span>
+                           <span class="s1">&#39;record.&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">loss_history_record</span><span class="p">[</span><span class="s1">&#39;training_loss_history&#39;</span><span class="p">],</span>
+                        <span class="nb">list</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Loss history is not a list[float].&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set loss nature</span>
+    <span class="n">loss_nature</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">loss_history_record</span><span class="p">[</span><span class="s1">&#39;loss_nature&#39;</span><span class="p">])</span>
+    <span class="c1"># Set loss type</span>
+    <span class="n">loss_type</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="n">loss_history_record</span><span class="p">[</span><span class="s1">&#39;loss_type&#39;</span><span class="p">])</span>
+    <span class="c1"># Set training loss history</span>
+    <span class="n">training_loss_history</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">loss_history_record</span><span class="p">[</span><span class="s1">&#39;training_loss_history&#39;</span><span class="p">]:</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+            <span class="n">training_loss_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">())</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">training_loss_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set validation loss history</span>
+    <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">loss_history_record</span><span class="p">[</span><span class="s1">&#39;validation_loss_history&#39;</span><span class="p">],</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="n">validation_loss_history</span> <span class="o">=</span> <span class="p">[]</span>
+        <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">loss_history_record</span><span class="p">[</span><span class="s1">&#39;validation_loss_history&#39;</span><span class="p">]:</span>
+            <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">Tensor</span><span class="p">):</span>
+                <span class="n">validation_loss_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="o">.</span><span class="n">detach</span><span class="p">()</span><span class="o">.</span><span class="n">cpu</span><span class="p">())</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="n">validation_loss_history</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">x</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">validation_loss_history</span> <span class="o">=</span> <span class="kc">None</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="p">(</span><span class="n">loss_nature</span><span class="p">,</span> <span class="n">loss_type</span><span class="p">,</span> <span class="n">training_loss_history</span><span class="p">,</span>
+            <span class="n">validation_loss_history</span><span class="p">)</span>
+<span class="c1"># =============================================================================</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">read_lr_history_from_file</span><span class="p">(</span><span class="n">loss_record_path</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Read training learning rate history from loss history record file.</span>
+<span class="sd">    </span>
+<span class="sd">    Loss history record file is stored in model_directory under the name</span>
+<span class="sd">    loss_history_record.pkl.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    loss_record_path : str</span>
+<span class="sd">        Loss history record file path.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    lr_scheduler_type : {&#39;steplr&#39;, &#39;explr&#39;, &#39;linlr&#39;}</span>
+<span class="sd">        Type of learning rate scheduler.</span>
+<span class="sd">    lr_history_epochs : list[float]</span>
+<span class="sd">        Training process learning rate history (per epoch).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check loss history record file</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="n">os</span><span class="o">.</span><span class="n">path</span><span class="o">.</span><span class="n">isfile</span><span class="p">(</span><span class="n">loss_record_path</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Loss history record file has not been found:</span><span class="se">\n\n</span><span class="s1">&#39;</span>
+                           <span class="o">+</span> <span class="n">loss_record_path</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Load loss history record</span>
+    <span class="k">with</span> <span class="nb">open</span><span class="p">(</span><span class="n">loss_record_path</span><span class="p">,</span> <span class="s1">&#39;rb&#39;</span><span class="p">)</span> <span class="k">as</span> <span class="n">loss_record_file</span><span class="p">:</span>
+        <span class="n">loss_history_record</span> <span class="o">=</span> <span class="n">pickle</span><span class="o">.</span><span class="n">load</span><span class="p">(</span><span class="n">loss_record_file</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Check learning rate history</span>
+    <span class="k">if</span> <span class="s1">&#39;lr_scheduler_type&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">loss_history_record</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Learning rate scheduler type is not available in &#39;</span>
+                           <span class="s1">&#39;loss history record.&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="s1">&#39;lr_history_epochs&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">loss_history_record</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Learning rate history is not available in loss &#39;</span>
+                           <span class="s1">&#39;history record.&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">loss_history_record</span><span class="p">[</span><span class="s1">&#39;lr_history_epochs&#39;</span><span class="p">],</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Learning rate history is not a list[float].&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set learning rate scheduler type</span>
+    <span class="n">lr_scheduler_type</span> <span class="o">=</span> <span class="n">loss_history_record</span><span class="p">[</span><span class="s1">&#39;lr_scheduler_type&#39;</span><span class="p">]</span>
+    <span class="c1"># Set learning rate history</span>
+    <span class="n">lr_history_epochs</span> <span class="o">=</span> <span class="n">loss_history_record</span><span class="p">[</span><span class="s1">&#39;lr_history_epochs&#39;</span><span class="p">]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">lr_scheduler_type</span><span class="p">,</span> <span class="n">lr_history_epochs</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="write_training_summary_file"><a class="viewcode-back" href="../../../_autosummary/hookeai.model_architectures.rnn_base_model.train.training.write_training_summary_file.html#hookeai.material_model_finder.train.training.write_training_summary_file">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">write_training_summary_file</span><span class="p">(</span>
+    <span class="n">device_type</span><span class="p">,</span> <span class="n">seed</span><span class="p">,</span> <span class="n">model_directory</span><span class="p">,</span> <span class="n">model_load_state</span><span class="p">,</span> <span class="n">n_max_epochs</span><span class="p">,</span>
+    <span class="n">is_model_in_normalized</span><span class="p">,</span> <span class="n">is_model_out_normalized</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span>
+    <span class="n">is_sampler_shuffle</span><span class="p">,</span> <span class="n">loss_nature</span><span class="p">,</span> <span class="n">loss_type</span><span class="p">,</span> <span class="n">loss_kwargs</span><span class="p">,</span> <span class="n">opt_algorithm</span><span class="p">,</span>
+    <span class="n">lr_init</span><span class="p">,</span> <span class="n">lr_scheduler_type</span><span class="p">,</span> <span class="n">lr_scheduler_kwargs</span><span class="p">,</span> <span class="n">n_epochs</span><span class="p">,</span>
+    <span class="n">dataset_file_path</span><span class="p">,</span> <span class="n">dataset</span><span class="p">,</span> <span class="n">best_loss</span><span class="p">,</span> <span class="n">best_training_epoch</span><span class="p">,</span> <span class="n">total_time_sec</span><span class="p">,</span>
+    <span class="n">avg_time_epoch</span><span class="p">,</span> <span class="n">best_model_parameters</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">torchinfo_summary</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Write summary data file for model training process.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    device_type : {&#39;cpu&#39;, &#39;cuda&#39;}</span>
+<span class="sd">        Type of device on which torch.Tensor is allocated.</span>
+<span class="sd">    seed : int</span>
+<span class="sd">        Seed used to initialize the random number generators of Python and</span>
+<span class="sd">        other libraries (e.g., NumPy, PyTorch) for all devices to preserve</span>
+<span class="sd">        reproducibility. Does also set workers seed in PyTorch data loaders.</span>
+<span class="sd">    model_directory : str</span>
+<span class="sd">        Directory where material patch model is stored.</span>
+<span class="sd">    model_load_state : {&#39;default&#39;, &#39;init&#39;, int, &#39;best&#39;, &#39;last&#39;}</span>
+<span class="sd">        Available model state to be loaded from the model directory.</span>
+<span class="sd">    n_max_epochs : int</span>
+<span class="sd">        Maximum number of training epochs.</span>
+<span class="sd">    is_model_in_normalized : bool, default=False</span>
+<span class="sd">        If True, then model input features are assumed to be normalized</span>
+<span class="sd">        (normalized input data has been seen during model training).</span>
+<span class="sd">    is_model_out_normalized : bool, default=False</span>
+<span class="sd">        If True, then model output features are assumed to be normalized</span>
+<span class="sd">        (normalized output data has been seen during model training).</span>
+<span class="sd">    batch_size : int</span>
+<span class="sd">        Number of samples loaded per batch.</span>
+<span class="sd">    is_sampler_shuffle : bool</span>
+<span class="sd">        If True, shuffles data set samples at every epoch.</span>
+<span class="sd">    loss_nature : str</span>
+<span class="sd">        Loss nature.</span>
+<span class="sd">    loss_type : str</span>
+<span class="sd">        Loss function type.</span>
+<span class="sd">    loss_kwargs : dict</span>
+<span class="sd">        Arguments of torch.nn._Loss initializer.</span>
+<span class="sd">    opt_algorithm : str</span>
+<span class="sd">        Optimization algorithm.</span>
+<span class="sd">    lr_init : float</span>
+<span class="sd">        Initial value optimizer learning rate. Constant learning rate value if</span>
+<span class="sd">        no learning rate scheduler is specified (lr_scheduler_type=None).</span>
+<span class="sd">    lr_scheduler_type : str</span>
+<span class="sd">        Type of learning rate scheduler.</span>
+<span class="sd">    lr_scheduler_kwargs : dict</span>
+<span class="sd">        Arguments of torch.optim.lr_scheduler.LRScheduler initializer.</span>
+<span class="sd">    n_epochs : int</span>
+<span class="sd">        Number of completed epochs in the training process.</span>
+<span class="sd">    dataset_file_path : str</span>
+<span class="sd">        Graph Neural Network graph data set file path if such file exists. Only</span>
+<span class="sd">        used for output purposes.</span>
+<span class="sd">    dataset : torch.utils.data.Dataset</span>
+<span class="sd">        Graph Neural Network graph data set. Each sample corresponds to a</span>
+<span class="sd">        torch_geometric.data.Data object describing a homogeneous graph.</span>
+<span class="sd">    best_loss : float</span>
+<span class="sd">        Best loss during training process.</span>
+<span class="sd">    best_training_epoch : int</span>
+<span class="sd">        Training epoch corresponding to best loss during training process.</span>
+<span class="sd">    total_time_sec : int</span>
+<span class="sd">        Total training time in seconds.</span>
+<span class="sd">    avg_time_epoch : float</span>
+<span class="sd">        Average training time per epoch.</span>
+<span class="sd">    best_model_parameters : dict</span>
+<span class="sd">        Model parameters corresponding to best model state.</span>
+<span class="sd">    torchinfo_summary : str, default=None</span>
+<span class="sd">        Torchinfo model architecture summary.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Set summary data</span>
+    <span class="n">summary_data</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;device_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">device_type</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;seed&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">seed</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;model_directory&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">model_directory</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;model_load_state&#39;</span><span class="p">]</span> <span class="o">=</span> \
+        <span class="n">model_load_state</span> <span class="k">if</span> <span class="n">model_load_state</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;n_max_epochs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">n_max_epochs</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;is_model_in_normalized&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">is_model_in_normalized</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;is_model_out_normalized&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">is_model_out_normalized</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;batch_size&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">batch_size</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;is_sampler_shuffle&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">is_sampler_shuffle</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;loss_nature&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">loss_nature</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;loss_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">loss_type</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;loss_kwargs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">loss_kwargs</span> <span class="k">if</span> <span class="n">loss_kwargs</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;opt_algorithm&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">opt_algorithm</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;lr_init&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">lr_init</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;lr_scheduler_type&#39;</span><span class="p">]</span> <span class="o">=</span> \
+        <span class="n">lr_scheduler_type</span> <span class="k">if</span> <span class="n">lr_scheduler_type</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;lr_scheduler_kwargs&#39;</span><span class="p">]</span> <span class="o">=</span> \
+        <span class="n">lr_scheduler_kwargs</span> <span class="k">if</span> <span class="n">lr_scheduler_kwargs</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;Number of completed epochs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">n_epochs</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;Training data set file&#39;</span><span class="p">]</span> <span class="o">=</span> \
+        <span class="n">dataset_file_path</span> <span class="k">if</span> <span class="n">dataset_file_path</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;Training data set size&#39;</span><span class="p">]</span> <span class="o">=</span> \
+        <span class="nb">len</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span> <span class="k">if</span> <span class="n">dataset</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;Best loss: &#39;</span><span class="p">]</span> <span class="o">=</span> \
+        <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">best_loss</span><span class="si">:</span><span class="s1">.8e</span><span class="si">}</span><span class="s1"> (training epoch </span><span class="si">{</span><span class="n">best_training_epoch</span><span class="si">}</span><span class="s1">)&#39;</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;Total training time&#39;</span><span class="p">]</span> <span class="o">=</span> \
+        <span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">total_time_sec</span><span class="p">)))</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;Avg. training time per epoch&#39;</span><span class="p">]</span> <span class="o">=</span> \
+        <span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">avg_time_epoch</span><span class="p">)))</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set summary optional data</span>
+    <span class="k">if</span> <span class="n">best_model_parameters</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;Model parameters (best state)&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">best_model_parameters</span>
+    <span class="k">if</span> <span class="n">torchinfo_summary</span> <span class="ow">is</span> <span class="ow">not</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;torchinfo summary&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">torchinfo_summary</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Write summary file</span>
+    <span class="n">write_summary_file</span><span class="p">(</span>
+        <span class="n">summary_directory</span><span class="o">=</span><span class="n">model_directory</span><span class="p">,</span>
+        <span class="n">summary_title</span><span class="o">=</span><span class="s1">&#39;Summary: Model training&#39;</span><span class="p">,</span>
+        <span class="o">**</span><span class="n">summary_data</span><span class="p">)</span></div>
+<span class="c1"># =============================================================================</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_training_loss_history</span><span class="p">(</span><span class="n">loss_history</span><span class="p">,</span> <span class="n">loss_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_log_loss</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                               <span class="n">loss_scale</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">,</span>
+                               <span class="n">filename</span><span class="o">=</span><span class="s1">&#39;training_loss_history&#39;</span><span class="p">,</span>
+                               <span class="n">save_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_save_fig</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                               <span class="n">is_stdout_display</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_latex</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot model training process loss history.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    loss_history : dict</span>
+<span class="sd">        One or more training processes loss histories, where each loss history</span>
+<span class="sd">        (key, str) is stored as a list of epochs loss values (item, list).</span>
+<span class="sd">        Dictionary keys are taken as labels for the corresponding training</span>
+<span class="sd">        processes loss histories.</span>
+<span class="sd">    loss_type : str, default=None</span>
+<span class="sd">        Loss type. If provided, then loss type is added to the y-axis label.</span>
+<span class="sd">    is_log_loss : bool, default=False</span>
+<span class="sd">        Applies logarithm to loss values if True, keeps original loss values</span>
+<span class="sd">        otherwise.</span>
+<span class="sd">    loss_scale : {&#39;linear&#39;, &#39;log&#39;}, default=&#39;linear&#39;</span>
+<span class="sd">        Loss axis scale type.</span>
+<span class="sd">    filename : str, default=&#39;training_loss_history&#39;</span>
+<span class="sd">        Figure name.</span>
+<span class="sd">    save_dir : str, default=None</span>
+<span class="sd">        Directory where figure is saved. If None, then figure is saved in</span>
+<span class="sd">        current working directory.</span>
+<span class="sd">    is_save_fig : bool, default=False</span>
+<span class="sd">        Save figure.</span>
+<span class="sd">    is_stdout_display : bool, default=False</span>
+<span class="sd">        True if displaying figure to standard output device, False otherwise.</span>
+<span class="sd">    is_latex : bool, default=False</span>
+<span class="sd">        If True, then render all strings in LaTeX. If LaTex is not available,</span>
+<span class="sd">        then this option is silently set to False and all input strings are</span>
+<span class="sd">        processed to remove $(...)$ enclosure.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check loss history</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">loss_history</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Loss history is not a dict.&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">([</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">loss_history</span><span class="o">.</span><span class="n">values</span><span class="p">()]):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Data must be provided as a dict where each loss &#39;</span>
+                           <span class="s1">&#39;history (key, str) is stored as a list[float] &#39;</span>
+                           <span class="s1">&#39;(item, list).&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get number of training processes</span>
+    <span class="n">n_loss_history</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">loss_history</span><span class="o">.</span><span class="n">keys</span><span class="p">())</span>
+    <span class="c1"># Get maximum number of training epochs</span>
+    <span class="n">max_n_train_epochs</span> <span class="o">=</span> <span class="nb">max</span><span class="p">([</span><span class="nb">len</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">loss_history</span><span class="o">.</span><span class="n">values</span><span class="p">()])</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Initialize data array and data labels</span>
+    <span class="n">data_xy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">full</span><span class="p">((</span><span class="n">max_n_train_epochs</span><span class="p">,</span> <span class="mi">2</span><span class="o">*</span><span class="n">n_loss_history</span><span class="p">),</span> <span class="n">fill_value</span><span class="o">=</span><span class="kc">None</span><span class="p">)</span>
+    <span class="n">data_labels</span> <span class="o">=</span> <span class="p">[]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Loop over training processes</span>
+    <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="p">(</span><span class="n">key</span><span class="p">,</span> <span class="n">val</span><span class="p">)</span> <span class="ow">in</span> <span class="nb">enumerate</span><span class="p">(</span><span class="n">loss_history</span><span class="o">.</span><span class="n">items</span><span class="p">()):</span>
+        <span class="c1"># Assemble loss history</span>
+        <span class="n">data_xy</span><span class="p">[:</span><span class="nb">len</span><span class="p">(</span><span class="n">val</span><span class="p">),</span> <span class="mi">2</span><span class="o">*</span><span class="n">i</span><span class="p">]</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span><span class="o">*</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">val</span><span class="p">))])</span>
+        <span class="k">if</span> <span class="n">is_log_loss</span><span class="p">:</span>
+            <span class="n">data_xy</span><span class="p">[:</span><span class="nb">len</span><span class="p">(</span><span class="n">val</span><span class="p">),</span> <span class="mi">2</span><span class="o">*</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">val</span><span class="p">))</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">data_xy</span><span class="p">[:</span><span class="nb">len</span><span class="p">(</span><span class="n">val</span><span class="p">),</span> <span class="mi">2</span><span class="o">*</span><span class="n">i</span><span class="o">+</span><span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">val</span><span class="p">)</span>
+        <span class="c1"># Assemble data label</span>
+        <span class="n">data_labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">key</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set axes limits and scale</span>
+    <span class="n">x_lims</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="n">max_n_train_epochs</span><span class="p">)</span>
+    <span class="n">y_lims</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">y_scale</span> <span class="o">=</span> <span class="n">loss_scale</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set axes labels</span>
+    <span class="n">x_label</span> <span class="o">=</span> <span class="s1">&#39;Epochs&#39;</span>
+    <span class="k">if</span> <span class="n">loss_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">is_log_loss</span><span class="p">:</span>
+            <span class="n">y_label</span> <span class="o">=</span> <span class="s1">&#39;log(Loss)&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">y_label</span> <span class="o">=</span> <span class="s1">&#39;Loss&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">is_log_loss</span><span class="p">:</span>
+            <span class="n">y_label</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;log(Loss) (</span><span class="si">{</span><span class="n">loss_type</span><span class="si">}</span><span class="s1">)&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">y_label</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Loss (</span><span class="si">{</span><span class="n">loss_type</span><span class="si">}</span><span class="s1">)&#39;</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Plot loss history</span>
+    <span class="n">figure</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">plot_xy_data</span><span class="p">(</span><span class="n">data_xy</span><span class="p">,</span> <span class="n">data_labels</span><span class="o">=</span><span class="n">data_labels</span><span class="p">,</span> <span class="n">x_lims</span><span class="o">=</span><span class="n">x_lims</span><span class="p">,</span>
+                             <span class="n">y_lims</span><span class="o">=</span><span class="n">y_lims</span><span class="p">,</span> <span class="n">x_label</span><span class="o">=</span><span class="n">x_label</span><span class="p">,</span>
+                             <span class="n">y_label</span><span class="o">=</span><span class="n">y_label</span><span class="p">,</span> <span class="n">y_scale</span><span class="o">=</span><span class="n">y_scale</span><span class="p">,</span>
+                             <span class="n">x_tick_format</span><span class="o">=</span><span class="s1">&#39;int&#39;</span><span class="p">,</span> <span class="n">is_latex</span><span class="o">=</span><span class="n">is_latex</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Display figure</span>
+    <span class="k">if</span> <span class="n">is_stdout_display</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Save figure</span>
+    <span class="k">if</span> <span class="n">is_save_fig</span><span class="p">:</span>
+        <span class="n">save_figure</span><span class="p">(</span><span class="n">figure</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span><span class="p">,</span> <span class="n">save_dir</span><span class="o">=</span><span class="n">save_dir</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Close plot</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">figure</span><span class="p">)</span>
+<span class="c1"># =============================================================================</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_training_loss_and_lr_history</span><span class="p">(</span><span class="n">loss_history</span><span class="p">,</span> <span class="n">lr_history</span><span class="p">,</span> <span class="n">loss_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                      <span class="n">is_log_loss</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">loss_scale</span><span class="o">=</span><span class="s1">&#39;linear&#39;</span><span class="p">,</span>
+                                      <span class="n">lr_type</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span>
+                                      <span class="n">filename</span><span class="o">=</span><span class="s1">&#39;training_loss_and_lr_history&#39;</span><span class="p">,</span>
+                                      <span class="n">save_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_save_fig</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                      <span class="n">is_stdout_display</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_latex</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot model training process loss and learning rate histories.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    loss_history : list[float]</span>
+<span class="sd">        Training process loss history stored as a list of training epochs</span>
+<span class="sd">        loss values.</span>
+<span class="sd">    lr_history : list[float]</span>
+<span class="sd">        Training process learning rate history stored as a list of training</span>
+<span class="sd">        epochs learning rate values.</span>
+<span class="sd">    loss_type : str, default=None</span>
+<span class="sd">        Loss type. If provided, then loss type is added to the y-axis label.</span>
+<span class="sd">    is_log_loss : bool, default=False</span>
+<span class="sd">        Applies logarithm to loss values if True, keeps original loss values</span>
+<span class="sd">        otherwise.</span>
+<span class="sd">    loss_scale : {&#39;linear&#39;, &#39;log&#39;}, default=&#39;linear&#39;</span>
+<span class="sd">        Loss axis scale type.</span>
+<span class="sd">    lr_type : str, default=None</span>
+<span class="sd">        Learning rate scheduler type. If provided, then learning rate scheduler</span>
+<span class="sd">        type is added to the y-axis label.    </span>
+<span class="sd">    filename : str, default=&#39;training_loss_history&#39;</span>
+<span class="sd">        Figure name.</span>
+<span class="sd">    save_dir : str, default=None</span>
+<span class="sd">        Directory where figure is saved. If None, then figure is saved in</span>
+<span class="sd">        current working directory.</span>
+<span class="sd">    is_save_fig : bool, default=False</span>
+<span class="sd">        Save figure.</span>
+<span class="sd">    is_stdout_display : bool, default=False</span>
+<span class="sd">        True if displaying figure to standard output device, False otherwise.</span>
+<span class="sd">    is_latex : bool, default=False</span>
+<span class="sd">        If True, then render all strings in LaTeX. If LaTex is not available,</span>
+<span class="sd">        then this option is silently set to False and all input strings are</span>
+<span class="sd">        processed to remove $(...)$ enclosure.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check loss history</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">loss_history</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Loss history is not a list[float].&#39;</span><span class="p">)</span>
+    <span class="c1"># Check learning rate history</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">lr_history</span><span class="p">,</span> <span class="nb">list</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Learning rate history is not a list[float].&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="nb">len</span><span class="p">(</span><span class="n">lr_history</span><span class="p">)</span> <span class="o">!=</span> <span class="nb">len</span><span class="p">(</span><span class="n">loss_history</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Number of epochs of learning rate history is not &#39;</span>
+                           <span class="s1">&#39;consistent with loss history.&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set data arrays</span>
+    <span class="n">x</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">([</span><span class="o">*</span><span class="nb">range</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">loss_history</span><span class="p">))])</span>
+    <span class="k">if</span> <span class="n">is_log_loss</span><span class="p">:</span>
+        <span class="n">data_xy1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">column_stack</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">np</span><span class="o">.</span><span class="n">log</span><span class="p">(</span><span class="n">loss_history</span><span class="p">))))</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">data_xy1</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">column_stack</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">loss_history</span><span class="p">)))</span>
+    <span class="n">data_xy2</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">column_stack</span><span class="p">((</span><span class="n">x</span><span class="p">,</span> <span class="nb">tuple</span><span class="p">(</span><span class="n">lr_history</span><span class="p">)))</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set axes limits and scale</span>
+    <span class="n">x_lims</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">loss_history</span><span class="p">))</span>
+    <span class="n">y1_lims</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">y2_lims</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+    <span class="n">y1_scale</span> <span class="o">=</span> <span class="n">loss_scale</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set axes labels</span>
+    <span class="n">x_label</span> <span class="o">=</span> <span class="s1">&#39;Epochs&#39;</span>
+    <span class="k">if</span> <span class="n">loss_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">is_log_loss</span><span class="p">:</span>
+            <span class="n">y1_label</span> <span class="o">=</span> <span class="s1">&#39;log(Loss)&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">y1_label</span> <span class="o">=</span> <span class="s1">&#39;Loss&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">if</span> <span class="n">is_log_loss</span><span class="p">:</span>
+            <span class="n">y1_label</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;log(Loss) (</span><span class="si">{</span><span class="n">loss_type</span><span class="si">}</span><span class="s1">)&#39;</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="n">y1_label</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Loss (</span><span class="si">{</span><span class="n">loss_type</span><span class="si">}</span><span class="s1">)&#39;</span>
+    <span class="k">if</span> <span class="n">lr_type</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">y2_label</span> <span class="o">=</span> <span class="s1">&#39;Learning rate&#39;</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">y2_label</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Learning rate (</span><span class="si">{</span><span class="n">lr_type</span><span class="si">}</span><span class="s1">)&#39;</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set title</span>
+    <span class="n">title</span> <span class="o">=</span> <span class="s1">&#39;Training loss and learning rate history&#39;</span>    
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Plot loss and learning rate history</span>
+    <span class="n">figure</span><span class="p">,</span> <span class="n">_</span> <span class="o">=</span> <span class="n">plot_xy2_data</span><span class="p">(</span><span class="n">data_xy1</span><span class="p">,</span> <span class="n">data_xy2</span><span class="p">,</span> <span class="n">x_lims</span><span class="o">=</span><span class="n">x_lims</span><span class="p">,</span>
+                              <span class="n">y1_lims</span><span class="o">=</span><span class="n">y1_lims</span><span class="p">,</span> <span class="n">y2_lims</span><span class="o">=</span><span class="n">y2_lims</span><span class="p">,</span>
+                              <span class="n">x_label</span><span class="o">=</span><span class="n">x_label</span><span class="p">,</span> <span class="n">y1_label</span><span class="o">=</span><span class="n">y1_label</span><span class="p">,</span>
+                              <span class="n">y2_label</span><span class="o">=</span><span class="n">y2_label</span><span class="p">,</span> <span class="n">y1_scale</span><span class="o">=</span><span class="n">y1_scale</span><span class="p">,</span>
+                              <span class="n">x_tick_format</span><span class="o">=</span><span class="s1">&#39;int&#39;</span><span class="p">,</span> <span class="n">is_latex</span><span class="o">=</span><span class="n">is_latex</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Display figure</span>
+    <span class="k">if</span> <span class="n">is_stdout_display</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Save figure</span>
+    <span class="k">if</span> <span class="n">is_save_fig</span><span class="p">:</span>
+        <span class="n">save_figure</span><span class="p">(</span><span class="n">figure</span><span class="p">,</span> <span class="n">filename</span><span class="p">,</span> <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span><span class="p">,</span> <span class="n">save_dir</span><span class="o">=</span><span class="n">save_dir</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Close plot</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="n">figure</span><span class="p">)</span>
+<span class="c1"># =============================================================================</span>
+<span class="k">def</span><span class="w"> </span><span class="nf">plot_model_parameters_history</span><span class="p">(</span><span class="n">model_parameters_history</span><span class="p">,</span>
+                                  <span class="n">model_parameters_bounds</span><span class="p">,</span>
+                                  <span class="n">filename</span><span class="o">=</span><span class="s1">&#39;model_parameter_history&#39;</span><span class="p">,</span>
+                                  <span class="n">save_dir</span><span class="o">=</span><span class="kc">None</span><span class="p">,</span> <span class="n">is_save_fig</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span>
+                                  <span class="n">is_stdout_display</span><span class="o">=</span><span class="kc">False</span><span class="p">,</span> <span class="n">is_latex</span><span class="o">=</span><span class="kc">False</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Plot model learnable parameters history.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    model_parameters_history : dict</span>
+<span class="sd">        Model learnable parameters history. For each model parameter</span>
+<span class="sd">        (key, str), store the corresponding training history (item, list).</span>
+<span class="sd">    model_parameters_bounds : dict</span>
+<span class="sd">        Model learnable parameters bounds. For each parameter (key, str),</span>
+<span class="sd">        the corresponding bounds are stored as a</span>
+<span class="sd">        tuple(lower_bound, upper_bound) (item, tuple).</span>
+<span class="sd">    filename : str, default=&#39;model_parameter_history&#39;</span>
+<span class="sd">        Figure name.</span>
+<span class="sd">    save_dir : str, default=None</span>
+<span class="sd">        Directory where figure is saved. If None, then figure is saved in</span>
+<span class="sd">        current working directory.</span>
+<span class="sd">    is_save_fig : bool, default=False</span>
+<span class="sd">        Save figure.</span>
+<span class="sd">    is_stdout_display : bool, default=False</span>
+<span class="sd">        True if displaying figure to standard output device, False otherwise.</span>
+<span class="sd">    is_latex : bool, default=False</span>
+<span class="sd">        If True, then render all strings in LaTeX. If LaTex is not available,</span>
+<span class="sd">        then this option is silently set to False and all input strings are</span>
+<span class="sd">        processed to remove $(...)$ enclosure.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Check model parameters history</span>
+    <span class="k">if</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">model_parameters_history</span><span class="p">,</span> <span class="nb">dict</span><span class="p">):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Model parameters history is not a dict.&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="ow">not</span> <span class="nb">all</span><span class="p">([</span><span class="nb">isinstance</span><span class="p">(</span><span class="n">x</span><span class="p">,</span> <span class="nb">list</span><span class="p">)</span>
+                  <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">model_parameters_history</span><span class="o">.</span><span class="n">values</span><span class="p">()]):</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Data must be provided as a dict where each &#39;</span>
+                           <span class="s1">&#39;parameter history (key, str) is stored as a &#39;</span>
+                           <span class="s1">&#39;list.&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Loop over model parameters</span>
+    <span class="k">for</span> <span class="n">name</span><span class="p">,</span> <span class="n">history</span> <span class="ow">in</span> <span class="n">model_parameters_history</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+        <span class="c1"># Initialize data array</span>
+        <span class="n">data_xy</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">zeros</span><span class="p">((</span><span class="nb">len</span><span class="p">(</span><span class="n">history</span><span class="p">),</span> <span class="mi">2</span><span class="p">))</span>
+        <span class="c1"># Build data array</span>
+        <span class="n">data_xy</span><span class="p">[:,</span> <span class="mi">0</span><span class="p">]</span> <span class="o">=</span> <span class="n">np</span><span class="o">.</span><span class="n">arange</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">history</span><span class="p">))</span>
+        <span class="n">data_xy</span><span class="p">[:,</span> <span class="mi">1</span><span class="p">]</span> <span class="o">=</span> <span class="n">history</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set axes limits</span>
+        <span class="n">x_lims</span> <span class="o">=</span> <span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">history</span><span class="p">))</span>
+        <span class="n">y_lims</span> <span class="o">=</span> <span class="p">(</span><span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set axes labels</span>
+        <span class="n">x_label</span> <span class="o">=</span> <span class="s1">&#39;Epochs&#39;</span>
+        <span class="n">y_label</span> <span class="o">=</span> <span class="sa">f</span><span class="s1">&#39;Parameter: </span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Plot parameter history</span>
+        <span class="n">figure</span><span class="p">,</span> <span class="n">axes</span> <span class="o">=</span> <span class="n">plot_xy_data</span><span class="p">(</span><span class="n">data_xy</span><span class="p">,</span> <span class="n">x_lims</span><span class="o">=</span><span class="n">x_lims</span><span class="p">,</span> <span class="n">y_lims</span><span class="o">=</span><span class="n">y_lims</span><span class="p">,</span>
+                                    <span class="n">x_label</span><span class="o">=</span><span class="n">x_label</span><span class="p">,</span> <span class="n">y_label</span><span class="o">=</span><span class="n">y_label</span><span class="p">,</span>
+                                    <span class="n">x_tick_format</span><span class="o">=</span><span class="s1">&#39;int&#39;</span><span class="p">,</span> <span class="n">marker</span><span class="o">=</span><span class="s1">&#39;o&#39;</span><span class="p">,</span>
+                                    <span class="n">markersize</span><span class="o">=</span><span class="mi">2</span><span class="p">,</span> <span class="n">is_latex</span><span class="o">=</span><span class="n">is_latex</span><span class="p">)</span>
+        <span class="c1"># Plot parameter bounds</span>
+        <span class="n">axes</span><span class="o">.</span><span class="n">hlines</span><span class="p">(</span><span class="n">model_parameters_bounds</span><span class="p">[</span><span class="n">name</span><span class="p">],</span> <span class="mi">0</span><span class="p">,</span> <span class="nb">len</span><span class="p">(</span><span class="n">history</span><span class="p">),</span>
+                    <span class="n">colors</span><span class="o">=</span><span class="s1">&#39;k&#39;</span><span class="p">,</span> <span class="n">linestyles</span><span class="o">=</span><span class="s1">&#39;dashed&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Save figure</span>
+        <span class="k">if</span> <span class="n">is_save_fig</span><span class="p">:</span>
+            <span class="n">save_figure</span><span class="p">(</span><span class="n">figure</span><span class="p">,</span> <span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">filename</span><span class="si">}</span><span class="s1">_</span><span class="si">{</span><span class="n">name</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">,</span>
+                        <span class="nb">format</span><span class="o">=</span><span class="s1">&#39;pdf&#39;</span><span class="p">,</span> <span class="n">save_dir</span><span class="o">=</span><span class="n">save_dir</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Display figure</span>
+    <span class="k">if</span> <span class="n">is_stdout_display</span><span class="p">:</span>
+        <span class="n">plt</span><span class="o">.</span><span class="n">show</span><span class="p">()</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Close plot</span>
+    <span class="n">plt</span><span class="o">.</span><span class="n">close</span><span class="p">(</span><span class="s1">&#39;all&#39;</span><span class="p">)</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="write_cross_validation_summary_file"><a class="viewcode-back" href="../../../_autosummary/hookeai.model_architectures.rnn_base_model.train.cross_validation.write_cross_validation_summary_file.html#hookeai.material_model_finder.train.training.write_cross_validation_summary_file">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">write_cross_validation_summary_file</span><span class="p">(</span>
+    <span class="n">cross_validation_dir</span><span class="p">,</span> <span class="n">device_type</span><span class="p">,</span> <span class="n">n_fold</span><span class="p">,</span> <span class="n">n_max_epochs</span><span class="p">,</span>
+    <span class="n">is_model_in_normalized</span><span class="p">,</span> <span class="n">is_model_out_normalized</span><span class="p">,</span> <span class="n">batch_size</span><span class="p">,</span> <span class="n">loss_nature</span><span class="p">,</span>
+    <span class="n">loss_type</span><span class="p">,</span> <span class="n">loss_kwargs</span><span class="p">,</span> <span class="n">dataset_file_path</span><span class="p">,</span> <span class="n">dataset</span><span class="p">,</span> <span class="n">k_fold_loss_array</span><span class="p">,</span>
+    <span class="n">total_time_sec</span><span class="p">,</span> <span class="n">avg_time_fold</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Write summary data file for model cross-validation process.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    cross_validation_dir : dir</span>
+<span class="sd">        Directory where cross-validation process data is stored.</span>
+<span class="sd">    device_type : {&#39;cpu&#39;, &#39;cuda&#39;}</span>
+<span class="sd">        Type of device on which torch.Tensor is allocated.</span>
+<span class="sd">    n_fold : int</span>
+<span class="sd">        Number of folds into which the data set is split to perform</span>
+<span class="sd">        cross-validation.</span>
+<span class="sd">    n_max_epochs : int</span>
+<span class="sd">        Maximum number of training epochs.</span>
+<span class="sd">    is_model_in_normalized : bool, default=False</span>
+<span class="sd">        If True, then model input features are assumed to be normalized</span>
+<span class="sd">        (normalized input data has been seen during model training).</span>
+<span class="sd">    is_model_out_normalized : bool, default=False</span>
+<span class="sd">        If True, then model output features are assumed to be normalized</span>
+<span class="sd">        (normalized output data has been seen during model training).</span>
+<span class="sd">    batch_size : int</span>
+<span class="sd">        Number of samples loaded per batch.</span>
+<span class="sd">    loss_nature : str</span>
+<span class="sd">        Loss nature.</span>
+<span class="sd">    loss_type : str</span>
+<span class="sd">        Loss function type.</span>
+<span class="sd">    loss_kwargs : dict</span>
+<span class="sd">        Arguments of torch.nn._Loss initializer.</span>
+<span class="sd">    dataset_file_path : str</span>
+<span class="sd">        Data set file path if such file exists. Only used for output purposes</span>
+<span class="sd">    dataset : torch.utils.data.Dataset</span>
+<span class="sd">        Data set.</span>
+<span class="sd">    k_fold_loss_array : numpy.ndarray(2d)</span>
+<span class="sd">        k-fold cross-validation loss array. For the i-th fold,</span>
+<span class="sd">        data_array[i, 0] stores the best training loss and data_array[i, 1]</span>
+<span class="sd">        stores the average prediction loss per sample.</span>
+<span class="sd">    total_time_sec : int</span>
+<span class="sd">        Total cross-validation time in seconds.</span>
+<span class="sd">    avg_time_fold : float</span>
+<span class="sd">        Average cross-validation time per fold.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Set summary data</span>
+    <span class="n">summary_data</span> <span class="o">=</span> <span class="p">{}</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;device_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">device_type</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;n_fold&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">n_fold</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;n_max_epochs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">n_max_epochs</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;is_model_in_normalized&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">is_model_in_normalized</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;is_model_out_normalized&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">is_model_out_normalized</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;batch_size&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">batch_size</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;loss_nature&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">loss_nature</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;loss_type&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">loss_type</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;loss_kwargs&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">loss_kwargs</span> <span class="k">if</span> <span class="n">loss_kwargs</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;k-fold cross-validation data set file&#39;</span><span class="p">]</span> <span class="o">=</span> \
+        <span class="n">dataset_file_path</span> <span class="k">if</span> <span class="n">dataset_file_path</span> <span class="k">else</span> <span class="kc">None</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;k-fold cross-validation data set size&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="nb">len</span><span class="p">(</span><span class="n">dataset</span><span class="p">)</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;k-fold cross-validation results&#39;</span><span class="p">]</span> <span class="o">=</span> <span class="n">k_fold_loss_array</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;Total cross-validation time&#39;</span><span class="p">]</span> <span class="o">=</span> \
+        <span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">total_time_sec</span><span class="p">)))</span>
+    <span class="n">summary_data</span><span class="p">[</span><span class="s1">&#39;Avg. cross-validation time per fold&#39;</span><span class="p">]</span> <span class="o">=</span> \
+        <span class="nb">str</span><span class="p">(</span><span class="n">datetime</span><span class="o">.</span><span class="n">timedelta</span><span class="p">(</span><span class="n">seconds</span><span class="o">=</span><span class="nb">int</span><span class="p">(</span><span class="n">avg_time_fold</span><span class="p">)))</span>
+    <span class="c1"># Set summary title</span>
+    <span class="n">summary_title</span> <span class="o">=</span> <span class="s1">&#39;Summary: Model k-fold cross-validation&#39;</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Write summary file</span>
+    <span class="n">write_summary_file</span><span class="p">(</span><span class="n">summary_directory</span><span class="o">=</span><span class="n">cross_validation_dir</span><span class="p">,</span>
+                       <span class="n">summary_title</span><span class="o">=</span><span class="n">summary_title</span><span class="p">,</span> <span class="o">**</span><span class="n">summary_data</span><span class="p">)</span></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

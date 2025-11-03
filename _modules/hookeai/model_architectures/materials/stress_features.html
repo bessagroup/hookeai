@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>hookeai.model_architectures.materials.stress_features &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../" id="documentation_options" src="../../../../_static/documentation_options.js"></script>
+        <script src="../../../../_static/doctools.js"></script>
+        <script src="../../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../_autosummary/hookeai.html">Code</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">hookeai.model_architectures.materials.stress_features</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for hookeai.model_architectures.materials.stress_features</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;Build stress-based features for time series data set.</span>
+
+<span class="sd">Functions</span>
+<span class="sd">---------</span>
+<span class="sd">add_stress_features(dataset, stress_feature_label)</span>
+<span class="sd">    Add new stress-based feature history in time series data set.</span>
+<span class="sd">compute_stressfeature(stress_comps_array, stress_feature_label, n_dim,</span>
+<span class="sd">                      stress_comps_order, device=None)</span>
+<span class="sd">    Compute stress-based feature.</span>
+<span class="sd">build_stress_from_comps(n_dim, stress_comps_order, stress_comps_array,</span>
+<span class="sd">                        device=None)</span>
+<span class="sd">    Build stress tensor from given components.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#                                                                       Modules</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Standard</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">itertools</span>
+<span class="c1"># Third-party</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="c1"># Local</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">time_series_data.time_dataset</span><span class="w"> </span><span class="kn">import</span> <span class="n">TimeSeriesDataset</span><span class="p">,</span> <span class="n">load_dataset</span>
+<span class="c1">#</span>
+<span class="c1">#                                                          Authorship &amp; Credits</span>
+<span class="c1"># =============================================================================</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Bernardo Ferreira (bernardo_ferreira@brown.edu)&#39;</span>
+<span class="n">__credits__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Bernardo Ferreira&#39;</span><span class="p">,</span> <span class="p">]</span>
+<span class="n">__status__</span> <span class="o">=</span> <span class="s1">&#39;Stable&#39;</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="add_stress_features"><a class="viewcode-back" href="../../../../_autosummary/hookeai.model_architectures.materials.stress_features.add_stress_features.html#hookeai.model_architectures.materials.stress_features.add_stress_features">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">add_stress_features</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">stress_feature_label</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Add new stress-based feature history in time series data set.</span>
+<span class="sd">    </span>
+<span class="sd">    The computation of a new stress-based feature requires that &#39;stress_path&#39;</span>
+<span class="sd">    is available as an existing feature of the time series data set.</span>
+<span class="sd">    </span>
+<span class="sd">    The new stress-based feature history is stored as a torch.Tensor(2d) of</span>
+<span class="sd">    shape (sequence_length, n_features), where n_features is the corresponding</span>
+<span class="sd">    dimensionality.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    dataset : torch.utils.data.Dataset</span>
+<span class="sd">        Time series data set. Each sample is stored as a dictionary where</span>
+<span class="sd">        each feature (key, str) data is a torch.Tensor(2d) of shape</span>
+<span class="sd">        (sequence_length, n_features).</span>
+<span class="sd">    stress_feature_label : {&#39;vol_stress&#39;, &#39;dev_stress&#39;}</span>
+<span class="sd">        Stress-based feature:</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;vol_stress&#39; : Volumetric (or hydrostatic) stress.</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;dev_stress&#39; : Deviatoric component of stress tensor.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    dataset : torch.utils.data.Dataset</span>
+<span class="sd">        Time series data set. Each sample is stored as a dictionary where</span>
+<span class="sd">        each feature (key, str) data is a torch.Tensor(2d) of shape</span>
+<span class="sd">        (sequence_length, n_features).</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Probe first data set sample</span>
+    <span class="n">sample</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="c1"># Check if required data is available in data set</span>
+    <span class="k">if</span> <span class="s1">&#39;stress_path&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sample</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The feature </span><span class="se">\&#39;</span><span class="s1">stress_path</span><span class="se">\&#39;</span><span class="s1"> must be available &#39;</span>
+                           <span class="sa">f</span><span class="s1">&#39;in the data set in order to compute a new &#39;</span>
+                           <span class="sa">f</span><span class="s1">&#39;stress-based feature.&#39;</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="s1">&#39;stress_comps_order&#39;</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">sample</span><span class="o">.</span><span class="n">keys</span><span class="p">():</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;The data </span><span class="se">\&#39;</span><span class="s1">stress_comps_order</span><span class="se">\&#39;</span><span class="s1"> must be &#39;</span>
+                           <span class="sa">f</span><span class="s1">&#39;available in the data set in order to compute a &#39;</span>
+                           <span class="sa">f</span><span class="s1">&#39;new stress-based feature.&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Get stress components order</span>
+    <span class="n">stress_comps_order</span> <span class="o">=</span> <span class="n">sample</span><span class="p">[</span><span class="s1">&#39;stress_comps_order&#39;</span><span class="p">]</span>
+    <span class="c1"># Infer number of spatial dimensions from stress components</span>
+    <span class="k">if</span> <span class="nb">len</span><span class="p">(</span><span class="n">stress_comps_order</span><span class="p">)</span> <span class="ow">in</span> <span class="p">(</span><span class="mi">3</span><span class="p">,</span> <span class="mi">4</span><span class="p">):</span>
+        <span class="n">n_dim</span> <span class="o">=</span> <span class="mi">2</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="n">n_dim</span> <span class="o">=</span> <span class="mi">3</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set available stress-based features</span>
+    <span class="n">available_stress_features</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;vol_stress&#39;</span><span class="p">,</span> <span class="s1">&#39;dev_stress&#39;</span><span class="p">)</span>
+    <span class="c1"># Check if available stress-based feature</span>
+    <span class="k">if</span> <span class="n">stress_feature_label</span> <span class="ow">not</span> <span class="ow">in</span> <span class="n">available_stress_features</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+            <span class="sa">f</span><span class="s1">&#39;Unavailable stress-based feature </span><span class="se">\&#39;</span><span class="si">{</span><span class="n">stress_feature_label</span><span class="si">}</span><span class="se">\&#39;</span><span class="s1">.</span><span class="se">\n\n</span><span class="s1">&#39;</span>
+            <span class="sa">f</span><span class="s1">&#39;Available stress-based features: </span><span class="si">{</span><span class="n">available_stress_features</span><span class="si">}</span><span class="s1">&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Loop over samples</span>
+    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="nb">len</span><span class="p">(</span><span class="n">dataset</span><span class="p">)):</span>
+        <span class="c1"># Get sample</span>
+        <span class="n">sample</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="n">i</span><span class="p">]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Extract sample stress path</span>
+        <span class="n">stress_path</span> <span class="o">=</span> <span class="n">sample</span><span class="p">[</span><span class="s1">&#39;stress_path&#39;</span><span class="p">]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set vectorized stress-based feature history computation (batch along</span>
+        <span class="c1"># time)</span>
+        <span class="n">vmap_compute_stress_feature</span> <span class="o">=</span> \
+            <span class="n">torch</span><span class="o">.</span><span class="n">vmap</span><span class="p">(</span><span class="n">compute_stress_feature</span><span class="p">,</span>
+                       <span class="n">in_dims</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">,</span> <span class="kc">None</span><span class="p">),</span> <span class="n">out_dims</span><span class="o">=</span><span class="p">(</span><span class="mi">0</span><span class="p">,))</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get stress-based feature history</span>
+        <span class="n">stress_feature_path</span> <span class="o">=</span> <span class="n">vmap_compute_stress_feature</span><span class="p">(</span>
+            <span class="n">stress_path</span><span class="p">,</span> <span class="n">stress_feature_label</span><span class="p">,</span> <span class="n">n_dim</span><span class="p">,</span> <span class="n">stress_comps_order</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set stress-based feature history</span>
+        <span class="n">sample</span><span class="p">[</span><span class="n">stress_feature_label</span><span class="p">]</span> <span class="o">=</span> <span class="n">stress_feature_path</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Update data set sample</span>
+        <span class="k">if</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">TimeSeriesDataset</span><span class="p">):</span>
+            <span class="n">dataset</span><span class="o">.</span><span class="n">update_dataset_sample</span><span class="p">(</span><span class="n">i</span><span class="p">,</span> <span class="n">sample</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">dataset</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="compute_stress_feature"><a class="viewcode-back" href="../../../../_autosummary/hookeai.model_architectures.materials.stress_features.compute_stress_feature.html#hookeai.model_architectures.materials.stress_features.compute_stress_feature">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">compute_stress_feature</span><span class="p">(</span><span class="n">stress_comps_array</span><span class="p">,</span> <span class="n">stress_feature_label</span><span class="p">,</span> <span class="n">n_dim</span><span class="p">,</span>
+                           <span class="n">stress_comps_order</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Compute stress-based feature.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    stress_comps_array : torch.Tensor(1d)</span>
+<span class="sd">        Strain components array.</span>
+<span class="sd">    stress_feature_label : {&#39;vol_stress&#39;, &#39;dev_stress&#39;}</span>
+<span class="sd">        Stress-based feature:</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;vol_stress&#39; : Volumetric (or hydrostatic) stress.</span>
+<span class="sd">        </span>
+<span class="sd">        &#39;dev_stress&#39; : Deviatoric component of stress tensor.</span>
+<span class="sd"> </span>
+<span class="sd">    n_dim : int</span>
+<span class="sd">        Number of spatial dimensions.</span>
+<span class="sd">    stress_comps_order : tuple[str]</span>
+<span class="sd">        Strain components order.</span>
+<span class="sd">    device : torch.device, default=None</span>
+<span class="sd">        Device on which torch.Tensor is allocated.</span>
+<span class="sd">        </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    stress_feature : torch.Tensor(1d)</span>
+<span class="sd">        Stress-based feature.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Build stress tensor</span>
+    <span class="n">stress</span> <span class="o">=</span> <span class="n">build_stress_from_comps</span><span class="p">(</span><span class="n">n_dim</span><span class="p">,</span> <span class="n">stress_comps_order</span><span class="p">,</span>
+                                     <span class="n">stress_comps_array</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Compute stress-based feature</span>
+    <span class="k">if</span> <span class="n">stress_feature_label</span> <span class="o">==</span> <span class="s1">&#39;vol_stress&#39;</span><span class="p">:</span>
+        <span class="c1"># Check number of spatial dimensions</span>
+        <span class="k">if</span> <span class="n">n_dim</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Volumetric (or hydrostatic) stress can only &#39;</span>
+                               <span class="s1">&#39;be computed from three-dimensional stress &#39;</span>
+                               <span class="s1">&#39;tensor.&#39;</span><span class="p">)</span>
+        <span class="c1"># Compute volumetric (or hydrostatic) stress</span>
+        <span class="n">stress_feature</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">stress</span><span class="p">)</span>
+    <span class="k">elif</span> <span class="n">stress_feature_label</span> <span class="o">==</span> <span class="s1">&#39;dev_stress&#39;</span><span class="p">:</span>
+        <span class="c1"># Check number of spatial dimensions</span>
+        <span class="k">if</span> <span class="n">n_dim</span> <span class="o">!=</span> <span class="mi">3</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Deviatoric stress component can only be &#39;</span>
+                               <span class="s1">&#39;computed from three-dimensional stress &#39;</span>
+                               <span class="s1">&#39;tensor.&#39;</span><span class="p">)</span>
+        <span class="c1"># Compute volumetric (or hydrostatic) stress</span>
+        <span class="n">vol_stress</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">trace</span><span class="p">(</span><span class="n">stress</span><span class="p">)</span>
+        <span class="c1"># Compute deviatoric stress</span>
+        <span class="n">dev_stress</span> <span class="o">=</span> <span class="n">stress</span> <span class="o">-</span> <span class="n">vol_stress</span><span class="o">*</span><span class="n">torch</span><span class="o">.</span><span class="n">eye</span><span class="p">(</span><span class="n">n_dim</span><span class="p">)</span>
+        <span class="c1"># Store deviatoric stress components</span>
+        <span class="n">stress_feature</span> <span class="o">=</span> <span class="n">store_stress_comps</span><span class="p">(</span><span class="n">stress_comps_order</span><span class="p">,</span> <span class="n">dev_stress</span><span class="p">)</span>
+    <span class="k">else</span><span class="p">:</span>
+        <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Unknown stress-based feature.&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Enforce stress-based feature 1d tensor</span>
+    <span class="n">stress_feature</span> <span class="o">=</span> <span class="n">stress_feature</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="o">-</span><span class="mi">1</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">stress_feature</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="build_stress_from_comps"><a class="viewcode-back" href="../../../../_autosummary/hookeai.model_architectures.materials.stress_features.build_stress_from_comps.html#hookeai.model_architectures.materials.stress_features.build_stress_from_comps">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">build_stress_from_comps</span><span class="p">(</span><span class="n">n_dim</span><span class="p">,</span> <span class="n">stress_comps_order</span><span class="p">,</span> <span class="n">stress_comps_array</span><span class="p">,</span>
+                            <span class="n">device</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Build stress tensor from given components.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    n_dim : int</span>
+<span class="sd">        Number of spatial dimensions.</span>
+<span class="sd">    stress_comps_order : tuple[str]</span>
+<span class="sd">        Stress components order.</span>
+<span class="sd">    stress_comps_array : torch.Tensor(1d)</span>
+<span class="sd">        Stress components array.</span>
+<span class="sd">    device : torch.device, default=None</span>
+<span class="sd">        Device on which torch.Tensor is allocated.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    stress : torch.Tensor(2d)</span>
+<span class="sd">        Stress tensor.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get device from input tensor</span>
+    <span class="k">if</span> <span class="n">device</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">device</span> <span class="o">=</span> <span class="n">stress_comps_array</span><span class="o">.</span><span class="n">device</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Set row major components order       </span>
+    <span class="n">row_major_order</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;</span><span class="si">{</span><span class="n">i</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}{</span><span class="n">j</span><span class="w"> </span><span class="o">+</span><span class="w"> </span><span class="mi">1</span><span class="si">}</span><span class="s1">&#39;</span> <span class="k">for</span> <span class="n">i</span><span class="p">,</span> <span class="n">j</span>
+                            <span class="ow">in</span> <span class="n">itertools</span><span class="o">.</span><span class="n">product</span><span class="p">(</span><span class="nb">range</span><span class="p">(</span><span class="n">n_dim</span><span class="p">),</span> <span class="n">repeat</span><span class="o">=</span><span class="mi">2</span><span class="p">))</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Build indexing mapping</span>
+    <span class="n">index_map</span> <span class="o">=</span> <span class="p">[</span><span class="n">stress_comps_order</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">if</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">stress_comps_order</span>
+                 <span class="k">else</span> <span class="n">stress_comps_order</span><span class="o">.</span><span class="n">index</span><span class="p">(</span><span class="n">x</span><span class="p">[::</span><span class="o">-</span><span class="mi">1</span><span class="p">])</span>
+                 <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">row_major_order</span><span class="p">]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Build stress tensor</span>
+    <span class="n">stress</span> <span class="o">=</span> <span class="n">stress_comps_array</span><span class="p">[</span><span class="n">index_map</span><span class="p">]</span><span class="o">.</span><span class="n">view</span><span class="p">(</span><span class="n">n_dim</span><span class="p">,</span> <span class="n">n_dim</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">stress</span></div>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="store_stress_comps"><a class="viewcode-back" href="../../../../_autosummary/hookeai.model_architectures.materials.stress_features.store_stress_comps.html#hookeai.model_architectures.materials.stress_features.store_stress_comps">[docs]</a><span class="k">def</span><span class="w"> </span><span class="nf">store_stress_comps</span><span class="p">(</span><span class="n">stress_comps_order</span><span class="p">,</span> <span class="n">stress</span><span class="p">,</span> <span class="n">device</span><span class="o">=</span><span class="kc">None</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;Store stress tensor components in array.</span>
+<span class="sd">    </span>
+<span class="sd">    Parameters</span>
+<span class="sd">    ----------</span>
+<span class="sd">    stress_comps_order : tuple[str]</span>
+<span class="sd">        Strain components order.</span>
+<span class="sd">    stress : torch.Tensor(2d)</span>
+<span class="sd">        Stress tensor.</span>
+<span class="sd">    device : torch.device, default=None</span>
+<span class="sd">        Device on which torch.Tensor is allocated.</span>
+<span class="sd">    </span>
+<span class="sd">    Returns</span>
+<span class="sd">    -------</span>
+<span class="sd">    stress_comps_array : torch.Tensor(1d)</span>
+<span class="sd">        Stress components array.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+    <span class="c1"># Get device from input tensor</span>
+    <span class="k">if</span> <span class="n">device</span> <span class="ow">is</span> <span class="kc">None</span><span class="p">:</span>
+        <span class="n">device</span> <span class="o">=</span> <span class="n">stress</span><span class="o">.</span><span class="n">device</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Build indexing mapping</span>
+    <span class="n">index_map</span> <span class="o">=</span> <span class="nb">tuple</span><span class="p">(</span>
+        <span class="p">[</span><span class="nb">int</span><span class="p">(</span><span class="n">x</span><span class="p">[</span><span class="n">i</span><span class="p">])</span> <span class="o">-</span> <span class="mi">1</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="n">stress_comps_order</span><span class="p">]</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">2</span><span class="p">))</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Build tensor components array</span>
+    <span class="n">stress_comps_array</span> <span class="o">=</span> <span class="n">stress</span><span class="p">[</span><span class="n">index_map</span><span class="p">]</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="k">return</span> <span class="n">stress_comps_array</span></div>
+<span class="c1"># =============================================================================</span>
+<span class="k">if</span> <span class="vm">__name__</span> <span class="o">==</span> <span class="s1">&#39;__main__&#39;</span><span class="p">:</span>
+    <span class="c1"># Set data set file path</span>
+    <span class="n">dataset_file_path</span> <span class="o">=</span> <span class="p">(</span><span class="s1">&#39;/home/username/Desktop/test/&#39;</span>
+                         <span class="s1">&#39;1_training_dataset/ss_paths_dataset_n10.pkl&#39;</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Load data set</span>
+    <span class="n">dataset</span> <span class="o">=</span> <span class="n">load_dataset</span><span class="p">(</span><span class="n">dataset_file_path</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Loop over stress-based features</span>
+    <span class="k">for</span> <span class="n">stress_feature_label</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;vol_stress&#39;</span><span class="p">,</span> <span class="s1">&#39;dev_stress&#39;</span><span class="p">):</span>
+        <span class="c1"># Add stress-based feature to data set</span>
+        <span class="n">dataset</span> <span class="o">=</span> <span class="n">add_stress_features</span><span class="p">(</span><span class="n">dataset</span><span class="p">,</span> <span class="n">stress_feature_label</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Probe first data set sample</span>
+    <span class="n">sample</span> <span class="o">=</span> <span class="n">dataset</span><span class="p">[</span><span class="mi">0</span><span class="p">]</span>
+    <span class="c1"># Get stress path</span>
+    <span class="n">output</span> <span class="o">=</span> <span class="n">sample</span><span class="p">[</span><span class="s1">&#39;stress_path&#39;</span><span class="p">]</span>
+    <span class="n">output_labels</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;stress_path&#39;</span><span class="p">]</span>
+    <span class="c1"># Loop over stress-based features</span>
+    <span class="k">for</span> <span class="n">stress_feature_label</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;vol_stress&#39;</span><span class="p">,</span> <span class="s1">&#39;dev_stress&#39;</span><span class="p">):</span>
+        <span class="n">output</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">cat</span><span class="p">((</span><span class="n">output</span><span class="p">,</span> <span class="n">sample</span><span class="p">[</span><span class="n">stress_feature_label</span><span class="p">]),</span> <span class="n">dim</span><span class="o">=</span><span class="mi">1</span><span class="p">)</span>
+        <span class="n">output_labels</span><span class="o">.</span><span class="n">append</span><span class="p">(</span><span class="n">stress_feature_label</span><span class="p">)</span>
+    <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+    <span class="c1"># Output first ten time steps</span>
+    <span class="n">torch</span><span class="o">.</span><span class="n">set_printoptions</span><span class="p">(</span><span class="n">linewidth</span><span class="o">=</span><span class="mi">1000</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">output_labels</span><span class="p">)</span>
+    <span class="nb">print</span><span class="p">(</span><span class="n">output</span><span class="p">[</span><span class="mi">0</span><span class="p">:</span><span class="nb">min</span><span class="p">(</span><span class="mi">10</span><span class="p">,</span> <span class="n">output</span><span class="o">.</span><span class="n">shape</span><span class="p">[</span><span class="mi">0</span><span class="p">]),</span> <span class="p">:])</span>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

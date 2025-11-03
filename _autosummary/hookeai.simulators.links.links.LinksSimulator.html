@@ -1,0 +1,528 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>hookeai.simulators.links.links.LinksSimulator &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="hookeai.simulators.links.links.LinksVonMises" href="hookeai.simulators.links.links.LinksVonMises.html" />
+    <link rel="prev" title="hookeai.simulators.links.links.LinksLou" href="hookeai.simulators.links.links.LinksLou.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="hookeai.html">Code</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="hookeai.data_generation.html">hookeai.data_generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.ioput.html">hookeai.ioput</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.material_model_finder.html">hookeai.material_model_finder</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.miscellaneous.html">hookeai.miscellaneous</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.model_architectures.html">hookeai.model_architectures</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="hookeai.simulators.html">hookeai.simulators</a><ul class="current">
+<li class="toctree-l3"><a class="reference internal" href="hookeai.simulators.fetorch.html">hookeai.simulators.fetorch</a></li>
+<li class="toctree-l3 current"><a class="reference internal" href="hookeai.simulators.links.html">hookeai.simulators.links</a><ul class="current">
+<li class="toctree-l4"><a class="reference internal" href="hookeai.simulators.links.discretization.html">hookeai.simulators.links.discretization</a></li>
+<li class="toctree-l4 current"><a class="reference internal" href="hookeai.simulators.links.links.html">hookeai.simulators.links.links</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hookeai.simulators.links.models.html">hookeai.simulators.links.models</a></li>
+<li class="toctree-l4"><a class="reference internal" href="hookeai.simulators.links.utilities.html">hookeai.simulators.links.utilities</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.time_series_data.html">hookeai.time_series_data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.utilities.html">hookeai.utilities</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="hookeai.html">hookeai</a></li>
+          <li class="breadcrumb-item"><a href="hookeai.simulators.html">hookeai.simulators</a></li>
+          <li class="breadcrumb-item"><a href="hookeai.simulators.links.html">hookeai.simulators.links</a></li>
+          <li class="breadcrumb-item"><a href="hookeai.simulators.links.links.html">hookeai.simulators.links.links</a></li>
+      <li class="breadcrumb-item active">hookeai.simulators.links.links.LinksSimulator</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="hookeai-simulators-links-links-linkssimulator">
+<h1>hookeai.simulators.links.links.LinksSimulator<a class="headerlink" href="#hookeai-simulators-links-links-linkssimulator" title="Permalink to this heading">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="hookeai.simulators.links.links.LinksSimulator">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">LinksSimulator</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">links_bin_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strain_formulation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">analysis_type</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/simulators/links/links.html#LinksSimulator"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.simulators.links.links.LinksSimulator" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>Finite element method simulator: Links.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.simulators.links.links.LinksSimulator._links_bin_path">
+<span class="sig-name descname"><span class="pre">_links_bin_path</span></span><a class="headerlink" href="#hookeai.simulators.links.links.LinksSimulator._links_bin_path" title="Permalink to this definition">¶</a></dt>
+<dd><p>Links binary absolute path.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.simulators.links.links.LinksSimulator._strain_formulation">
+<span class="sig-name descname"><span class="pre">_strain_formulation</span></span><a class="headerlink" href="#hookeai.simulators.links.links.LinksSimulator._strain_formulation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Links strain formulation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>{‘infinitesimal’, ‘finite’}</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.simulators.links.links.LinksSimulator._analysis_type">
+<span class="sig-name descname"><span class="pre">_analysis_type</span></span><a class="headerlink" href="#hookeai.simulators.links.links.LinksSimulator._analysis_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Links analysis type.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>{‘plane_stress’, ‘plane_strain’, ‘axisymmetric’,                         ‘tridimensional’}</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.simulators.links.links.LinksSimulator._get_n_dim">
+<span class="sig-name descname"><span class="pre">_get_n_dim</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/simulators/links/links.html#LinksSimulator._get_n_dim"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.simulators.links.links.LinksSimulator._get_n_dim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get number of spatial dimensions from analysis type.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.simulators.links.links.LinksSimulator.generate_input_data_file">
+<span class="sig-name descname"><span class="pre">generate_input_data_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">directory</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">patch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">patch_material_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">links_input_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/simulators/links/links.html#LinksSimulator.generate_input_data_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.simulators.links.links.LinksSimulator.generate_input_data_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate Links input data file.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.simulators.links.links.LinksSimulator.run_links_simulation">
+<span class="sig-name descname"><span class="pre">run_links_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">links_file_path</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/simulators/links/links.html#LinksSimulator.run_links_simulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.simulators.links.links.LinksSimulator.run_links_simulation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run Links simulation.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.simulators.links.links.LinksSimulator.read_links_simulation_results">
+<span class="sig-name descname"><span class="pre">read_links_simulation_results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">links_output_directory</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">results_keywords</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/simulators/links/links.html#LinksSimulator.read_links_simulation_results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.simulators.links.links.LinksSimulator.read_links_simulation_results" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read Links simulation results.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.simulators.links.links.LinksSimulator._write_links_input_data_file">
+<span class="sig-name descname"><span class="pre">_write_links_input_data_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">links_file_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elements</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elements_mat_phase</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">element_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_gauss_points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh_elem_material</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mat_phases_descriptors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_displacements</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/simulators/links/links.html#LinksSimulator._write_links_input_data_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.simulators.links.links.LinksSimulator._write_links_input_data_file" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write Links input data file.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.simulators.links.links.LinksSimulator._get_links_default_input_params">
+<span class="sig-name descname"><span class="pre">_get_links_default_input_params</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/simulators/links/links.html#LinksSimulator._get_links_default_input_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.simulators.links.links.LinksSimulator._get_links_default_input_params" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get Links default input data file parameters.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.simulators.links.links.LinksSimulator._get_links_mesh_data">
+<span class="sig-name descname"><span class="pre">_get_links_mesh_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">patch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh_elem_material</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/simulators/links/links.html#LinksSimulator._get_links_mesh_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.simulators.links.links.LinksSimulator._get_links_mesh_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get Links finite element mesh data.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.simulators.links.links.LinksSimulator._get_links_elem_type_data">
+<span class="sig-name descname"><span class="pre">_get_links_elem_type_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">patch</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/simulators/links/links.html#LinksSimulator._get_links_elem_type_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.simulators.links.links.LinksSimulator._get_links_elem_type_data" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get Links finite element type data.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.simulators.links.links.LinksSimulator._get_links_loading_incrementation">
+<span class="sig-name descname"><span class="pre">_get_links_loading_incrementation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/simulators/links/links.html#LinksSimulator._get_links_loading_incrementation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.simulators.links.links.LinksSimulator._get_links_loading_incrementation" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get Links loading incrementation.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.simulators.links.links.LinksSimulator.remove_mesh_elements">
+<span class="sig-name descname"><span class="pre">remove_mesh_elements</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_elements_labels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elements</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elements_mat_phase</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_disps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary_nodes_labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/simulators/links/links.html#LinksSimulator.remove_mesh_elements"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.simulators.links.links.LinksSimulator.remove_mesh_elements" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove elements from finite element mesh.</p>
+</dd></dl>
+
+<p>Constructor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>links_bin_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Links binary absolute path.</p></li>
+<li><p><strong>strain_formulation</strong> (<em>{'infinitesimal'</em><em>, </em><em>'finite'}</em>) – Links strain formulation.</p></li>
+<li><p><strong>analysis_type</strong> (<em>{'plane_stress'</em><em>, </em><em>'plane_strain'</em><em>, </em><em>'axisymmetric'</em><em>,                          </em><em>'tridimensional'}</em>) – Links analysis type.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">List of Public Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id6" title="hookeai.simulators.links.links.LinksSimulator.generate_input_data_file"><code class="xref py py-obj docutils literal notranslate"><span class="pre">generate_input_data_file</span></code></a></p></td>
+<td><p>Generate Links input data file.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#id7" title="hookeai.simulators.links.links.LinksSimulator.read_links_simulation_results"><code class="xref py py-obj docutils literal notranslate"><span class="pre">read_links_simulation_results</span></code></a></p></td>
+<td><p>Read Links simulation results.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id8" title="hookeai.simulators.links.links.LinksSimulator.remove_mesh_elements"><code class="xref py py-obj docutils literal notranslate"><span class="pre">remove_mesh_elements</span></code></a></p></td>
+<td><p>Remove elements from finite element mesh.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#id9" title="hookeai.simulators.links.links.LinksSimulator.run_links_simulation"><code class="xref py py-obj docutils literal notranslate"><span class="pre">run_links_simulation</span></code></a></p></td>
+<td><p>Run Links simulation.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.simulators.links.links.LinksSimulator.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">links_bin_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">strain_formulation</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">analysis_type</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/simulators/links/links.html#LinksSimulator.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.simulators.links.links.LinksSimulator.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>links_bin_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Links binary absolute path.</p></li>
+<li><p><strong>strain_formulation</strong> (<em>{'infinitesimal'</em><em>, </em><em>'finite'}</em>) – Links strain formulation.</p></li>
+<li><p><strong>analysis_type</strong> (<em>{'plane_stress'</em><em>, </em><em>'plane_strain'</em><em>, </em><em>'axisymmetric'</em><em>,                          </em><em>'tridimensional'}</em>) – Links analysis type.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">_get_links_default_input_params</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/simulators/links/links.html#LinksSimulator._get_links_default_input_params"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id0" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get Links default input data file parameters.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>default_parameters</strong> – Links input data file default parameters.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id1">
+<span class="sig-name descname"><span class="pre">_get_links_elem_type_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">patch</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/simulators/links/links.html#LinksSimulator._get_links_elem_type_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id1" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get Links finite element type data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>patch</strong> (<a class="reference internal" href="hookeai.data_generation.spdg.patch.FiniteElementPatch.html#hookeai.data_generation.spdg.patch.FiniteElementPatch" title="hookeai.data_generation.spdg.patch.FiniteElementPatch"><em>FiniteElementPatch</em></a>) – Finite element patch.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>element_type</strong> (<em>str</em>) – Finite element type.</p></li>
+<li><p><strong>n_gauss_points</strong> (<em>int</em>) – Number of Gauss integration points per element.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id2">
+<span class="sig-name descname"><span class="pre">_get_links_loading_incrementation</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/simulators/links/links.html#LinksSimulator._get_links_loading_incrementation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get Links loading incrementation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>increm_input_lines</strong> – Loading incrementation formatted to Links input data file.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#list" title="(in Python v3.14)">list</a>[<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a>]</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id3">
+<span class="sig-name descname"><span class="pre">_get_links_mesh_data</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">patch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh_elem_material</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/simulators/links/links.html#LinksSimulator._get_links_mesh_data"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id3" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get Links finite element mesh data.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>patch</strong> (<a class="reference internal" href="hookeai.data_generation.spdg.patch.FiniteElementPatch.html#hookeai.data_generation.spdg.patch.FiniteElementPatch" title="hookeai.data_generation.spdg.patch.FiniteElementPatch"><em>FiniteElementPatch</em></a>) – Finite element patch.</p></li>
+<li><p><strong>mesh_elem_material</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>numpy.ndarray</em></a><em>(</em><em>2d</em><em> or </em><em>3d</em><em>)</em>) – Finite element mesh elements material matrix
+(numpy.ndarray[int](n_elems_per_dim) where each element
+corresponds to a given finite element position and whose value is
+the corresponding material phase (int).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>node_coords</strong> (<em>dict</em>) – Coordinates (item, numpy.ndarray(n_dim)) of each finite element
+mesh node (key, str[int]).</p></li>
+<li><p><strong>elements</strong> (<em>dict</em>) – Nodes (item, tuple[int]) of each finite element (key, str[int]).</p></li>
+<li><p><strong>elements_mat_phase</strong> (<em>dict</em>) – Material phase (item, int) of each finite element (key, str).</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id4">
+<span class="sig-name descname"><span class="pre">_get_n_dim</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/simulators/links/links.html#LinksSimulator._get_n_dim"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id4" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get number of spatial dimensions from analysis type.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>n_dim</strong> – Number of spatial dimensions.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id5">
+<span class="sig-name descname"><span class="pre">_write_links_input_data_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">links_file_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">input_params</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elements</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elements_mat_phase</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">element_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_gauss_points</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh_elem_material</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mat_phases_descriptors</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_displacements</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_save_increm_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/simulators/links/links.html#LinksSimulator._write_links_input_data_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id5" title="Permalink to this definition">¶</a></dt>
+<dd><p>Write Links input data file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>links_file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Links input data file path.</p></li>
+<li><p><strong>input_params</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Links input data file parameters.</p></li>
+<li><p><strong>node_coords</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Coordinates (item, numpy.ndarray(n_dim)) of each finite element
+mesh node (key, str[int]).</p></li>
+<li><p><strong>elements</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Nodes (item, tuple[int]) of each finite element (key, str[int]).</p></li>
+<li><p><strong>elements_mat_phase</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Material phase (item, int) of each finite element (key, str).</p></li>
+<li><p><strong>element_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Finite element type.</p></li>
+<li><p><strong>n_gauss_points</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of Gauss integration points per element.</p></li>
+<li><p><strong>mesh_elem_material</strong> (<a class="reference external" href="https://numpy.org/doc/stable/reference/generated/numpy.ndarray.html#numpy.ndarray" title="(in NumPy v2.3)"><em>numpy.ndarray</em></a><em>(</em><em>2d</em><em> or </em><em>3d</em><em>)</em>) – Finite element mesh elements material matrix
+(numpy.ndarray[int](n_elems_per_dim) where each element
+corresponds to a given finite element position and whose value is
+the corresponding material phase (int).</p></li>
+<li><p><strong>mat_phases_descriptors</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Constitutive model descriptors (item, dict) for each material phase
+(key, str[int])).</p></li>
+<li><p><strong>node_displacements</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Displacements (item, numpy.ndarray(n_dim)) prescribed on each
+finite element mesh node (key, str[int]). Free degrees of
+freedom must be set as None.</p></li>
+<li><p><strong>is_save_increm_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – If True, then save data file with Links input data file loading
+incrementation data.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id6">
+<span class="sig-name descname"><span class="pre">generate_input_data_file</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">filename</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">directory</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">patch</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">patch_material_data</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">remove_elements_labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">links_input_params</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_overwrite_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_save_increm_file</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/simulators/links/links.html#LinksSimulator.generate_input_data_file"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id6" title="Permalink to this definition">¶</a></dt>
+<dd><p>Generate Links input data file.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>filename</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Links input data file name.</p></li>
+<li><p><strong>directory</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Directory where Links input data file is stored.</p></li>
+<li><p><strong>patch</strong> (<a class="reference internal" href="hookeai.data_generation.spdg.patch.FiniteElementPatch.html#hookeai.data_generation.spdg.patch.FiniteElementPatch" title="hookeai.data_generation.spdg.patch.FiniteElementPatch"><em>FiniteElementPatch</em></a>) – Finite element patch. If <cite>is_admissible</cite> is False, then returns
+None.</p></li>
+<li><p><strong>patch_material_data</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Finite element patch material data. Expecting
+‘mesh_elem_material’: numpy.ndarray [int](n_elems_per_dim) (finite
+element mesh elements material matrix where each element
+corresponds to a given finite element position and whose value is
+the corresponding material phase (int)) and
+‘mat_phases_descriptors’: dict (constitutive model descriptors
+(item, dict) for each material phase (key, str[int])).</p></li>
+<li><p><strong>remove_elements_labels</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>]</em><em>, </em><em>default=None</em>) – Finite elements to be removed from finite element mesh.</p></li>
+<li><p><strong>links_input_params</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em>, </em><em>default=None</em>) – Links input data file parameters. If None, default parameters are
+set.</p></li>
+<li><p><strong>is_overwrite_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – Overwrite existing Links input data file if True, otherwise
+generate non-existent file path by extending the original file path
+with an integer.</p></li>
+<li><p><strong>is_save_increm_file</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – If True, then save data file with Links input data file loading
+incrementation data.</p></li>
+<li><p><strong>is_verbose</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – If True, enable verbose output.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>links_file_path</strong> – Links input data file path.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)">str</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id7">
+<span class="sig-name descname"><span class="pre">read_links_simulation_results</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">links_output_directory</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">results_keywords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/simulators/links/links.html#LinksSimulator.read_links_simulation_results"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id7" title="Permalink to this definition">¶</a></dt>
+<dd><p>Read Links simulation results.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>links_output_directory</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Links simulation output directory.</p></li>
+<li><p><strong>results_keywords</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a><em>]</em>) – <p>A list of results to be output among:</p>
+<p>’node_data’ : numpy.ndarray(3d) of shape                         (n_nodes, n_data_dim, n_time_steps), where the i-th                         node output data at the k-th time step is stored in                         indexes [i, :, k].</p>
+<p>’global_data’ : numpy.ndarray(3d) of shape                             (1, n_data_dim, n_time_steps) where the global                             output data at the k-th time step is stored in                             [0, :, k].</p>
+</p></li>
+<li><p><strong>is_verbose</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=False</em>) – If True, enable verbose output.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>results</strong> – Links simulation results for each requested results keyword
+(key, str).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id8">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">remove_mesh_elements</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">remove_elements_labels</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_coords</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elements</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elements_mat_phase</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">node_disps</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">boundary_nodes_labels</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/simulators/links/links.html#LinksSimulator.remove_mesh_elements"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id8" title="Permalink to this definition">¶</a></dt>
+<dd><p>Remove elements from finite element mesh.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>remove_elements_labels</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>]</em>) – Finite elements to be removed from finite element mesh.</p></li>
+<li><p><strong>node_coords</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Coordinates (item, numpy.ndarray(n_dim)) of each finite element
+mesh node (key, str[int]).</p></li>
+<li><p><strong>elements</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Nodes (item, tuple[int]) of each finite element (key, str[int]).</p></li>
+<li><p><strong>elements_mat_phase</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Material phase (item, int) of each finite element (key, str).</p></li>
+<li><p><strong>node_disps</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a><em>, </em><em>default=None</em>) – Displacements (item, numpy.ndarray(n_dim)) of each finite element
+mesh node (key, str[int]).</p></li>
+<li><p><strong>boundary_nodes_labels</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#tuple" title="(in Python v3.14)"><em>tuple</em></a><em>[</em><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a><em>]</em><em>, </em><em>default=None</em>) – Finite element mesh boundary nodes labels. If provided, then
+removal of elements that would lead to the removal of a boundary
+node raises error.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>node_coords</strong> (<em>dict</em>) – Coordinates (item, numpy.ndarray(n_dim)) of each finite element
+mesh node (key, str[int]).</p></li>
+<li><p><strong>elements</strong> (<em>dict</em>) – Nodes (item, tuple[int]) of each finite element (key, str[int]).</p></li>
+<li><p><strong>elements_mat_phase</strong> (<em>dict</em>) – Material phase (item, int) of each finite element (key, str).</p></li>
+<li><p><strong>node_disps</strong> (<em>dict</em>) – Displacements (item, numpy.ndarray(n_dim)) of each finite element
+mesh node (key, str[int]). None if displacements are not provided.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id9">
+<span class="sig-name descname"><span class="pre">run_links_simulation</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">links_file_path</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_verbose</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">False</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/hookeai/simulators/links/links.html#LinksSimulator.run_links_simulation"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id9" title="Permalink to this definition">¶</a></dt>
+<dd><p>Run Links simulation.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>links_file_path</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#str" title="(in Python v3.14)"><em>str</em></a>) – Links input data file path.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>is_success</strong> (<em>bool</em>) – True if Links simulation is successfully solved.</p></li>
+<li><p><strong>links_output_directory</strong> (<em>str</em>) – Links simulation output directory.</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="hookeai.simulators.links.links.LinksLou.html" class="btn btn-neutral float-left" title="hookeai.simulators.links.links.LinksLou" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="hookeai.simulators.links.links.LinksVonMises.html" class="btn btn-neutral float-right" title="hookeai.simulators.links.links.LinksVonMises" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

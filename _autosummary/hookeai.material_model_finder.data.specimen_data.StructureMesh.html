@@ -1,0 +1,871 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.18.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>hookeai.material_model_finder.data.specimen_data.StructureMesh &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../" id="documentation_options" src="../_static/documentation_options.js"></script>
+        <script src="../_static/doctools.js"></script>
+        <script src="../_static/sphinx_highlight.js"></script>
+    <script src="../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../genindex.html" />
+    <link rel="search" title="Search" href="../search.html" />
+    <link rel="next" title="hookeai.material_model_finder.model" href="hookeai.material_model_finder.model.html" />
+    <link rel="prev" title="hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData" href="hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="reference internal" href="hookeai.html">Code</a><ul class="current">
+<li class="toctree-l2"><a class="reference internal" href="hookeai.data_generation.html">hookeai.data_generation</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.ioput.html">hookeai.ioput</a></li>
+<li class="toctree-l2 current"><a class="reference internal" href="hookeai.material_model_finder.html">hookeai.material_model_finder</a><ul class="current">
+<li class="toctree-l3 current"><a class="reference internal" href="hookeai.material_model_finder.data.html">hookeai.material_model_finder.data</a><ul class="current">
+<li class="toctree-l4 current"><a class="reference internal" href="hookeai.material_model_finder.data.specimen_data.html">hookeai.material_model_finder.data.specimen_data</a></li>
+</ul>
+</li>
+<li class="toctree-l3"><a class="reference internal" href="hookeai.material_model_finder.model.html">hookeai.material_model_finder.model</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hookeai.material_model_finder.train.html">hookeai.material_model_finder.train</a></li>
+<li class="toctree-l3"><a class="reference internal" href="hookeai.material_model_finder.utilities.html">hookeai.material_model_finder.utilities</a></li>
+</ul>
+</li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.miscellaneous.html">hookeai.miscellaneous</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.model_architectures.html">hookeai.model_architectures</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.simulators.html">hookeai.simulators</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.time_series_data.html">hookeai.time_series_data</a></li>
+<li class="toctree-l2"><a class="reference internal" href="hookeai.utilities.html">hookeai.utilities</a></li>
+</ul>
+</li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="hookeai.html">hookeai</a></li>
+          <li class="breadcrumb-item"><a href="hookeai.material_model_finder.html">hookeai.material_model_finder</a></li>
+          <li class="breadcrumb-item"><a href="hookeai.material_model_finder.data.html">hookeai.material_model_finder.data</a></li>
+          <li class="breadcrumb-item"><a href="hookeai.material_model_finder.data.specimen_data.html">hookeai.material_model_finder.data.specimen_data</a></li>
+      <li class="breadcrumb-item active">hookeai.material_model_finder.data.specimen_data.StructureMesh</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="hookeai-material-model-finder-data-specimen-data-structuremesh">
+<h1>hookeai.material_model_finder.data.specimen_data.StructureMesh<a class="headerlink" href="#hookeai-material-model-finder-data-specimen-data-structuremesh" title="Permalink to this heading">¶</a></h1>
+<dl class="py class">
+<dt class="sig sig-object py" id="hookeai.material_model_finder.data.specimen_data.StructureMesh">
+<em class="property"><span class="pre">class</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">StructureMesh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nodes_coords_mesh_init</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elements_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">connectivities</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dirichlet_bool_mesh</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/structure/structure_mesh.html#StructureMesh"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.material_model_finder.data.specimen_data.StructureMesh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Bases: <a class="reference external" href="https://docs.python.org/3/library/functions.html#object" title="(in Python v3.14)"><code class="xref py py-class docutils literal notranslate"><span class="pre">object</span></code></a></p>
+<p>FETorch structure finite element mesh.</p>
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.material_model_finder.data.specimen_data.StructureMesh._n_dim">
+<span class="sig-name descname"><span class="pre">_n_dim</span></span><a class="headerlink" href="#hookeai.material_model_finder.data.specimen_data.StructureMesh._n_dim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of spatial dimensions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.material_model_finder.data.specimen_data.StructureMesh._n_node_mesh">
+<span class="sig-name descname"><span class="pre">_n_node_mesh</span></span><a class="headerlink" href="#hookeai.material_model_finder.data.specimen_data.StructureMesh._n_node_mesh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of nodes of finite element mesh.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.material_model_finder.data.specimen_data.StructureMesh._n_elem">
+<span class="sig-name descname"><span class="pre">_n_elem</span></span><a class="headerlink" href="#hookeai.material_model_finder.data.specimen_data.StructureMesh._n_elem" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of elements of finite element mesh.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.material_model_finder.data.specimen_data.StructureMesh._elements_type">
+<span class="sig-name descname"><span class="pre">_elements_type</span></span><a class="headerlink" href="#hookeai.material_model_finder.data.specimen_data.StructureMesh._elements_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>FETorch element type (item, ElementType) of each finite element mesh
+element (str[int]). Elements are labeled from 1 to n_elem.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.material_model_finder.data.specimen_data.StructureMesh._connectivities">
+<span class="sig-name descname"><span class="pre">_connectivities</span></span><a class="headerlink" href="#hookeai.material_model_finder.data.specimen_data.StructureMesh._connectivities" title="Permalink to this definition">¶</a></dt>
+<dd><p>Nodes (item, tuple[int]) of each finite element mesh element
+(key, str[int]). Nodes are labeled from 1 to n_node_mesh. Elements are
+labeled from 1 to n_elem.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.material_model_finder.data.specimen_data.StructureMesh._nodes_coords_mesh_init">
+<span class="sig-name descname"><span class="pre">_nodes_coords_mesh_init</span></span><a class="headerlink" href="#hookeai.material_model_finder.data.specimen_data.StructureMesh._nodes_coords_mesh_init" title="Permalink to this definition">¶</a></dt>
+<dd><p>Initial coordinates of finite element mesh nodes stored as
+torch.Tensor(2d) of shape (n_node_mesh, n_dim).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor(2d)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.material_model_finder.data.specimen_data.StructureMesh._nodes_coords_mesh">
+<span class="sig-name descname"><span class="pre">_nodes_coords_mesh</span></span><a class="headerlink" href="#hookeai.material_model_finder.data.specimen_data.StructureMesh._nodes_coords_mesh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Coordinates of finite element mesh nodes stored as torch.Tensor(2d) of
+shape (n_node_mesh, n_dim).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor(2d)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.material_model_finder.data.specimen_data.StructureMesh._nodes_coords_mesh_old">
+<span class="sig-name descname"><span class="pre">_nodes_coords_mesh_old</span></span><a class="headerlink" href="#hookeai.material_model_finder.data.specimen_data.StructureMesh._nodes_coords_mesh_old" title="Permalink to this definition">¶</a></dt>
+<dd><p>Last converged coordinates of finite element mesh nodes stored as
+torch.Tensor(2d) of shape (n_node_mesh, n_dim).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor(2d)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.material_model_finder.data.specimen_data.StructureMesh._nodes_disps_mesh">
+<span class="sig-name descname"><span class="pre">_nodes_disps_mesh</span></span><a class="headerlink" href="#hookeai.material_model_finder.data.specimen_data.StructureMesh._nodes_disps_mesh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Displacements of finite element mesh nodes stored as torch.Tensor(2d)
+of shape (n_node_mesh, n_dim).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor(2d)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.material_model_finder.data.specimen_data.StructureMesh._nodes_disps_mesh_old">
+<span class="sig-name descname"><span class="pre">_nodes_disps_mesh_old</span></span><a class="headerlink" href="#hookeai.material_model_finder.data.specimen_data.StructureMesh._nodes_disps_mesh_old" title="Permalink to this definition">¶</a></dt>
+<dd><p>Last converged displacements of finite element mesh nodes stored as
+torch.Tensor(2d) of shape (n_node_mesh, n_dim).</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor(2d)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py attribute">
+<dt class="sig sig-object py" id="hookeai.material_model_finder.data.specimen_data.StructureMesh._dirichlet_bool_mesh">
+<span class="sig-name descname"><span class="pre">_dirichlet_bool_mesh</span></span><a class="headerlink" href="#hookeai.material_model_finder.data.specimen_data.StructureMesh._dirichlet_bool_mesh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Degrees of freedom of finite element mesh subject to Dirichlet boundary
+conditions. Stored as torch.Tensor(2d) of shape (n_node_mesh, n_dim)
+where constrained degrees of freedom are labeled 1, otherwise 0.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor(2d)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.material_model_finder.data.specimen_data.StructureMesh.get_n_dim">
+<span class="sig-name descname"><span class="pre">get_n_dim</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/structure/structure_mesh.html#StructureMesh.get_n_dim"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.material_model_finder.data.specimen_data.StructureMesh.get_n_dim" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get number of spatial dimensions.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.material_model_finder.data.specimen_data.StructureMesh.get_n_node_mesh">
+<span class="sig-name descname"><span class="pre">get_n_node_mesh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/structure/structure_mesh.html#StructureMesh.get_n_node_mesh"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.material_model_finder.data.specimen_data.StructureMesh.get_n_node_mesh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get number of nodes of finite element mesh.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.material_model_finder.data.specimen_data.StructureMesh.get_n_elem">
+<span class="sig-name descname"><span class="pre">get_n_elem</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/structure/structure_mesh.html#StructureMesh.get_n_elem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.material_model_finder.data.specimen_data.StructureMesh.get_n_elem" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of elements of finite element mesh.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.material_model_finder.data.specimen_data.StructureMesh.get_elements_type">
+<span class="sig-name descname"><span class="pre">get_elements_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/structure/structure_mesh.html#StructureMesh.get_elements_type"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.material_model_finder.data.specimen_data.StructureMesh.get_elements_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get type of elements of finite element mesh.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.material_model_finder.data.specimen_data.StructureMesh.get_n_element_type">
+<span class="sig-name descname"><span class="pre">get_n_element_type</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/structure/structure_mesh.html#StructureMesh.get_n_element_type"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.material_model_finder.data.specimen_data.StructureMesh.get_n_element_type" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the number of elements types of finite element mesh.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.material_model_finder.data.specimen_data.StructureMesh.get_connectivities">
+<span class="sig-name descname"><span class="pre">get_connectivities</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/structure/structure_mesh.html#StructureMesh.get_connectivities"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.material_model_finder.data.specimen_data.StructureMesh.get_connectivities" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get finite element mesh elements connectivities.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.material_model_finder.data.specimen_data.StructureMesh.get_connectivities_tensor">
+<span class="sig-name descname"><span class="pre">get_connectivities_tensor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/structure/structure_mesh.html#StructureMesh.get_connectivities_tensor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.material_model_finder.data.specimen_data.StructureMesh.get_connectivities_tensor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get finite element mesh elements connectivities stored (tensor).</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.material_model_finder.data.specimen_data.StructureMesh.get_dirichlet_bool_mesh">
+<span class="sig-name descname"><span class="pre">get_dirichlet_bool_mesh</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/structure/structure_mesh.html#StructureMesh.get_dirichlet_bool_mesh"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.material_model_finder.data.specimen_data.StructureMesh.get_dirichlet_bool_mesh" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get degrees of freedom subject to Dirichlet boundary conditions.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.material_model_finder.data.specimen_data.StructureMesh.get_n_dirichlet_dof">
+<span class="sig-name descname"><span class="pre">get_n_dirichlet_dof</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/structure/structure_mesh.html#StructureMesh.get_n_dirichlet_dof"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.material_model_finder.data.specimen_data.StructureMesh.get_n_dirichlet_dof" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get number of degrees of freedom subject to Dirichlet conditions.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.material_model_finder.data.specimen_data.StructureMesh.get_element_configuration">
+<span class="sig-name descname"><span class="pre">get_element_configuration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">element_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'current'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/structure/structure_mesh.html#StructureMesh.get_element_configuration"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.material_model_finder.data.specimen_data.StructureMesh.get_element_configuration" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get element nodes coordinates and displacements.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.material_model_finder.data.specimen_data.StructureMesh.get_mesh_configuration">
+<span class="sig-name descname"><span class="pre">get_mesh_configuration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'current'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/structure/structure_mesh.html#StructureMesh.get_mesh_configuration"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.material_model_finder.data.specimen_data.StructureMesh.get_mesh_configuration" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get finite element mesh configuration.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.material_model_finder.data.specimen_data.StructureMesh.update_mesh_configuration">
+<span class="sig-name descname"><span class="pre">update_mesh_configuration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodes_disps_mesh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">nodes_disps_mesh_old</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">None</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_update_coords</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/structure/structure_mesh.html#StructureMesh.update_mesh_configuration"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.material_model_finder.data.specimen_data.StructureMesh.update_mesh_configuration" title="Permalink to this definition">¶</a></dt>
+<dd></dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.material_model_finder.data.specimen_data.StructureMesh.element_assembler">
+<span class="sig-name descname"><span class="pre">element_assembler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elements_array</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/structure/structure_mesh.html#StructureMesh.element_assembler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.material_model_finder.data.specimen_data.StructureMesh.element_assembler" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assemble element level arrays into mesh level counterparts.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.material_model_finder.data.specimen_data.StructureMesh._element_assembler_1d">
+<span class="sig-name descname"><span class="pre">_element_assembler_1d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elements_array_1d</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/structure/structure_mesh.html#StructureMesh._element_assembler_1d"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.material_model_finder.data.specimen_data.StructureMesh._element_assembler_1d" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assemble element level 1D array into mesh level counterpart.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.material_model_finder.data.specimen_data.StructureMesh.element_extractor">
+<span class="sig-name descname"><span class="pre">element_extractor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh_array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">element_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/structure/structure_mesh.html#StructureMesh.element_extractor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.material_model_finder.data.specimen_data.StructureMesh.element_extractor" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extract element level array from mesh level counterpart.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.material_model_finder.data.specimen_data.StructureMesh._element_extractor_1d">
+<span class="sig-name descname"><span class="pre">_element_extractor_1d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">mesh_array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">element_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/structure/structure_mesh.html#StructureMesh._element_extractor_1d"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.material_model_finder.data.specimen_data.StructureMesh._element_extractor_1d" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extract element level 1D array from mesh level counterpart.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.material_model_finder.data.specimen_data.StructureMesh.build_elements_mesh_indexing">
+<span class="sig-name descname"><span class="pre">build_elements_mesh_indexing</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">self</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_dof_node</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/structure/structure_mesh.html#StructureMesh.build_elements_mesh_indexing"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.material_model_finder.data.specimen_data.StructureMesh.build_elements_mesh_indexing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build elements nodes degrees of freedom mesh indexes.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.material_model_finder.data.specimen_data.StructureMesh.build_element_mesh_indexing">
+<span class="sig-name descname"><span class="pre">build_element_mesh_indexing</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">cls</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">element_nodes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_dof_node</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/structure/structure_mesh.html#StructureMesh.build_element_mesh_indexing"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.material_model_finder.data.specimen_data.StructureMesh.build_element_mesh_indexing" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get element nodes degrees of freedom mesh indexes.</p>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py">
+<span class="sig-name descname"><span class="pre">_check_mesh_initialization(self,</span> <span class="pre">nodes_coords_mesh_init,</span> <span class="pre">elements_type,</span></span></dt>
+<dd><blockquote>
+<div><p>connectivities)</p>
+</div></blockquote>
+<p>Check finite element mesh initialization.</p>
+</dd></dl>
+
+<p>Constructor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nodes_coords_mesh_init</strong> (<em>torch.Tensor</em><em>(</em><em>2d</em><em>)</em>) – Initial coordinates of finite element mesh nodes stored as
+torch.Tensor(2d) of shape (n_node_mesh, n_dim).</p></li>
+<li><p><strong>elements_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – FETorch element type (item, ElementType) of each finite element
+mesh element (str[int]). Elements labels must be within the range
+of 1 to n_elem (included).</p></li>
+<li><p><strong>connectivities</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Nodes (item, tuple[int]) of each finite element mesh element
+(key, str[int]). Nodes are labeled from 1 to n_node_mesh. Elements
+are labeled from 1 to n_elem.</p></li>
+<li><p><strong>dirichlet_bool_mesh</strong> (<em>torch.Tensor</em><em>(</em><em>2d</em><em>)</em>) – Degrees of freedom of finite element mesh subject to Dirichlet
+boundary conditions. Stored as torch.Tensor(2d) of shape
+(n_node_mesh, n_dim) where constrained degrees of freedom are
+labeled 1, otherwise 0.</p></li>
+</ul>
+</dd>
+</dl>
+<p class="rubric">List of Public Methods</p>
+<table class="autosummary longtable docutils align-default">
+<tbody>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id2" title="hookeai.material_model_finder.data.specimen_data.StructureMesh.build_element_mesh_indexing"><code class="xref py py-obj docutils literal notranslate"><span class="pre">build_element_mesh_indexing</span></code></a></p></td>
+<td><p>Get element nodes degrees of freedom mesh indexes.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#id3" title="hookeai.material_model_finder.data.specimen_data.StructureMesh.build_elements_mesh_indexing"><code class="xref py py-obj docutils literal notranslate"><span class="pre">build_elements_mesh_indexing</span></code></a></p></td>
+<td><p>Build elements nodes degrees of freedom mesh indexes.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id4" title="hookeai.material_model_finder.data.specimen_data.StructureMesh.element_assembler"><code class="xref py py-obj docutils literal notranslate"><span class="pre">element_assembler</span></code></a></p></td>
+<td><p>Assemble element level arrays into mesh level counterparts.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#id5" title="hookeai.material_model_finder.data.specimen_data.StructureMesh.element_extractor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">element_extractor</span></code></a></p></td>
+<td><p>Extract element level array from mesh level counterpart.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id6" title="hookeai.material_model_finder.data.specimen_data.StructureMesh.get_connectivities"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_connectivities</span></code></a></p></td>
+<td><p>Get finite element mesh elements connectivities.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#id7" title="hookeai.material_model_finder.data.specimen_data.StructureMesh.get_connectivities_tensor"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_connectivities_tensor</span></code></a></p></td>
+<td><p>Get finite element mesh elements connectivities (tensor).</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id8" title="hookeai.material_model_finder.data.specimen_data.StructureMesh.get_dirichlet_bool_mesh"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_dirichlet_bool_mesh</span></code></a></p></td>
+<td><p>Get degrees of freedom subject to Dirichlet boundary conditions.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#id9" title="hookeai.material_model_finder.data.specimen_data.StructureMesh.get_element_configuration"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_element_configuration</span></code></a></p></td>
+<td><p>Get element nodes coordinates and displacements.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id10" title="hookeai.material_model_finder.data.specimen_data.StructureMesh.get_elements_type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_elements_type</span></code></a></p></td>
+<td><p>Get type of elements of finite element mesh.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#id11" title="hookeai.material_model_finder.data.specimen_data.StructureMesh.get_mesh_configuration"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_mesh_configuration</span></code></a></p></td>
+<td><p>Get finite element mesh configuration.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id12" title="hookeai.material_model_finder.data.specimen_data.StructureMesh.get_n_dim"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_n_dim</span></code></a></p></td>
+<td><p>Get number of spatial dimensions.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#id13" title="hookeai.material_model_finder.data.specimen_data.StructureMesh.get_n_dirichlet_dof"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_n_dirichlet_dof</span></code></a></p></td>
+<td><p>Get number of degrees of freedom subject to Dirichlet conditions.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id14" title="hookeai.material_model_finder.data.specimen_data.StructureMesh.get_n_elem"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_n_elem</span></code></a></p></td>
+<td><p>Number of elements of finite element mesh.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#id15" title="hookeai.material_model_finder.data.specimen_data.StructureMesh.get_n_element_type"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_n_element_type</span></code></a></p></td>
+<td><p>Get the number of elements types of finite element mesh.</p></td>
+</tr>
+<tr class="row-odd"><td><p><a class="reference internal" href="#id16" title="hookeai.material_model_finder.data.specimen_data.StructureMesh.get_n_node_mesh"><code class="xref py py-obj docutils literal notranslate"><span class="pre">get_n_node_mesh</span></code></a></p></td>
+<td><p>Get number of nodes of finite element mesh.</p></td>
+</tr>
+<tr class="row-even"><td><p><a class="reference internal" href="#id17" title="hookeai.material_model_finder.data.specimen_data.StructureMesh.update_mesh_configuration"><code class="xref py py-obj docutils literal notranslate"><span class="pre">update_mesh_configuration</span></code></a></p></td>
+<td><p>Update finite element mesh configuration from nodes displacements.</p></td>
+</tr>
+</tbody>
+</table>
+<p class="rubric">Methods</p>
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.material_model_finder.data.specimen_data.StructureMesh.__init__">
+<span class="sig-name descname"><span class="pre">__init__</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nodes_coords_mesh_init</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elements_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">connectivities</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">dirichlet_bool_mesh</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/structure/structure_mesh.html#StructureMesh.__init__"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.material_model_finder.data.specimen_data.StructureMesh.__init__" title="Permalink to this definition">¶</a></dt>
+<dd><p>Constructor.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nodes_coords_mesh_init</strong> (<em>torch.Tensor</em><em>(</em><em>2d</em><em>)</em>) – Initial coordinates of finite element mesh nodes stored as
+torch.Tensor(2d) of shape (n_node_mesh, n_dim).</p></li>
+<li><p><strong>elements_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – FETorch element type (item, ElementType) of each finite element
+mesh element (str[int]). Elements labels must be within the range
+of 1 to n_elem (included).</p></li>
+<li><p><strong>connectivities</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Nodes (item, tuple[int]) of each finite element mesh element
+(key, str[int]). Nodes are labeled from 1 to n_node_mesh. Elements
+are labeled from 1 to n_elem.</p></li>
+<li><p><strong>dirichlet_bool_mesh</strong> (<em>torch.Tensor</em><em>(</em><em>2d</em><em>)</em>) – Degrees of freedom of finite element mesh subject to Dirichlet
+boundary conditions. Stored as torch.Tensor(2d) of shape
+(n_node_mesh, n_dim) where constrained degrees of freedom are
+labeled 1, otherwise 0.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="hookeai.material_model_finder.data.specimen_data.StructureMesh._check_mesh_initialization">
+<span class="sig-name descname"><span class="pre">_check_mesh_initialization</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nodes_coords_mesh_init</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">elements_type</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">connectivities</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/structure/structure_mesh.html#StructureMesh._check_mesh_initialization"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#hookeai.material_model_finder.data.specimen_data.StructureMesh._check_mesh_initialization" title="Permalink to this definition">¶</a></dt>
+<dd><p>Check finite element mesh initialization.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nodes_coords_mesh_init</strong> (<em>torch.Tensor</em><em>(</em><em>2d</em><em>)</em>) – Initial coordinates of finite element mesh nodes stored as
+torch.Tensor(2d) of shape (n_node_mesh, n_dim).</p></li>
+<li><p><strong>elements_type</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – FETorch element type (item, ElementType) of each finite element
+mesh element (str[int]). Elements are labeled from 1 to n_elem.</p></li>
+<li><p><strong>connectivities</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Nodes (item, tuple[int]) of each finite element mesh element
+(key, str[int]). Elements are labeled from 1 to n_elem.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id0">
+<span class="sig-name descname"><span class="pre">_element_assembler_1d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elements_array_1d</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/structure/structure_mesh.html#StructureMesh._element_assembler_1d"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id0" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assemble element level 1D array into mesh level counterpart.</p>
+<p>Assumes similar number of dimensions per node in the whole finite
+element mesh.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>elements_arrays_1d</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Generic array (item, torch.Tensor(1d)) associated with given finite
+element mesh element (key, str[int]). Elements labels must be
+within the range of 1 to n_elem (included).</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>mesh_array</strong> – Mesh level array resulting from the assembly of the corresponding
+element level arrays. Mesh level array is always sorted and
+dimensioned accounting for the total number of nodes in the finite
+element mesh.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor(1d)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id1">
+<span class="sig-name descname"><span class="pre">_element_extractor_1d</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh_array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">element_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/structure/structure_mesh.html#StructureMesh._element_extractor_1d"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id1" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extract element level 1D array from mesh level counterpart.</p>
+<p>Assumes similar number of dimensions per node in the whole finite
+element mesh.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mesh_array</strong> (<em>torch.Tensor</em><em>(</em><em>1d</em><em>)</em>) – Mesh level array resulting from the assembly of the corresponding
+element level arrays. Mesh level array is always sorted and
+dimensioned accounting for the total number of nodes in the finite
+element mesh.</p></li>
+<li><p><strong>element_id</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Element label. Elements labels must be within the range of
+1 to n_elem (included).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>element_array</strong> – Generic element array.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor(1d)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id2">
+<em class="property"><span class="pre">classmethod</span><span class="w"> </span></em><span class="sig-name descname"><span class="pre">build_element_mesh_indexing</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">element_nodes</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">n_dof_node</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/structure/structure_mesh.html#StructureMesh.build_element_mesh_indexing"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id2" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get element nodes degrees of freedom mesh indexes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>element_nodes</strong> (<em>torch.Tensor</em><em>(</em><em>1d</em><em>)</em>) – Finite element mesh element connectitivities stored as
+torch.Tensor(1d) of shape (n_node,). Nodes are labeled from
+1 to n_node_mesh.</p></li>
+<li><p><strong>n_dof_node</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of degrees of freedom per element node.</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>element_mesh_indexes</strong> – Element nodes degrees of freedom mesh indexes stored as
+torch.Tensor(1d) of shape (n_node*n_dof_node,).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor(1d)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id3">
+<span class="sig-name descname"><span class="pre">build_elements_mesh_indexing</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">n_dof_node</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/structure/structure_mesh.html#StructureMesh.build_elements_mesh_indexing"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id3" title="Permalink to this definition">¶</a></dt>
+<dd><p>Build elements nodes degrees of freedom mesh indexes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>n_dof_node</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Number of degrees of freedom per element node.</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>elements_mesh_indexes</strong> – Elements nodes degrees of freedom mesh indexes stored as
+torch.Tensor(2d) of shape (n_elem, n_node*n_dof_node).</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor(2d)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id4">
+<span class="sig-name descname"><span class="pre">element_assembler</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">elements_array</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/structure/structure_mesh.html#StructureMesh.element_assembler"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id4" title="Permalink to this definition">¶</a></dt>
+<dd><p>Assemble element level arrays into mesh level counterparts.</p>
+<p>Assumes similar number of dimensions per node in the whole finite
+element mesh.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>elements_array</strong> (<a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)"><em>dict</em></a>) – Generic array (item, torch.Tensor) associated with given finite
+element mesh element (key, str[int]). Elements labels must be
+within the range of 1 to n_elem (included).</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>mesh_array</strong> – Mesh level array resulting from the assembly of the corresponding
+element level arrays. Mesh level array is always sorted and
+dimensioned accounting for the total number of nodes in the finite
+element mesh.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id5">
+<span class="sig-name descname"><span class="pre">element_extractor</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">mesh_array</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">element_id</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/structure/structure_mesh.html#StructureMesh.element_extractor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id5" title="Permalink to this definition">¶</a></dt>
+<dd><p>Extract element level array from mesh level counterpart.</p>
+<p>Assumes similar number of dimensions per node in the whole finite
+element mesh.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>mesh_array</strong> (<em>torch.Tensor</em>) – Mesh level array resulting from the assembly of the corresponding
+element level arrays. Mesh level array is always sorted and
+dimensioned accounting for the total number of nodes in the finite
+element mesh.</p></li>
+<li><p><strong>element_id</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Element label. Elements labels must be within the range of
+1 to n_elem (included).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><strong>element_array</strong> – Generic element array.</p>
+</dd>
+<dt class="field-odd">Return type<span class="colon">:</span></dt>
+<dd class="field-odd"><p>torch.Tensor</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id6">
+<span class="sig-name descname"><span class="pre">get_connectivities</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/structure/structure_mesh.html#StructureMesh.get_connectivities"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id6" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get finite element mesh elements connectivities.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>connectivities</strong> – Nodes (item, tuple[int]) of each finite element mesh element
+(key, str[int]). Nodes are labeled from 1 to n_node_mesh. Elements
+are labeled from 1 to n_elem.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id7">
+<span class="sig-name descname"><span class="pre">get_connectivities_tensor</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/structure/structure_mesh.html#StructureMesh.get_connectivities_tensor"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id7" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get finite element mesh elements connectivities (tensor).</p>
+<p>Storage of finite element mesh elements connectivities in tensor,
+i.e., batching over the element dimension, requires that all finite
+element mesh elements have the same number of nodes.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>connectivities_tensor</strong> – Finite element mesh elements connectitivities stored as
+torch.Tensor(2d) of shape (n_elem, n_node). Elements are sorted
+according with their labels (1 to n_elem). Nodes are labeled from
+1 to n_node_mesh.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>torch.Tensor(2d)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id8">
+<span class="sig-name descname"><span class="pre">get_dirichlet_bool_mesh</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/structure/structure_mesh.html#StructureMesh.get_dirichlet_bool_mesh"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id8" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get degrees of freedom subject to Dirichlet boundary conditions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>dirichlet_bool_mesh</strong> – Degrees of freedom of finite element mesh subject to Dirichlet
+boundary conditions. Stored as torch.Tensor(2d) of shape
+(n_node_mesh, n_dim) where constrained degrees of freedom are
+labeled 1, otherwise 0.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p>torch.Tensor(2d)</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id9">
+<span class="sig-name descname"><span class="pre">get_element_configuration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">element_id</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'current'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/structure/structure_mesh.html#StructureMesh.get_element_configuration"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id9" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get element nodes coordinates and displacements.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>element_id</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)"><em>int</em></a>) – Element label. Elements labels must be within the range of
+1 to n_elem (included).</p></li>
+<li><p><strong>time</strong> (<em>{'init'</em><em>, </em><em>'last'</em><em>, </em><em>'current'}</em><em>, </em><em>default='current'</em>) – Time where element configuration is returned: initial configuration
+(‘init’), last converged configuration (‘last’), or current
+configuration (‘current’).</p></li>
+</ul>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>nodes_coords</strong> (<em>torch.Tensor(2d)</em>) – Nodes coordinates stored as torch.Tensor(2d) of shape
+(n_node, n_dof_node).</p></li>
+<li><p><strong>nodes_disps</strong> (<em>torch.Tensor(2d)</em>) – Nodes displacements stored as torch.Tensor(2d) of shape
+(n_node, n_dof_node).</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id10">
+<span class="sig-name descname"><span class="pre">get_elements_type</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/structure/structure_mesh.html#StructureMesh.get_elements_type"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id10" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get type of elements of finite element mesh.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>elements_type</strong> – FETorch element type (item, ElementType) of each finite element
+mesh element (str[int]). Elements are labeled from 1 to n_elem.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/stdtypes.html#dict" title="(in Python v3.14)">dict</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id11">
+<span class="sig-name descname"><span class="pre">get_mesh_configuration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'current'</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/structure/structure_mesh.html#StructureMesh.get_mesh_configuration"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id11" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get finite element mesh configuration.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>time</strong> (<em>{'init'</em><em>, </em><em>'last'</em><em>, </em><em>'current'}</em><em>, </em><em>default='current'</em>) – Time where element configuration is returned: initial configuration
+(‘init’), last converged configuration (‘last’), or current
+configuration (‘current’).</p>
+</dd>
+<dt class="field-even">Returns<span class="colon">:</span></dt>
+<dd class="field-even"><p><ul class="simple">
+<li><p><strong>nodes_coords_mesh</strong> (<em>torch.Tensor(2d)</em>) – Coordinates of finite element mesh nodes stored as torch.Tensor(2d)
+of shape (n_node_mesh, n_dim).</p></li>
+<li><p><strong>nodes_disps_mesh</strong> (<em>torch.Tensor(2d)</em>) – Displacements of finite element mesh nodes stored as
+torch.Tensor(2d) of shape (n_node_mesh, n_dim).</p></li>
+</ul>
+</p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id12">
+<span class="sig-name descname"><span class="pre">get_n_dim</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/structure/structure_mesh.html#StructureMesh.get_n_dim"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id12" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get number of spatial dimensions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>n_dim</strong> – Number of spatial dimensions.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id13">
+<span class="sig-name descname"><span class="pre">get_n_dirichlet_dof</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/structure/structure_mesh.html#StructureMesh.get_n_dirichlet_dof"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id13" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get number of degrees of freedom subject to Dirichlet conditions.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>n_dof_dirichlet</strong> – Number of degrees of freedom subject to Dirichlet boundary
+conditions.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id14">
+<span class="sig-name descname"><span class="pre">get_n_elem</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/structure/structure_mesh.html#StructureMesh.get_n_elem"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id14" title="Permalink to this definition">¶</a></dt>
+<dd><p>Number of elements of finite element mesh.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>n_elem</strong> – Number of elements of finite element mesh.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id15">
+<span class="sig-name descname"><span class="pre">get_n_element_type</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/structure/structure_mesh.html#StructureMesh.get_n_element_type"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id15" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get the number of elements types of finite element mesh.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>n_element_type</strong> – Number of element types of finite element mesh.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id16">
+<span class="sig-name descname"><span class="pre">get_n_node_mesh</span></span><span class="sig-paren">(</span><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/structure/structure_mesh.html#StructureMesh.get_n_node_mesh"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id16" title="Permalink to this definition">¶</a></dt>
+<dd><p>Get number of nodes of finite element mesh.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Returns<span class="colon">:</span></dt>
+<dd class="field-odd"><p><strong>n_node_mesh</strong> – Number of nodes of finite element mesh.</p>
+</dd>
+<dt class="field-even">Return type<span class="colon">:</span></dt>
+<dd class="field-even"><p><a class="reference external" href="https://docs.python.org/3/library/functions.html#int" title="(in Python v3.14)">int</a></p>
+</dd>
+</dl>
+</dd></dl>
+
+<dl class="py method">
+<dt class="sig sig-object py" id="id17">
+<span class="sig-name descname"><span class="pre">update_mesh_configuration</span></span><span class="sig-paren">(</span><em class="sig-param"><span class="n"><span class="pre">nodes_disps_mesh</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">time</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">'current'</span></span></em>, <em class="sig-param"><span class="n"><span class="pre">is_update_coords</span></span><span class="o"><span class="pre">=</span></span><span class="default_value"><span class="pre">True</span></span></em><span class="sig-paren">)</span><a class="reference internal" href="../_modules/simulators/fetorch/structure/structure_mesh.html#StructureMesh.update_mesh_configuration"><span class="viewcode-link"><span class="pre">[source]</span></span></a><a class="headerlink" href="#id17" title="Permalink to this definition">¶</a></dt>
+<dd><p>Update finite element mesh configuration from nodes displacements.</p>
+<dl class="field-list simple">
+<dt class="field-odd">Parameters<span class="colon">:</span></dt>
+<dd class="field-odd"><ul class="simple">
+<li><p><strong>nodes_disps_mesh</strong> (<em>torch.Tensor</em><em>(</em><em>2d</em><em>)</em>) – Displacements of finite element mesh nodes stored as
+torch.Tensor(2d) of shape (n_node_mesh, n_dim).</p></li>
+<li><p><strong>time</strong> (<em>{'last'</em><em>, </em><em>'current'}</em><em>, </em><em>default='current'</em>) – Time where update of element state variables is performed: last
+converged state variables (‘last’) or current state variables
+(‘current’).</p></li>
+<li><p><strong>is_update_coords</strong> (<a class="reference external" href="https://docs.python.org/3/library/functions.html#bool" title="(in Python v3.14)"><em>bool</em></a><em>, </em><em>default=True</em>) – If False, then only updates the displacements of the finite element
+mesh nodes, leaving the nodes coordinates unchanged. If True, then
+update both coordinates and displacements of finite element mesh
+nodes.</p></li>
+</ul>
+</dd>
+</dl>
+</dd></dl>
+
+</dd></dl>
+
+</section>
+
+
+           </div>
+          </div>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData.html" class="btn btn-neutral float-left" title="hookeai.material_model_finder.data.specimen_data.SpecimenNumericalData" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="hookeai.material_model_finder.model.html" class="btn btn-neutral float-right" title="hookeai.material_model_finder.model" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>

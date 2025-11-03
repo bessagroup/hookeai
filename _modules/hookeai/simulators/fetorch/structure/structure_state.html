@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>hookeai.simulators.fetorch.structure.structure_state &mdash; hookeai 1.0.0 documentation</title>
+      <link rel="stylesheet" href="../../../../../_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../../_static/css/theme.css" type="text/css" />
+      <link rel="stylesheet" href="../../../../../_static/readthedocs-custom.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="../../../../../_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="../../../../../" id="documentation_options" src="../../../../../_static/documentation_options.js"></script>
+        <script src="../../../../../_static/doctools.js"></script>
+        <script src="../../../../../_static/sphinx_highlight.js"></script>
+    <script src="../../../../../_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="../../../../../genindex.html" />
+    <link rel="search" title="Search" href="../../../../../search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+
+          
+          
+          <a href="../../../../../index.html" class="icon icon-home">
+            hookeai
+          </a>
+              <div class="version">
+                1.0.0
+              </div>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="../../../../../search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" aria-label="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <p class="caption" role="heading"><span class="caption-text">Getting started</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/getting_started/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/getting_started/installation.html">Installation</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">Features</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/overview.html">Overview</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/data_generation.html">Data generation</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/material_models.html">Material model architectures</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/local_model_updating.html">Local material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/global_model_updating.html">Global material model updating</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/data_analysis.html">Data analysis and visualization tools</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/tensor_matrix.html">Tensorial algebra and matrix operations</a></li>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../rst_doc_files/features/other.html">Other utilities</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">API</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../_autosummary/hookeai.html">Code</a></li>
+</ul>
+<p class="caption" role="heading"><span class="caption-text">License</span></p>
+<ul>
+<li class="toctree-l1"><a class="reference internal" href="../../../../../license.html">MIT License</a></li>
+</ul>
+
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="../../../../../index.html">hookeai</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="../../../../../index.html" class="icon icon-home" aria-label="Home"></a></li>
+          <li class="breadcrumb-item"><a href="../../../../index.html">Module code</a></li>
+      <li class="breadcrumb-item active">hookeai.simulators.fetorch.structure.structure_state</li>
+      <li class="wy-breadcrumbs-aside">
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <h1>Source code for hookeai.simulators.fetorch.structure.structure_state</h1><div class="highlight"><pre>
+<span></span><span class="sd">&quot;&quot;&quot;FETorch: Structure material state.</span>
+
+<span class="sd">Classes</span>
+<span class="sd">-------</span>
+<span class="sd">StructureMaterialState</span>
+<span class="sd">    FETorch structure material state.</span>
+<span class="sd">&quot;&quot;&quot;</span>
+<span class="c1">#</span>
+<span class="c1">#                                                                       Modules</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1"># Standard</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">copy</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">re</span>
+<span class="c1"># Third-party</span>
+<span class="kn">import</span><span class="w"> </span><span class="nn">torch</span>
+<span class="c1"># Local</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">simulators.fetorch.math.matrixops</span><span class="w"> </span><span class="kn">import</span> <span class="n">get_problem_type_parameters</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">simulators.fetorch.material.models.standard.elastic</span><span class="w"> </span><span class="kn">import</span> <span class="n">Elastic</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">simulators.fetorch.material.models.standard.von_mises</span><span class="w"> </span><span class="kn">import</span> <span class="n">VonMises</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">simulators.fetorch.material.models.standard.von_mises_mixed</span><span class="w"> </span><span class="kn">import</span> \
+    <span class="n">VonMisesMixed</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">simulators.fetorch.material.models.standard.drucker_prager</span><span class="w"> </span><span class="kn">import</span> \
+    <span class="n">DruckerPrager</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">model_architectures.rnn_base_model.model.gru_model</span><span class="w"> </span><span class="kn">import</span> <span class="n">GRURNNModel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">model_architectures.rc_base_model.model.recurrent_model</span><span class="w"> </span><span class="kn">import</span> \
+    <span class="n">RecurrentConstitutiveModel</span>
+<span class="kn">from</span><span class="w"> </span><span class="nn">model_architectures.hybrid_base_model.model.hybrid_model</span><span class="w"> </span><span class="kn">import</span> \
+    <span class="n">HybridModel</span>
+<span class="c1">#</span>
+<span class="c1">#                                                          Authorship &amp; Credits</span>
+<span class="c1"># =============================================================================</span>
+<span class="n">__author__</span> <span class="o">=</span> <span class="s1">&#39;Bernardo Ferreira (bernardo_ferreira@brown.edu)&#39;</span>
+<span class="n">__credits__</span> <span class="o">=</span> <span class="p">[</span><span class="s1">&#39;Bernardo Ferreira&#39;</span><span class="p">,</span> <span class="p">]</span>
+<span class="n">__status__</span> <span class="o">=</span> <span class="s1">&#39;Stable&#39;</span>
+<span class="c1"># =============================================================================</span>
+<span class="c1">#</span>
+<span class="c1"># =============================================================================</span>
+<div class="viewcode-block" id="StructureMaterialState"><a class="viewcode-back" href="../../../../../_autosummary/hookeai.simulators.fetorch.structure.structure_state.StructureMaterialState.html#hookeai.simulators.fetorch.structure.structure_state.StructureMaterialState">[docs]</a><span class="k">class</span><span class="w"> </span><span class="nc">StructureMaterialState</span><span class="p">(</span><span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">):</span>
+<span class="w">    </span><span class="sd">&quot;&quot;&quot;FETorch structure material state.</span>
+<span class="sd">    </span>
+<span class="sd">    Attributes</span>
+<span class="sd">    ----------</span>
+<span class="sd">    _strain_formulation: {&#39;infinitesimal&#39;, &#39;finite&#39;}</span>
+<span class="sd">        Problem strain formulation.</span>
+<span class="sd">    _problem_type : int</span>
+<span class="sd">        Problem type: 2D plane strain (1), 2D plane stress (2),</span>
+<span class="sd">        2D axisymmetric (3) and 3D (4).</span>
+<span class="sd">    _n_dim : int</span>
+<span class="sd">        Problem number of spatial dimensions.</span>
+<span class="sd">    _comp_order_sym : list[str]</span>
+<span class="sd">        Strain/Stress components symmetric order.</span>
+<span class="sd">    _comp_order_nsym : list[str]</span>
+<span class="sd">        Strain/Stress components nonsymmetric order.</span>
+<span class="sd">    _n_mat_model : int</span>
+<span class="sd">        Number of FETorch material constitutive models.</span>
+<span class="sd">    _material_models : torch.nn.ModuleDict</span>
+<span class="sd">        FETorch material constitutive models (key, str[int], item,</span>
+<span class="sd">        ConstitutiveModel). Models are labeled from 1 to n_mat_model.</span>
+<span class="sd">    _elements_material : dict</span>
+<span class="sd">        FETorch material constitutive model (item, ConstitutiveModel) of each</span>
+<span class="sd">        finite element mesh element (str[int]). Elements are labeled from</span>
+<span class="sd">        1 to n_elem.</span>
+<span class="sd">    _elements_state : dict</span>
+<span class="sd">        For each finite element mesh element (key, str[int]), stores a</span>
+<span class="sd">        dictionary with the material constitutive model state variables</span>
+<span class="sd">        (item, dict) for each Gauss integration point (key, str[int]).</span>
+<span class="sd">    _elements_state_old : dict</span>
+<span class="sd">        For each finite element mesh element (key, str[int]), stores a</span>
+<span class="sd">        dictionary with the last converged material constitutive model state</span>
+<span class="sd">        variables (item, dict) for each Gauss integration point</span>
+<span class="sd">        (key, str[int]).</span>
+<span class="sd">    _elements_is_recurrent_material : dict</span>
+<span class="sd">        For each finite element mesh element (key, str[int]), stores a bool</span>
+<span class="sd">        that defines if the material constitutive model has a recurrent</span>
+<span class="sd">        structure (processes full deformation path when called).</span>
+
+<span class="sd">    Methods</span>
+<span class="sd">    -------</span>
+<span class="sd">    init_elements_model(self, model_name, model_parameters, element_ids, \</span>
+<span class="sd">                        elements_type)</span>
+<span class="sd">        Initialize constitutive model assigned to given set of elements.</span>
+<span class="sd">    get_strain_formulation(self)</span>
+<span class="sd">        Get problem strain formulation.</span>
+<span class="sd">    get_problem_type(self)</span>
+<span class="sd">        Get problem type.</span>
+<span class="sd">    get_material_models(self)</span>
+<span class="sd">        Get material constitutive models.</span>
+<span class="sd">    get_elements_material(self)</span>
+<span class="sd">        Get elements material constitutive models.</span>
+<span class="sd">    get_n_element_material_type(self)</span>
+<span class="sd">        Get the number of material model types of finite element mesh.</span>
+<span class="sd">    update_element_state(self, element_id, state_variables, time=&#39;current&#39;, \</span>
+<span class="sd">                         is_copy=True)</span>
+<span class="sd">        Update element material constitutive state variables.</span>
+<span class="sd">    get_element_state(self, element_id, element_state, time=&#39;current&#39;, \</span>
+<span class="sd">                      is_copy=True)</span>
+<span class="sd">        Get element material constitutive state variables.</span>
+<span class="sd">    update_converged_elements_state(self, is_copy=True)</span>
+<span class="sd">        Update elements last converged material state variables.</span>
+<span class="sd">    get_element_model_recurrency(self, element_id)</span>
+<span class="sd">        Get element constitutive model recurrent structure.</span>
+<span class="sd">    update_material_models_device(self, device_type)</span>
+<span class="sd">        Update material models Torch device.</span>
+<span class="sd">    &quot;&quot;&quot;</span>
+<div class="viewcode-block" id="StructureMaterialState.__init__"><a class="viewcode-back" href="../../../../../_autosummary/hookeai.simulators.fetorch.structure.structure_state.StructureMaterialState.html#hookeai.simulators.fetorch.structure.structure_state.StructureMaterialState.__init__">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="fm">__init__</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">strain_formulation</span><span class="p">,</span> <span class="n">problem_type</span><span class="p">,</span> <span class="n">n_elem</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Constructor.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        strain_formulation: {&#39;infinitesimal&#39;, &#39;finite&#39;}</span>
+<span class="sd">            Problem strain formulation.</span>
+<span class="sd">        problem_type : int</span>
+<span class="sd">            Problem type: 2D plane strain (1), 2D plane stress (2),</span>
+<span class="sd">            2D axisymmetric (3) and 3D (4).</span>
+<span class="sd">        n_elem : int</span>
+<span class="sd">            Number of elements of finite element mesh.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Initialize from base class</span>
+        <span class="nb">super</span><span class="p">(</span><span class="n">StructureMaterialState</span><span class="p">,</span> <span class="bp">self</span><span class="p">)</span><span class="o">.</span><span class="fm">__init__</span><span class="p">()</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Set problem strain formulation and type</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_strain_formulation</span> <span class="o">=</span> <span class="n">strain_formulation</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_problem_type</span> <span class="o">=</span> <span class="n">problem_type</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize number of material models</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_n_mat_model</span> <span class="o">=</span> <span class="mi">0</span>
+        <span class="c1"># Initialize material models</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_material_models</span> <span class="o">=</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleDict</span><span class="p">()</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Initialize elements material model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_elements_material</span> <span class="o">=</span> <span class="p">{</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">):</span> <span class="kc">None</span> <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_elem</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)}</span>
+        <span class="c1"># Initialize elements material model recurrency</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_elements_is_recurrent_material</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># Initialize elements material constitutive state variables</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_elements_state</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_elements_state_old</span> <span class="o">=</span> <span class="p">{}</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Get problem type parameters</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_n_dim</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_comp_order_sym</span><span class="p">,</span> <span class="bp">self</span><span class="o">.</span><span class="n">_comp_order_nsym</span> <span class="o">=</span> \
+            <span class="n">get_problem_type_parameters</span><span class="p">(</span><span class="n">problem_type</span><span class="p">)</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="StructureMaterialState.init_elements_model"><a class="viewcode-back" href="../../../../../_autosummary/hookeai.simulators.fetorch.structure.structure_state.StructureMaterialState.html#hookeai.simulators.fetorch.structure.structure_state.StructureMaterialState.init_elements_model">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">init_elements_model</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">model_name</span><span class="p">,</span> <span class="n">model_parameters</span><span class="p">,</span> <span class="n">element_ids</span><span class="p">,</span>
+                            <span class="n">elements_type</span><span class="p">,</span> <span class="n">model_kwargs</span><span class="o">=</span><span class="p">{}):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Initialize constitutive model assigned to given set of elements.</span>
+<span class="sd">        </span>
+<span class="sd">        While the constitutive model object is shared between all the elements</span>
+<span class="sd">        in the provided set, the corresponding state variables are initialized</span>
+<span class="sd">        independently for each element (and corresponding Gauss integration</span>
+<span class="sd">        points) in the provided set.</span>
+<span class="sd">        </span>
+<span class="sd">        Constitutive models are automatically labeled from 1 to n_mat_model,</span>
+<span class="sd">        following the assignment order. A unique constitutive model is created</span>
+<span class="sd">        whenever this method is called for a given set of elements.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        model_name : str</span>
+<span class="sd">            Material constitutive model name.</span>
+<span class="sd">        model_parameters : dict</span>
+<span class="sd">            Material constitutive model parameters.</span>
+<span class="sd">        element_ids : tuple[int]</span>
+<span class="sd">            Set of element labels. Elements labels must be within the range of</span>
+<span class="sd">            1 to n_elem (included).</span>
+<span class="sd">        elements_type : dict</span>
+<span class="sd">            FETorch element type (item, ElementType) of each finite element</span>
+<span class="sd">            mesh element (str[int]). Elements labels must be within the range</span>
+<span class="sd">            of 1 to n_elem (included).</span>
+<span class="sd">        model_kwargs : dict, default={}</span>
+<span class="sd">            Other parameters required to initialize constitutive model.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Initialize constitutive model and set related parameters</span>
+        <span class="k">if</span> <span class="n">model_name</span> <span class="o">==</span> <span class="s1">&#39;elastic&#39;</span><span class="p">:</span>
+            <span class="c1"># Initialize constitutive model</span>
+            <span class="n">constitutive_model</span> <span class="o">=</span> <span class="n">Elastic</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_strain_formulation</span><span class="p">,</span>
+                                         <span class="bp">self</span><span class="o">.</span><span class="n">_problem_type</span><span class="p">,</span>
+                                         <span class="n">model_parameters</span><span class="p">)</span>
+            <span class="c1"># Set recurrency structure</span>
+            <span class="n">is_recurrent_model</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">elif</span> <span class="n">model_name</span> <span class="o">==</span> <span class="s1">&#39;von_mises&#39;</span><span class="p">:</span>
+            <span class="c1"># Initialize constitutive model</span>
+            <span class="n">constitutive_model</span> <span class="o">=</span> <span class="n">VonMises</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_strain_formulation</span><span class="p">,</span>
+                                          <span class="bp">self</span><span class="o">.</span><span class="n">_problem_type</span><span class="p">,</span>
+                                          <span class="n">model_parameters</span><span class="p">)</span>
+            <span class="c1"># Set recurrency structure</span>
+            <span class="n">is_recurrent_model</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">elif</span> <span class="n">model_name</span> <span class="o">==</span> <span class="s1">&#39;von_mises_mixed&#39;</span><span class="p">:</span>
+            <span class="c1"># Initialize constitutive model</span>
+            <span class="n">constitutive_model</span> <span class="o">=</span> <span class="n">VonMisesMixed</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_strain_formulation</span><span class="p">,</span>
+                                               <span class="bp">self</span><span class="o">.</span><span class="n">_problem_type</span><span class="p">,</span>
+                                               <span class="n">model_parameters</span><span class="p">)</span>
+            <span class="c1"># Set recurrency structure</span>
+            <span class="n">is_recurrent_model</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">elif</span> <span class="n">model_name</span> <span class="o">==</span> <span class="s1">&#39;drucker_prager&#39;</span><span class="p">:</span>
+            <span class="c1"># Initialize constitutive model</span>
+            <span class="n">constitutive_model</span> <span class="o">=</span> <span class="n">DruckerPrager</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_strain_formulation</span><span class="p">,</span>
+                                               <span class="bp">self</span><span class="o">.</span><span class="n">_problem_type</span><span class="p">,</span>
+                                               <span class="n">model_parameters</span><span class="p">)</span>
+            <span class="c1"># Set recurrency structure</span>
+            <span class="n">is_recurrent_model</span> <span class="o">=</span> <span class="kc">False</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">elif</span> <span class="nb">bool</span><span class="p">(</span><span class="n">re</span><span class="o">.</span><span class="n">search</span><span class="p">(</span><span class="sa">r</span><span class="s1">&#39;^rc_.*$&#39;</span><span class="p">,</span> <span class="n">model_name</span><span class="p">)):</span>
+            <span class="c1"># Get number of input and output features</span>
+            <span class="n">n_features_in</span> <span class="o">=</span> <span class="n">model_kwargs</span><span class="p">[</span><span class="s1">&#39;n_features_in&#39;</span><span class="p">]</span>
+            <span class="n">n_features_out</span> <span class="o">=</span> <span class="n">model_kwargs</span><span class="p">[</span><span class="s1">&#39;n_features_out&#39;</span><span class="p">]</span>
+            <span class="c1"># Get learnable parameters</span>
+            <span class="n">learnable_parameters</span> <span class="o">=</span> <span class="n">model_kwargs</span><span class="p">[</span><span class="s1">&#39;learnable_parameters&#39;</span><span class="p">]</span>
+            <span class="c1"># Set strain formulation</span>
+            <span class="n">strain_formulation</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_strain_formulation</span>
+            <span class="c1"># Set problem type</span>
+            <span class="n">problem_type</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_problem_type</span>
+            <span class="c1"># Set material constitutive model name</span>
+            <span class="n">material_model_name</span> <span class="o">=</span> <span class="n">model_kwargs</span><span class="p">[</span><span class="s1">&#39;material_model_name&#39;</span><span class="p">]</span>
+            <span class="c1"># Set material constitutive model parameters</span>
+            <span class="n">material_model_parameters</span> <span class="o">=</span> <span class="n">model_parameters</span>
+            <span class="c1"># Get material constitutive state variables (prediction)</span>
+            <span class="n">state_features_out</span> <span class="o">=</span> <span class="n">model_kwargs</span><span class="p">[</span><span class="s1">&#39;state_features_out&#39;</span><span class="p">]</span>
+            <span class="c1"># Get automatic synchronization of material model parameters</span>
+            <span class="n">is_auto_sync_parameters</span> <span class="o">=</span> <span class="n">model_kwargs</span><span class="p">[</span><span class="s1">&#39;is_auto_sync_parameters&#39;</span><span class="p">]</span>
+            <span class="c1"># Get state update failure checking</span>
+            <span class="n">is_check_su_fail</span> <span class="o">=</span> <span class="n">model_kwargs</span><span class="p">[</span><span class="s1">&#39;is_check_su_fail&#39;</span><span class="p">]</span>
+            <span class="c1"># Get model directory</span>
+            <span class="n">model_directory</span> <span class="o">=</span> <span class="n">model_kwargs</span><span class="p">[</span><span class="s1">&#39;model_directory&#39;</span><span class="p">]</span>
+            <span class="c1"># Get parameters normalization</span>
+            <span class="n">is_normalized_parameters</span> <span class="o">=</span> <span class="n">model_kwargs</span><span class="p">[</span><span class="s1">&#39;is_normalized_parameters&#39;</span><span class="p">]</span>
+            <span class="c1"># Get model input and output features normalization</span>
+            <span class="n">is_model_in_normalized</span> <span class="o">=</span> <span class="n">model_kwargs</span><span class="p">[</span><span class="s1">&#39;is_model_in_normalized&#39;</span><span class="p">]</span>
+            <span class="n">is_model_out_normalized</span> <span class="o">=</span> <span class="n">model_kwargs</span><span class="p">[</span><span class="s1">&#39;is_model_out_normalized&#39;</span><span class="p">]</span>
+            <span class="c1"># Get device type</span>
+            <span class="n">device_type</span> <span class="o">=</span> <span class="n">model_kwargs</span><span class="p">[</span><span class="s1">&#39;device_type&#39;</span><span class="p">]</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Build model initialization parameters</span>
+            <span class="n">model_init_args</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;n_features_in&#39;</span><span class="p">:</span> <span class="n">n_features_in</span><span class="p">,</span>
+                <span class="s1">&#39;n_features_out&#39;</span><span class="p">:</span> <span class="n">n_features_out</span><span class="p">,</span>
+                <span class="s1">&#39;learnable_parameters&#39;</span><span class="p">:</span> <span class="n">learnable_parameters</span><span class="p">,</span>
+                <span class="s1">&#39;strain_formulation&#39;</span><span class="p">:</span> <span class="n">strain_formulation</span><span class="p">,</span>
+                <span class="s1">&#39;problem_type&#39;</span><span class="p">:</span> <span class="n">problem_type</span><span class="p">,</span>
+                <span class="s1">&#39;material_model_name&#39;</span><span class="p">:</span> <span class="n">material_model_name</span><span class="p">,</span>
+                <span class="s1">&#39;material_model_parameters&#39;</span><span class="p">:</span> <span class="n">material_model_parameters</span><span class="p">,</span>
+                <span class="s1">&#39;state_features_out&#39;</span><span class="p">:</span> <span class="n">state_features_out</span><span class="p">,</span>
+                <span class="s1">&#39;is_auto_sync_parameters&#39;</span><span class="p">:</span> <span class="n">is_auto_sync_parameters</span><span class="p">,</span>
+                <span class="s1">&#39;is_check_su_fail&#39;</span><span class="p">:</span> <span class="n">is_check_su_fail</span><span class="p">,</span>
+                <span class="s1">&#39;model_directory&#39;</span><span class="p">:</span> <span class="n">model_directory</span><span class="p">,</span>
+                <span class="s1">&#39;model_name&#39;</span><span class="p">:</span> <span class="n">model_name</span><span class="p">,</span>
+                <span class="s1">&#39;is_normalized_parameters&#39;</span><span class="p">:</span> <span class="n">is_normalized_parameters</span><span class="p">,</span>
+                <span class="s1">&#39;is_model_in_normalized&#39;</span><span class="p">:</span> <span class="n">is_model_in_normalized</span><span class="p">,</span>
+                <span class="s1">&#39;is_model_out_normalized&#39;</span><span class="p">:</span> <span class="n">is_model_out_normalized</span><span class="p">,</span>
+                <span class="s1">&#39;device_type&#39;</span><span class="p">:</span> <span class="n">device_type</span><span class="p">}</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Initialize constitutive model</span>
+            <span class="n">constitutive_model</span> <span class="o">=</span> <span class="n">RecurrentConstitutiveModel</span><span class="p">(</span><span class="o">**</span><span class="n">model_init_args</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Set recurrency structure</span>
+            <span class="n">is_recurrent_model</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">elif</span> <span class="n">model_name</span> <span class="o">==</span> <span class="s1">&#39;gru_material_model&#39;</span><span class="p">:</span>
+            <span class="c1"># Get number of input and output features</span>
+            <span class="n">n_features_in</span> <span class="o">=</span> <span class="n">model_kwargs</span><span class="p">[</span><span class="s1">&#39;n_features_in&#39;</span><span class="p">]</span>
+            <span class="n">n_features_out</span> <span class="o">=</span> <span class="n">model_kwargs</span><span class="p">[</span><span class="s1">&#39;n_features_out&#39;</span><span class="p">]</span>
+            <span class="c1"># Get hidden layer size</span>
+            <span class="n">hidden_layer_size</span> <span class="o">=</span> <span class="n">model_kwargs</span><span class="p">[</span><span class="s1">&#39;hidden_layer_size&#39;</span><span class="p">]</span>
+            <span class="c1"># Get number of recurrent layers</span>
+            <span class="n">n_recurrent_layers</span> <span class="o">=</span> <span class="n">model_kwargs</span><span class="p">[</span><span class="s1">&#39;n_recurrent_layers&#39;</span><span class="p">]</span>
+            <span class="c1"># Get dropout probability</span>
+            <span class="n">dropout</span> <span class="o">=</span> <span class="n">model_kwargs</span><span class="p">[</span><span class="s1">&#39;dropout&#39;</span><span class="p">]</span>
+            <span class="c1"># Get model directory</span>
+            <span class="n">model_directory</span> <span class="o">=</span> <span class="n">model_kwargs</span><span class="p">[</span><span class="s1">&#39;model_directory&#39;</span><span class="p">]</span>
+            <span class="c1"># Get model input and output features normalization</span>
+            <span class="n">is_model_in_normalized</span> <span class="o">=</span> <span class="n">model_kwargs</span><span class="p">[</span><span class="s1">&#39;is_model_in_normalized&#39;</span><span class="p">]</span>
+            <span class="n">is_model_out_normalized</span> <span class="o">=</span> <span class="n">model_kwargs</span><span class="p">[</span><span class="s1">&#39;is_model_out_normalized&#39;</span><span class="p">]</span>
+            <span class="c1"># Set GRU model source</span>
+            <span class="n">gru_model_source</span> <span class="o">=</span> <span class="n">model_kwargs</span><span class="p">[</span><span class="s1">&#39;gru_model_source&#39;</span><span class="p">]</span>
+            <span class="c1"># Get device type</span>
+            <span class="n">device_type</span> <span class="o">=</span> <span class="n">model_kwargs</span><span class="p">[</span><span class="s1">&#39;device_type&#39;</span><span class="p">]</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Build model initialization parameters</span>
+            <span class="n">model_init_args</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;n_features_in&#39;</span><span class="p">:</span> <span class="n">n_features_in</span><span class="p">,</span>
+                <span class="s1">&#39;n_features_out&#39;</span><span class="p">:</span> <span class="n">n_features_out</span><span class="p">,</span>
+                <span class="s1">&#39;hidden_layer_size&#39;</span><span class="p">:</span> <span class="n">hidden_layer_size</span><span class="p">,</span>
+                <span class="s1">&#39;n_recurrent_layers&#39;</span><span class="p">:</span> <span class="n">n_recurrent_layers</span><span class="p">,</span>
+                <span class="s1">&#39;dropout&#39;</span><span class="p">:</span> <span class="n">dropout</span><span class="p">,</span>
+                <span class="s1">&#39;model_directory&#39;</span><span class="p">:</span> <span class="n">model_directory</span><span class="p">,</span>
+                <span class="s1">&#39;model_name&#39;</span><span class="p">:</span> <span class="n">model_name</span><span class="p">,</span>
+                <span class="s1">&#39;is_model_in_normalized&#39;</span><span class="p">:</span> <span class="n">is_model_in_normalized</span><span class="p">,</span>
+                <span class="s1">&#39;is_model_out_normalized&#39;</span><span class="p">:</span> <span class="n">is_model_out_normalized</span><span class="p">,</span>
+                <span class="s1">&#39;gru_model_source&#39;</span><span class="p">:</span> <span class="n">gru_model_source</span><span class="p">,</span>
+                <span class="s1">&#39;device_type&#39;</span><span class="p">:</span> <span class="n">device_type</span><span class="p">}</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Initialize constitutive model</span>
+            <span class="n">constitutive_model</span> <span class="o">=</span> <span class="n">GRURNNModel</span><span class="p">(</span><span class="o">**</span><span class="n">model_init_args</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Get data scaling type</span>
+            <span class="n">scaling_type</span> <span class="o">=</span> <span class="n">model_kwargs</span><span class="p">[</span><span class="s1">&#39;scaling_type&#39;</span><span class="p">]</span>
+            <span class="c1"># Get data scaling parameters</span>
+            <span class="n">scaling_parameters</span> <span class="o">=</span> <span class="n">model_kwargs</span><span class="p">[</span><span class="s1">&#39;scaling_parameters&#39;</span><span class="p">]</span>
+            <span class="c1"># Set fitted model data scalers</span>
+            <span class="n">constitutive_model</span><span class="o">.</span><span class="n">set_fitted_data_scalers</span><span class="p">(</span><span class="n">scaling_type</span><span class="p">,</span>
+                                                       <span class="n">scaling_parameters</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Set recurrency structure</span>
+            <span class="n">is_recurrent_model</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">elif</span> <span class="n">model_name</span> <span class="o">==</span> <span class="s1">&#39;hybrid_material_model&#39;</span><span class="p">:</span>
+            <span class="c1"># Get number of input and output features</span>
+            <span class="n">n_features_in</span> <span class="o">=</span> <span class="n">model_kwargs</span><span class="p">[</span><span class="s1">&#39;n_features_in&#39;</span><span class="p">]</span>
+            <span class="n">n_features_out</span> <span class="o">=</span> <span class="n">model_kwargs</span><span class="p">[</span><span class="s1">&#39;n_features_out&#39;</span><span class="p">]</span>
+            <span class="c1"># Get hybridized models dictionary</span>
+            <span class="n">hyb_models_dict</span> <span class="o">=</span> <span class="n">model_kwargs</span><span class="p">[</span><span class="s1">&#39;hyb_models_dict&#39;</span><span class="p">]</span>
+            <span class="c1"># Get hybridization model type</span>
+            <span class="n">hybridization_type</span> <span class="o">=</span> <span class="n">model_kwargs</span><span class="p">[</span><span class="s1">&#39;hybridization_type&#39;</span><span class="p">]</span>
+            <span class="c1"># Get model directory</span>
+            <span class="n">model_directory</span> <span class="o">=</span> <span class="n">model_kwargs</span><span class="p">[</span><span class="s1">&#39;model_directory&#39;</span><span class="p">]</span>
+            <span class="c1"># Get model input and output features normalization</span>
+            <span class="n">is_model_in_normalized</span> <span class="o">=</span> <span class="n">model_kwargs</span><span class="p">[</span><span class="s1">&#39;is_model_in_normalized&#39;</span><span class="p">]</span>
+            <span class="n">is_model_out_normalized</span> <span class="o">=</span> <span class="n">model_kwargs</span><span class="p">[</span><span class="s1">&#39;is_model_out_normalized&#39;</span><span class="p">]</span>
+            <span class="c1"># Get device type</span>
+            <span class="n">device_type</span> <span class="o">=</span> <span class="n">model_kwargs</span><span class="p">[</span><span class="s1">&#39;device_type&#39;</span><span class="p">]</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Build model initialization parameters</span>
+            <span class="n">model_init_args</span> <span class="o">=</span> <span class="p">{</span>
+                <span class="s1">&#39;n_features_in&#39;</span><span class="p">:</span> <span class="n">n_features_in</span><span class="p">,</span>
+                <span class="s1">&#39;n_features_out&#39;</span><span class="p">:</span> <span class="n">n_features_out</span><span class="p">,</span>
+                <span class="s1">&#39;hyb_models_dict&#39;</span><span class="p">:</span> <span class="n">hyb_models_dict</span><span class="p">,</span>
+                <span class="s1">&#39;hybridization_type&#39;</span><span class="p">:</span> <span class="n">hybridization_type</span><span class="p">,</span>
+                <span class="s1">&#39;model_directory&#39;</span><span class="p">:</span> <span class="n">model_directory</span><span class="p">,</span>
+                <span class="s1">&#39;model_name&#39;</span><span class="p">:</span> <span class="n">model_name</span><span class="p">,</span>
+                <span class="s1">&#39;is_model_in_normalized&#39;</span><span class="p">:</span> <span class="n">is_model_in_normalized</span><span class="p">,</span>
+                <span class="s1">&#39;is_model_out_normalized&#39;</span><span class="p">:</span> <span class="n">is_model_out_normalized</span><span class="p">,</span>
+                <span class="s1">&#39;device_type&#39;</span><span class="p">:</span> <span class="n">device_type</span><span class="p">}</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Initialize constitutive model</span>
+            <span class="n">constitutive_model</span> <span class="o">=</span> <span class="n">HybridModel</span><span class="p">(</span><span class="o">**</span><span class="n">model_init_args</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Set recurrency structure</span>
+            <span class="n">is_recurrent_model</span> <span class="o">=</span> <span class="kc">True</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="sa">f</span><span class="s1">&#39;Unknown material constitutive model &#39;</span>
+                               <span class="sa">f</span><span class="s1">&#39;</span><span class="se">\&#39;</span><span class="si">{</span><span class="n">model_name</span><span class="si">}</span><span class="se">\&#39;</span><span class="s1">.&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Check constitutive model class</span>
+        <span class="k">if</span> <span class="p">(</span><span class="nb">isinstance</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_material_models</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">ModuleDict</span><span class="p">)</span>
+                <span class="ow">and</span> <span class="ow">not</span> <span class="nb">isinstance</span><span class="p">(</span><span class="n">constitutive_model</span><span class="p">,</span> <span class="n">torch</span><span class="o">.</span><span class="n">nn</span><span class="o">.</span><span class="n">Module</span><span class="p">)):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span>
+                <span class="s1">&#39;The structure material models are currently stored as a &#39;</span>
+                <span class="s1">&#39;torch.nn.ModuleDict. Attempting to initialize a &#39;</span>
+                <span class="s1">&#39;non-torch.nn.Module constitutive model &#39;</span>
+                <span class="sa">f</span><span class="s1">&#39;(</span><span class="si">{</span><span class="nb">type</span><span class="p">(</span><span class="n">constitutive_model</span><span class="p">)</span><span class="si">}</span><span class="s1">) will raise an error.&#39;</span>
+                <span class="s1">&#39;</span><span class="se">\n\n</span><span class="s1">Hotfix: Initialize self._material_models as standard &#39;</span>
+                <span class="s1">&#39;dictionary.&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Update number of material constitutive models</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_n_mat_model</span> <span class="o">+=</span> <span class="mi">1</span>
+        <span class="c1"># Set new material constitutive model label</span>
+        <span class="n">model_id</span> <span class="o">=</span> <span class="nb">str</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_n_mat_model</span><span class="p">)</span>
+        <span class="c1"># Store constitutive model</span>
+        <span class="bp">self</span><span class="o">.</span><span class="n">_material_models</span><span class="p">[</span><span class="n">model_id</span><span class="p">]</span> <span class="o">=</span> <span class="n">constitutive_model</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Loop over elements</span>
+        <span class="k">for</span> <span class="n">element_id</span> <span class="ow">in</span> <span class="n">element_ids</span><span class="p">:</span>
+            <span class="c1"># Assign constitutive model</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_elements_material</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">element_id</span><span class="p">)]</span> <span class="o">=</span> <span class="n">constitutive_model</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Initialize constitutive model state variables</span>
+            <span class="k">if</span> <span class="n">is_recurrent_model</span><span class="p">:</span>
+                <span class="c1"># Set element material model recurrency</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_elements_is_recurrent_material</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">element_id</span><span class="p">)]</span> <span class="o">=</span> <span class="kc">True</span>
+                <span class="c1"># Initialize constitutive model state variables</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_elements_state</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">element_id</span><span class="p">)]</span> <span class="o">=</span> <span class="kc">None</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_elements_state_old</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">element_id</span><span class="p">)]</span> <span class="o">=</span> <span class="kc">None</span>
+            <span class="k">else</span><span class="p">:</span>
+                <span class="c1"># Initialize constitutive model state variables</span>
+                <span class="n">state_variables</span> <span class="o">=</span> <span class="n">constitutive_model</span><span class="o">.</span><span class="n">state_init</span><span class="p">()</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Get element type</span>
+                <span class="n">element_type</span> <span class="o">=</span> <span class="n">elements_type</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">element_id</span><span class="p">)]</span>
+                <span class="c1"># Get element number of Gauss quadrature integration points</span>
+                <span class="n">n_gauss</span> <span class="o">=</span> <span class="n">element_type</span><span class="o">.</span><span class="n">get_n_gauss</span><span class="p">()</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Initialize element Gauss integration points state variables</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_elements_state</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">element_id</span><span class="p">)]</span> <span class="o">=</span> \
+                    <span class="p">{</span><span class="nb">str</span><span class="p">(</span><span class="n">i</span><span class="p">):</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">state_variables</span><span class="p">)</span>
+                    <span class="k">for</span> <span class="n">i</span> <span class="ow">in</span> <span class="nb">range</span><span class="p">(</span><span class="mi">1</span><span class="p">,</span> <span class="n">n_gauss</span> <span class="o">+</span> <span class="mi">1</span><span class="p">)}</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_elements_state_old</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">element_id</span><span class="p">)]</span> <span class="o">=</span> \
+                    <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_elements_state</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">element_id</span><span class="p">)])</span>
+                <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+                <span class="c1"># Set element material model recurrency</span>
+                <span class="bp">self</span><span class="o">.</span><span class="n">_elements_is_recurrent_material</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">element_id</span><span class="p">)]</span> <span class="o">=</span> <span class="kc">False</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="StructureMaterialState.get_strain_formulation"><a class="viewcode-back" href="../../../../../_autosummary/hookeai.simulators.fetorch.structure.structure_state.StructureMaterialState.html#hookeai.simulators.fetorch.structure.structure_state.StructureMaterialState.get_strain_formulation">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_strain_formulation</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get problem strain formulation.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        strain_formulation: {&#39;infinitesimal&#39;, &#39;finite&#39;}</span>
+<span class="sd">            Problem strain formulation.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_strain_formulation</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="StructureMaterialState.get_problem_type"><a class="viewcode-back" href="../../../../../_autosummary/hookeai.simulators.fetorch.structure.structure_state.StructureMaterialState.html#hookeai.simulators.fetorch.structure.structure_state.StructureMaterialState.get_problem_type">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_problem_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get problem type.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        problem_type : int</span>
+<span class="sd">            Problem type: 2D plane strain (1), 2D plane stress (2),</span>
+<span class="sd">            2D axisymmetric (3) and 3D (4).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_problem_type</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="StructureMaterialState.get_material_models"><a class="viewcode-back" href="../../../../../_autosummary/hookeai.simulators.fetorch.structure.structure_state.StructureMaterialState.html#hookeai.simulators.fetorch.structure.structure_state.StructureMaterialState.get_material_models">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_material_models</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get material constitutive models.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        material_models : dict</span>
+<span class="sd">            FETorch material constitutive models (key, str[int], item,</span>
+<span class="sd">            ConstitutiveModel). Models are labeled from 1 to n_mat_model.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_material_models</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="StructureMaterialState.get_elements_material"><a class="viewcode-back" href="../../../../../_autosummary/hookeai.simulators.fetorch.structure.structure_state.StructureMaterialState.html#hookeai.simulators.fetorch.structure.structure_state.StructureMaterialState.get_elements_material">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_elements_material</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get elements material constitutive models.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        elements_material : dict</span>
+<span class="sd">            FETorch material constitutive model (item, ConstitutiveModel) of</span>
+<span class="sd">            each finite element mesh element (str[int]). Elements are labeled</span>
+<span class="sd">            from 1 to n_elem.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="bp">self</span><span class="o">.</span><span class="n">_elements_material</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="StructureMaterialState.get_n_element_material_type"><a class="viewcode-back" href="../../../../../_autosummary/hookeai.simulators.fetorch.structure.structure_state.StructureMaterialState.html#hookeai.simulators.fetorch.structure.structure_state.StructureMaterialState.get_n_element_material_type">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_n_element_material_type</span><span class="p">(</span><span class="bp">self</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get the number of material model types of finite element mesh.</span>
+<span class="sd">        </span>
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        n_element_material_type : int</span>
+<span class="sd">            Number of types of constitutive material models of finite element</span>
+<span class="sd">            mesh.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">return</span> <span class="nb">len</span><span class="p">({</span><span class="nb">type</span><span class="p">(</span><span class="n">x</span><span class="p">)</span> <span class="k">for</span> <span class="n">x</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_elements_material</span><span class="o">.</span><span class="n">values</span><span class="p">()})</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="StructureMaterialState.update_element_state"><a class="viewcode-back" href="../../../../../_autosummary/hookeai.simulators.fetorch.structure.structure_state.StructureMaterialState.html#hookeai.simulators.fetorch.structure.structure_state.StructureMaterialState.update_element_state">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">update_element_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element_id</span><span class="p">,</span> <span class="n">element_state</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="s1">&#39;current&#39;</span><span class="p">,</span>
+                             <span class="n">is_copy</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update element material constitutive state variables.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        element_id : int</span>
+<span class="sd">            Element label. Elements labels must be within the range of</span>
+<span class="sd">            1 to n_elem (included).</span>
+<span class="sd">        element_state : dict</span>
+<span class="sd">            Material constitutive model state variables (item, dict) for each</span>
+<span class="sd">            Gauss integration point (key, str[int]).</span>
+<span class="sd">        time : {&#39;last&#39;, &#39;current&#39;}, default=&#39;current&#39;</span>
+<span class="sd">            Time where update of element state variables is performed: last</span>
+<span class="sd">            converged state variables (&#39;last&#39;) or current state variables</span>
+<span class="sd">            (&#39;current&#39;).</span>
+<span class="sd">        is_copy : bool, default=True</span>
+<span class="sd">            If True, then update is performed by copying the state variables.</span>
+<span class="sd">            If False, then update is performed by direct assignment (without</span>
+<span class="sd">            copy).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Copy element material constitutive state variables</span>
+        <span class="k">if</span> <span class="n">is_copy</span><span class="p">:</span>
+            <span class="n">element_state</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">element_state</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Update element material constitutive state variables</span>
+        <span class="k">if</span> <span class="n">time</span> <span class="o">==</span> <span class="s1">&#39;last&#39;</span><span class="p">:</span>
+           <span class="bp">self</span><span class="o">.</span><span class="n">_elements_state_old</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">element_id</span><span class="p">)]</span> <span class="o">=</span> <span class="n">element_state</span>
+        <span class="k">elif</span> <span class="n">time</span> <span class="o">==</span> <span class="s1">&#39;current&#39;</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_elements_state</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">element_id</span><span class="p">)]</span> <span class="o">=</span> <span class="n">element_state</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Unknown time option.&#39;</span><span class="p">)</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="StructureMaterialState.get_element_state"><a class="viewcode-back" href="../../../../../_autosummary/hookeai.simulators.fetorch.structure.structure_state.StructureMaterialState.html#hookeai.simulators.fetorch.structure.structure_state.StructureMaterialState.get_element_state">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_element_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element_id</span><span class="p">,</span> <span class="n">time</span><span class="o">=</span><span class="s1">&#39;current&#39;</span><span class="p">,</span> <span class="n">is_copy</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get element material constitutive state variables.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        element_id : int</span>
+<span class="sd">            Element label. Elements labels must be within the range of</span>
+<span class="sd">            1 to n_elem (included).</span>
+<span class="sd">        time : {&#39;last&#39;, &#39;current&#39;}, default=&#39;current&#39;</span>
+<span class="sd">            Time where update of element state variables is performed: last</span>
+<span class="sd">            converged state variables (&#39;last&#39;) or current state variables</span>
+<span class="sd">            (&#39;current&#39;).</span>
+<span class="sd">        is_copy : bool, default=True</span>
+<span class="sd">            If True, then return copy of the element state variables. If False,</span>
+<span class="sd">            then return the element state variables by direct assignment</span>
+<span class="sd">            (without copy).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        element_state : dict</span>
+<span class="sd">            Material constitutive model state variables (item, dict) for each</span>
+<span class="sd">            Gauss integration point (key, str[int]).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Update element material constitutive state variables</span>
+        <span class="k">if</span> <span class="n">time</span> <span class="o">==</span> <span class="s1">&#39;last&#39;</span><span class="p">:</span>
+            <span class="n">element_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_elements_state_old</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">element_id</span><span class="p">)]</span>
+        <span class="k">elif</span> <span class="n">time</span> <span class="o">==</span> <span class="s1">&#39;current&#39;</span><span class="p">:</span>
+            <span class="n">element_state</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_elements_state</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">element_id</span><span class="p">)]</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Unknown time option.&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Copy element material constitutive state variables</span>
+        <span class="k">if</span> <span class="n">is_copy</span><span class="p">:</span>
+            <span class="n">element_state</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="n">element_state</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">element_state</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="StructureMaterialState.update_converged_elements_state"><a class="viewcode-back" href="../../../../../_autosummary/hookeai.simulators.fetorch.structure.structure_state.StructureMaterialState.html#hookeai.simulators.fetorch.structure.structure_state.StructureMaterialState.update_converged_elements_state">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">update_converged_elements_state</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">is_copy</span><span class="o">=</span><span class="kc">True</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update elements last converged material state variables.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        is_copy : bool, default=True</span>
+<span class="sd">            If True, then update is performed by copying the state variables.</span>
+<span class="sd">            If False, then update is performed by direct assignment (without</span>
+<span class="sd">            copy).</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="k">if</span> <span class="n">is_copy</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_elements_state_old</span> <span class="o">=</span> <span class="n">copy</span><span class="o">.</span><span class="n">deepcopy</span><span class="p">(</span><span class="bp">self</span><span class="o">.</span><span class="n">_elements_state</span><span class="p">)</span>
+        <span class="k">else</span><span class="p">:</span>
+            <span class="bp">self</span><span class="o">.</span><span class="n">_elements_state_old</span> <span class="o">=</span> <span class="bp">self</span><span class="o">.</span><span class="n">_elements_state</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="StructureMaterialState.get_element_model_recurrency"><a class="viewcode-back" href="../../../../../_autosummary/hookeai.simulators.fetorch.structure.structure_state.StructureMaterialState.html#hookeai.simulators.fetorch.structure.structure_state.StructureMaterialState.get_element_model_recurrency">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">get_element_model_recurrency</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">element_id</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Get element constitutive model recurrent structure.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        element_id : int</span>
+<span class="sd">            Element label. Elements labels must be within the range of</span>
+<span class="sd">            1 to n_elem (included).</span>
+
+<span class="sd">        Returns</span>
+<span class="sd">        -------</span>
+<span class="sd">        is_recurrent_model : bool</span>
+<span class="sd">            True if the material constitutive model has a recurrent structure</span>
+<span class="sd">            (processes full deformation path when called), False otherwise.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check element constitutive model recurrent structure</span>
+        <span class="n">is_recurrent_model</span> <span class="o">=</span> \
+            <span class="bp">self</span><span class="o">.</span><span class="n">_elements_is_recurrent_material</span><span class="p">[</span><span class="nb">str</span><span class="p">(</span><span class="n">element_id</span><span class="p">)]</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span> <span class="n">is_recurrent_model</span></div>
+    <span class="c1"># -------------------------------------------------------------------------</span>
+<div class="viewcode-block" id="StructureMaterialState.update_material_models_device"><a class="viewcode-back" href="../../../../../_autosummary/hookeai.simulators.fetorch.structure.structure_state.StructureMaterialState.html#hookeai.simulators.fetorch.structure.structure_state.StructureMaterialState.update_material_models_device">[docs]</a>    <span class="k">def</span><span class="w"> </span><span class="nf">update_material_models_device</span><span class="p">(</span><span class="bp">self</span><span class="p">,</span> <span class="n">device_type</span><span class="p">):</span>
+<span class="w">        </span><span class="sd">&quot;&quot;&quot;Update material models Torch device.</span>
+<span class="sd">        </span>
+<span class="sd">        Parameters</span>
+<span class="sd">        ----------</span>
+<span class="sd">        device_type : {&#39;cpu&#39;, &#39;cuda&#39;}</span>
+<span class="sd">            Type of device on which torch.Tensor is allocated.</span>
+<span class="sd">        &quot;&quot;&quot;</span>
+        <span class="c1"># Check device type</span>
+        <span class="k">if</span> <span class="n">device_type</span> <span class="ow">not</span> <span class="ow">in</span> <span class="p">(</span><span class="s1">&#39;cpu&#39;</span><span class="p">,</span> <span class="s1">&#39;cuda&#39;</span><span class="p">):</span>
+            <span class="k">raise</span> <span class="ne">RuntimeError</span><span class="p">(</span><span class="s1">&#39;Invalid device type.&#39;</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="c1"># Loop over material models</span>
+        <span class="k">for</span> <span class="n">_</span><span class="p">,</span> <span class="n">model</span> <span class="ow">in</span> <span class="bp">self</span><span class="o">.</span><span class="n">_material_models</span><span class="o">.</span><span class="n">items</span><span class="p">():</span>
+            <span class="c1"># Check model device</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s1">&#39;_device_type&#39;</span><span class="p">):</span>
+                <span class="c1"># Update model device</span>
+                <span class="n">model</span><span class="o">.</span><span class="n">set_device</span><span class="p">(</span><span class="n">device_type</span><span class="p">)</span>
+            <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+            <span class="c1"># Check model embedded material model</span>
+            <span class="k">if</span> <span class="nb">hasattr</span><span class="p">(</span><span class="n">model</span><span class="p">,</span> <span class="s1">&#39;_constitutive_model&#39;</span><span class="p">):</span>
+                <span class="c1"># Update embedded material model device</span>
+                <span class="n">model</span><span class="o">.</span><span class="n">_constitutive_model</span><span class="o">.</span><span class="n">set_device</span><span class="p">(</span><span class="n">device_type</span><span class="p">)</span>
+        <span class="c1"># ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~</span>
+        <span class="k">return</span></div></div>
+</pre></div>
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2025, Bernardo Ferreira.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
