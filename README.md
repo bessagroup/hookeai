@@ -1,6 +1,6 @@
 
 <p align="center">
-  <a href=""><img alt="logo" src="https://gist.github.com/user-attachments/assets/2e8896e2-6eb9-4d94-b632-7385ca7c2ffc" width="50%"></a>
+  <a href=""><img alt="logo" src="https://github.com/user-attachments/assets/2e8896e2-6eb9-4d94-b632-7385ca7c2ffc" width="50%"></a>
 </p>
 
 # What is HookeAI?
@@ -14,7 +14,7 @@
 **HookeAI** is an open-source Python package built on [PyTorch](https://pytorch.org/) to perform material model updating at the intersection of **computational mechanics**, **machine learning** and **scientific computing**. At its core lies the **Automatically Differentiable Model Updating (ADiMU)** framework, which enables **finding general history-dependent material models** - conventional (physics-based), neural network (data-driven), or hybrid - from different data sources (e.g., strain-stress data, displacement-force data). It also includes numerous computational resources to support **material modeling research**, namely data generation methods, highly-customizable material model architectures, and data analysis and visualization tools.
 
 <p align="center">
-  <a href=""><img alt="updating" src="https://gist.github.com/user-attachments/assets/c4efc04f-5ee9-4ef5-b557-43010b254410" width="80%"></a>
+  <a href=""><img alt="updating" src="https://github.com/user-attachments/assets/c4efc04f-5ee9-4ef5-b557-43010b254410" width="80%"></a>
 </p>
 
 
@@ -26,7 +26,7 @@ In a **teaching environment**, HookeAI extensive documentation, pre-built materi
 Consider **leaving a star** :star: if you think HookeAI is useful for the community!
 
 <p align="center">
-  <a href=""><img alt="workflow" src="https://gist.github.com/user-attachments/assets/42659c1b-5abf-4aa2-95ff-c67a203527cd" width="90%"></a>
+  <a href=""><img alt="workflow" src="https://github.com/user-attachments/assets/42659c1b-5abf-4aa2-95ff-c67a203527cd" width="90%"></a>
 </p>
 
 
