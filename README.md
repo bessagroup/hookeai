@@ -1,7 +1,8 @@
 
 <p align="center">
-  <a href=""><img alt="logo" src="https://github.com/user-attachments/assets/2e8896e2-6eb9-4d94-b632-7385ca7c2ffc" width="50%"></a>
+  <a href=""><img alt="logo" src="https://github.com/user-attachments/assets/d443c6c4-841f-487e-8716-47c8979a8e35" width="50%"></a>
 </p>
+
 
 # What is HookeAI?
 
