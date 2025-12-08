@@ -1,6 +1,6 @@
 
 <p align="center">
-  <a href=""><img alt="logo" src="https://private-user-images.githubusercontent.com/25851824/492778208-2e8896e2-6eb9-4d94-b632-7385ca7c2ffc.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NjQ3ODEwMTcsIm5iZiI6MTc2NDc4MDcxNywicGF0aCI6Ii8yNTg1MTgyNC80OTI3NzgyMDgtMmU4ODk2ZTItNmViOS00ZDk0LWI2MzItNzM4NWNhN2MyZmZjLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTEyMDMlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUxMjAzVDE2NTE1N1omWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPTAzZTczNjJiY2U3ODEzM2IyN2Y3MzgwY2FiODc2OWRmZGExOGM2NDJjOWJiOTA0MWNjN2YxMGY0NGI2ZTg4YWMmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.NhOzKtsHZPpt6uvEoug5y5BG1jv9jSCadyuwDUCdm3I" width="50%"></a>
+  <a href=""><img alt="logo" src="https://gist.github.com/user-attachments/assets/2e8896e2-6eb9-4d94-b632-7385ca7c2ffc" width="50%"></a>
 </p>
 
 # What is HookeAI?
@@ -14,7 +14,7 @@
 **HookeAI** is an open-source Python package built on [PyTorch](https://pytorch.org/) to perform material model updating at the intersection of **computational mechanics**, **machine learning** and **scientific computing**. At its core lies the **Automatically Differentiable Model Updating (ADiMU)** framework, which enables **finding general history-dependent material models** - conventional (physics-based), neural network (data-driven), or hybrid - from different data sources (e.g., strain-stress data, displacement-force data). It also includes numerous computational resources to support **material modeling research**, namely data generation methods, highly-customizable material model architectures, and data analysis and visualization tools.
 
 <p align="center">
-  <a href=""><img alt="updating" src="https://private-user-images.githubusercontent.com/25851824/507083361-c4efc04f-5ee9-4ef5-b557-43010b254410.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NjQ3ODEwMTcsIm5iZiI6MTc2NDc4MDcxNywicGF0aCI6Ii8yNTg1MTgyNC81MDcwODMzNjEtYzRlZmMwNGYtNWVlOS00ZWY1LWI1NTctNDMwMTBiMjU0NDEwLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTEyMDMlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUxMjAzVDE2NTE1N1omWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPWY5NWRkODQwNjhiM2ZjNzk0Zjc0MTc2MGU0YjY1ZDZhMzU0MTgwYjNjZmUxOTcyZWVhMGZlNWQ5MTgwYTNiMjMmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.lyMzlWn0U5MV69-Pbf1rqsmKs6egh6WqQocMz38u0Zs" width="80%"></a>
+  <a href=""><img alt="updating" src="https://gist.github.com/user-attachments/assets/c4efc04f-5ee9-4ef5-b557-43010b254410" width="80%"></a>
 </p>
 
 
@@ -26,7 +26,7 @@ In a **teaching environment**, HookeAI extensive documentation, pre-built materi
 Consider **leaving a star** :star: if you think HookeAI is useful for the community!
 
 <p align="center">
-  <a href=""><img alt="workflow" src="https://private-user-images.githubusercontent.com/25851824/507056571-42659c1b-5abf-4aa2-95ff-c67a203527cd.png?jwt=eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJnaXRodWIuY29tIiwiYXVkIjoicmF3LmdpdGh1YnVzZXJjb250ZW50LmNvbSIsImtleSI6ImtleTUiLCJleHAiOjE3NjQ3ODEwMTcsIm5iZiI6MTc2NDc4MDcxNywicGF0aCI6Ii8yNTg1MTgyNC81MDcwNTY1NzEtNDI2NTljMWItNWFiZi00YWEyLTk1ZmYtYzY3YTIwMzUyN2NkLnBuZz9YLUFtei1BbGdvcml0aG09QVdTNC1ITUFDLVNIQTI1NiZYLUFtei1DcmVkZW50aWFsPUFLSUFWQ09EWUxTQTUzUFFLNFpBJTJGMjAyNTEyMDMlMkZ1cy1lYXN0LTElMkZzMyUyRmF3czRfcmVxdWVzdCZYLUFtei1EYXRlPTIwMjUxMjAzVDE2NTE1N1omWC1BbXotRXhwaXJlcz0zMDAmWC1BbXotU2lnbmF0dXJlPWQ4MzcwMWQ0NGJlZjM5ODJiOWUyM2E3YTFmMzUyOTZjNGUxMDFiMjBmMjgzZTdmNjFlNWQxNDRlNTNkZTlkZTgmWC1BbXotU2lnbmVkSGVhZGVycz1ob3N0In0.zGoo2W_6b_UhzxaHJbdPXwOiVpYb67gZF8wNlXMc2_4" width="90%"></a>
+  <a href=""><img alt="workflow" src="https://gist.github.com/user-attachments/assets/42659c1b-5abf-4aa2-95ff-c67a203527cd" width="90%"></a>
 </p>
 
 
